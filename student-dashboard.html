@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - IELTS Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .welcome {
+            flex: 1;
+        }
+
+        .welcome h1 {
+            color: #667eea;
+            font-size: 2rem;
+            margin-bottom: 5px;
+        }
+
+        .welcome p {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        .user-info {
+            text-align: right;
+        }
+
+        .user-info .name {
+            font-weight: bold;
+            color: #333;
+            font-size: 1.1rem;
+        }
+
+        .user-info .group {
+            color: #667eea;
+            font-size: 0.9rem;
+        }
+
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .logout-btn:hover {
+            background: #c82333;
+        }
+
+        .week-section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .week-title {
+            font-size: 1.8rem;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .week-description {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .days-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .day-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+            cursor: pointer;
+        }
+
+        .day-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .day-card.locked {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .day-card.locked:hover {
+            transform: none;
+        }
+
+        .day-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .day-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .day-status-icon {
+            font-size: 1.5rem;
+        }
+
+        .day-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .progress-container {
+            margin: 15px 0;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        .progress-fill.red {
+            background: linear-gradient(90deg, #dc3545 0%, #c82333 100%);
+        }
+
+        .progress-fill.yellow {
+            background: linear-gradient(90deg, #ffc107 0%, #ffb300 100%);
+        }
+
+        .progress-fill.green {
+            background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+        }
+
+        .day-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status-badge.not-started {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-badge.in-progress {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-badge.completed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .user-info {
+                text-align: center;
+                margin-top: 20px;
+            }
+
+            .days-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="welcome">
+                <h1>👋 Hi, <span id="studentName">Loading...</span>!</h1>
+                <p>Welcome to your IELTS learning journey</p>
+            </div>
+            <div class="user-info">
+                <div class="name" id="studentFullName">-</div>
+                <div class="group">📚 <span id="studentGroup">-</span></div>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <!-- Week 1: Education -->
+        <div class="week-section">
+            <div class="week-title">📖 Week 1: Education</div>
+            <div class="week-description">Foundation skills and academic vocabulary</div>
+
+            <div class="days-grid" id="daysGrid">
+                <!-- Days will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Initialize Supabase
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let currentUser = null;
+
+        // Check authentication
+        window.addEventListener('load', async () => {
+            const userStr = localStorage.getItem('user');
+            if (!userStr) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            currentUser = JSON.parse(userStr);
+            
+            if (currentUser.type !== 'student') {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Display user info
+            document.getElementById('studentName').textContent = currentUser.name.split(' ')[0];
+            document.getElementById('studentFullName').textContent = currentUser.name;
+            document.getElementById('studentGroup').textContent = currentUser.group;
+
+            // Load progress
+            await loadProgress();
+        });
+
+        async function loadProgress() {
+            try {
+                // Get day summaries for Week 1
+                const { data: summaries, error } = await supabase
+                    .from('day_summary')
+                    .select('*')
+                    .eq('student_id', currentUser.id)
+                    .eq('week', 1)
+                    .order('day');
+
+                if (error) throw error;
+
+                // Create a map of existing progress
+                const progressMap = {};
+                if (summaries) {
+                    summaries.forEach(summary => {
+                        progressMap[summary.day] = summary;
+                    });
+                }
+
+                // Render all 5 days
+                const daysGrid = document.getElementById('daysGrid');
+                daysGrid.innerHTML = '';
+
+                for (let day = 1; day <= 5; day++) {
+                    const progress = progressMap[day] || {
+                        completed_tasks: 0,
+                        total_tasks: 7,
+                        percentage: 0,
+                        total_time_spent_minutes: 0
+                    };
+
+                    const card = createDayCard(day, progress);
+                    daysGrid.appendChild(card);
+                }
+
+            } catch (error) {
+                console.error('Error loading progress:', error);
+            }
+        }
+
+        function createDayCard(dayNumber, progress) {
+            const card = document.createElement('a');
+            card.className = 'day-card';
+            
+            const percentage = progress.percentage || 0;
+            const completedTasks = progress.completed_tasks || 0;
+            const totalTasks = progress.total_tasks || 7;
+            const timeSpent = progress.total_time_spent_minutes || 0;
+
+            // Determine status
+            let statusBadge = '';
+            let statusIcon = '';
+            let progressColor = 'red';
+
+            if (percentage === 0) {
+                statusBadge = '<span class="status-badge not-started">Not Started</span>';
+                statusIcon = '🔒';
+            } else if (percentage === 100) {
+                statusBadge = '<span class="status-badge completed">Completed</span>';
+                statusIcon = '✅';
+                progressColor = 'green';
+            } else {
+                statusBadge = '<span class="status-badge in-progress">In Progress</span>';
+                statusIcon = '⏳';
+                if (percentage >= 80) {
+                    progressColor = 'green';
+                } else if (percentage >= 30) {
+                    progressColor = 'yellow';
+                } else {
+                    progressColor = 'red';
+                }
+            }
+
+            // Only make clickable if Day 1 or previous day is completed
+            if (dayNumber === 1 || (progressMap[dayNumber - 1] && progressMap[dayNumber - 1].percentage === 100)) {
+                card.href = `week1/day${dayNumber}/day${dayNumber}.html`;
+                card.classList.remove('locked');
+            } else {
+                card.classList.add('locked');
+                card.onclick = (e) => {
+                    e.preventDefault();
+                    alert('Please complete the previous day first!');
+                };
+            }
+
+            card.innerHTML = `
+                <div class="day-header">
+                    <div class="day-number">${dayNumber}</div>
+                    <div class="day-status-icon">${statusIcon}</div>
+                </div>
+                <div class="day-title">Day ${dayNumber}</div>
+                ${statusBadge}
+                <div class="progress-container">
+                    <div class="progress-label">
+                        <span>Progress</span>
+                        <span><strong>${completedTasks}/${totalTasks}</strong> tasks</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill ${progressColor}" style="width: ${percentage}%">
+                            ${percentage}%
+                        </div>
+                    </div>
+                </div>
+                <div class="day-stats">
+                    <div class="stat-item">
+                        <span>⏱️</span>
+                        <span>${timeSpent} min</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>📊</span>
+                        <span>${percentage}%</span>
+                    </div>
+                </div>
+            `;
+
+            return card;
+        }
+
+        function logout() {
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+
+        // Make progressMap available globally for the card creation function
+        let progressMap = {};
+    </script>
+</body>
+</html>
