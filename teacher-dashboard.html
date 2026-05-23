@@ -412,11 +412,13 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script>
-       const SUPABASE_URL = 'https://nbfceuhuaizyucugejr.supabase.co';
+        // Initialize Supabase - FIXED!
+        const SUPABASE_URL = 'https://nbfceuhuaizyucugejr.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_0mFIGJkA_DKZfUiDAWFdrA_nXt0hF6H';
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const { createClient } = supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let currentTeacher = null;
         let allStudents = [];
@@ -445,7 +447,7 @@
         async function loadDashboardData() {
             try {
                 // Get all students in this group
-                const { data: students, error } = await supabase
+                const { data: students, error } = await supabaseClient
                     .from('students')
                     .select(`
                         *,
@@ -636,7 +638,7 @@
                 document.getElementById('modalStudentName').textContent = student.name;
 
                 // Get detailed task progress
-                const { data: taskProgress, error } = await supabase
+                const { data: taskProgress, error } = await supabaseClient
                     .from('task_progress')
                     .select('*')
                     .eq('student_id', studentId)
