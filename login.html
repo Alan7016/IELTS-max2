@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - IELTS Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 450px;
+            width: 100%;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            color: #667eea;
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+        }
+
+        .logo p {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-login:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .register-link {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+        }
+
+        .register-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .register-link a:hover {
+            text-decoration: underline;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .user-type-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .user-type-tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            color: #666;
+        }
+
+        .user-type-tab.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <h1>📚 IELTS Platform</h1>
+            <p>Welcome Back!</p>
+        </div>
+
+        <div class="user-type-tabs">
+            <div class="user-type-tab active" id="studentTab" onclick="switchTab('student')">
+                👨‍🎓 Student
+            </div>
+            <div class="user-type-tab" id="teacherTab" onclick="switchTab('teacher')">
+                👨‍🏫 Teacher
+            </div>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+        <div class="loading" id="loading">
+            <div class="loading-spinner"></div>
+            <p>Logging in...</p>
+        </div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required placeholder="Enter your username">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required placeholder="Enter your password">
+            </div>
+
+            <button type="submit" class="btn-login" id="submitBtn">Login</button>
+        </form>
+
+        <div class="register-link" id="registerLink">
+            Don't have an account? <a href="register.html">Register here</a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Initialize Supabase
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let currentUserType = 'student';
+
+        const form = document.getElementById('loginForm');
+        const errorMessage = document.getElementById('errorMessage');
+        const loading = document.getElementById('loading');
+        const submitBtn = document.getElementById('submitBtn');
+        const registerLink = document.getElementById('registerLink');
+
+        function switchTab(type) {
+            currentUserType = type;
+            document.getElementById('studentTab').classList.remove('active');
+            document.getElementById('teacherTab').classList.remove('active');
+            
+            if (type === 'student') {
+                document.getElementById('studentTab').classList.add('active');
+                registerLink.style.display = 'block';
+            } else {
+                document.getElementById('teacherTab').classList.add('active');
+                registerLink.style.display = 'none';
+            }
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value.trim().toLowerCase();
+            const password = document.getElementById('password').value;
+
+            // Hide error
+            errorMessage.style.display = 'none';
+
+            if (!username || !password) {
+                showError('Please enter username and password');
+                return;
+            }
+
+            // Show loading
+            loading.style.display = 'block';
+            submitBtn.disabled = true;
+
+            try {
+                const passwordHash = btoa(password);
+                let user = null;
+
+                if (currentUserType === 'student') {
+                    // Check student credentials
+                    const { data, error } = await supabase
+                        .from('students')
+                        .select('*')
+                        .eq('username', username)
+                        .eq('password_hash', passwordHash)
+                        .single();
+
+                    if (error || !data) {
+                        showError('Invalid username or password');
+                        loading.style.display = 'none';
+                        submitBtn.disabled = false;
+                        return;
+                    }
+
+                    // Update last login
+                    await supabase
+                        .from('students')
+                        .update({ last_login: new Date().toISOString() })
+                        .eq('id', data.id);
+
+                    // Save to localStorage
+                    localStorage.setItem('user', JSON.stringify({
+                        id: data.id,
+                        name: data.name,
+                        username: data.username,
+                        group: data.student_group,
+                        type: 'student'
+                    }));
+
+                    // Redirect to student dashboard
+                    window.location.href = 'student-dashboard.html';
+
+                } else {
+                    // Check teacher credentials
+                    const { data, error } = await supabase
+                        .from('teachers')
+                        .select('*')
+                        .eq('username', username)
+                        .eq('password_hash', passwordHash)
+                        .single();
+
+                    if (error || !data) {
+                        showError('Invalid username or password');
+                        loading.style.display = 'none';
+                        submitBtn.disabled = false;
+                        return;
+                    }
+
+                    // Save to localStorage
+                    localStorage.setItem('user', JSON.stringify({
+                        id: data.id,
+                        name: data.name,
+                        username: data.username,
+                        assignedGroup: data.assigned_group,
+                        isSuperAdmin: data.is_super_admin,
+                        type: 'teacher'
+                    }));
+
+                    // Redirect based on admin type
+                    if (data.is_super_admin) {
+                        window.location.href = 'super-admin-dashboard.html';
+                    } else {
+                        window.location.href = 'teacher-dashboard.html';
+                    }
+                }
+
+            } catch (error) {
+                console.error('Login error:', error);
+                showError('Login failed: ' + error.message);
+                submitBtn.disabled = false;
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+
+        // Check if already logged in
+        window.addEventListener('load', () => {
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (user) {
+                if (user.type === 'student') {
+                    window.location.href = 'student-dashboard.html';
+                } else if (user.isSuperAdmin) {
+                    window.location.href = 'super-admin-dashboard.html';
+                } else {
+                    window.location.href = 'teacher-dashboard.html';
+                }
+            }
+        });
+    </script>
+</body>
+</html>
