@@ -233,7 +233,7 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script>
         // Initialize Supabase - FIXED!
         const SUPABASE_URL = 'https://nbfceuhuaizyucugejr.supabase.co';
@@ -283,8 +283,7 @@
 
             try {
                 // Check if username already exists
-                const { data: existingUser } = await supabaseClient
-                    .from('students')
+                const { data: existingUser } = await supabaseClient.from('students')
                     .select('username')
                     .eq('username', username)
                     .single();
@@ -300,8 +299,7 @@
                 const passwordHash = btoa(password);
 
                 // Insert student
-                const { data, error } = await supabaseClient
-                    .from('students')
+                const { data, error } = await supabaseClient.from('students')
                     .insert([
                         {
                             name: fullName,
