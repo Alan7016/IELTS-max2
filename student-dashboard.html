@@ -277,12 +277,13 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script>
-        // Initialize Supabase
-      const SUPABASE_URL = 'https://nbfceuhuaizyucugejr.supabase.co';
+        // Initialize Supabase - FIXED!
+        const SUPABASE_URL = 'https://nbfceuhuaizyucugejr.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_0mFIGJkA_DKZfUiDAWFdrA_nXt0hF6H';
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const { createClient } = supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let currentUser = null;
 
@@ -313,7 +314,7 @@
         async function loadProgress() {
             try {
                 // Get day summaries for Week 1
-                const { data: summaries, error } = await supabase
+                const { data: summaries, error } = await supabaseClient
                     .from('day_summary')
                     .select('*')
                     .eq('student_id', currentUser.id)
@@ -342,7 +343,7 @@
                         total_time_spent_minutes: 0
                     };
 
-                    const card = createDayCard(day, progress);
+                    const card = createDayCard(day, progress, progressMap);
                     daysGrid.appendChild(card);
                 }
 
@@ -351,7 +352,7 @@
             }
         }
 
-        function createDayCard(dayNumber, progress) {
+        function createDayCard(dayNumber, progress, progressMap) {
             const card = document.createElement('a');
             card.className = 'day-card';
             
@@ -433,9 +434,6 @@
             localStorage.removeItem('user');
             window.location.href = 'login.html';
         }
-
-        // Make progressMap available globally for the card creation function
-        let progressMap = {};
     </script>
 </body>
 </html>
