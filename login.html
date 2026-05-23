@@ -191,7 +191,7 @@
             <p>Logging in...</p>
         </div>
 
-        <form id="loginForm">
+        <form id="loginForm" onsubmit="return false;">
             <div class="form-group">
                 <label for="username">Username</label>
                 <input type="text" id="username" name="username" required placeholder="Enter your username">
@@ -202,7 +202,7 @@
                 <input type="password" id="password" name="password" required placeholder="Enter your password">
             </div>
 
-            <button type="submit" class="btn-login" id="submitBtn">Login</button>
+            <button type="button" class="btn-login" id="submitBtn" onclick="handleLogin()">Login</button>
         </form>
 
         <div class="register-link" id="registerLink">
@@ -212,14 +212,13 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // Initialize Supabase
-       const SUPABASE_URL = 'https://nbfceuhuaizyucugejr.supabase.co';
+        // Initialize Supabase - FIXED!
+        const SUPABASE_URL = 'https://nbfceuhuaizyucugejr.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_0mFIGJkA_DKZfUiDAWFdrA_nXt0hF6H';
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const { createClient } = supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let currentUserType = 'student';
-
-        const form = document.getElementById('loginForm');
         const errorMessage = document.getElementById('errorMessage');
         const loading = document.getElementById('loading');
         const submitBtn = document.getElementById('submitBtn');
@@ -239,9 +238,7 @@
             }
         }
 
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
+        async function handleLogin() {
             const username = document.getElementById('username').value.trim().toLowerCase();
             const password = document.getElementById('password').value;
 
@@ -259,11 +256,10 @@
 
             try {
                 const passwordHash = btoa(password);
-                let user = null;
 
                 if (currentUserType === 'student') {
                     // Check student credentials
-                    const { data, error } = await supabase
+                    const { data, error } = await supabaseClient
                         .from('students')
                         .select('*')
                         .eq('username', username)
@@ -278,7 +274,7 @@
                     }
 
                     // Update last login
-                    await supabase
+                    await supabaseClient
                         .from('students')
                         .update({ last_login: new Date().toISOString() })
                         .eq('id', data.id);
@@ -297,7 +293,7 @@
 
                 } else {
                     // Check teacher credentials
-                    const { data, error } = await supabase
+                    const { data, error } = await supabaseClient
                         .from('teachers')
                         .select('*')
                         .eq('username', username)
@@ -336,7 +332,7 @@
             } finally {
                 loading.style.display = 'none';
             }
-        });
+        }
 
         function showError(message) {
             errorMessage.textContent = message;
