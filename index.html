@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IELTS Course - Student Login</title>
+    <title>IELTS Platform - Welcome</title>
     <style>
         * {
             margin: 0;
@@ -20,176 +20,138 @@
             align-items: center;
         }
 
-        .login-container {
+        .welcome-container {
             background: white;
-            padding: 40px;
+            padding: 50px;
             border-radius: 20px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
             width: 100%;
-            max-width: 450px;
+            max-width: 550px;
+            text-align: center;
         }
 
         .logo {
-            text-align: center;
             margin-bottom: 30px;
         }
 
         .logo h1 {
             color: #667eea;
-            font-size: 2.5rem;
+            font-size: 3rem;
             margin-bottom: 10px;
         }
 
         .logo p {
             color: #666;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
         }
 
-        .form-group {
-            margin-bottom: 25px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
+        .welcome-text {
+            margin: 30px 0;
             color: #333;
-            font-weight: 600;
-            font-size: 1rem;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-            font-size: 1rem;
-            transition: border-color 0.3s ease;
-        }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .login-btn {
-            width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 10px;
             font-size: 1.1rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .login-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        .error-message {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            display: none;
-            text-align: center;
-            font-weight: 500;
-        }
-
-        .error-message.show {
-            display: block;
-            animation: shake 0.3s ease;
-        }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            75% { transform: translateX(10px); }
-        }
-
-        .info-box {
-            background: #d1ecf1;
-            color: #0c5460;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 20px;
-            font-size: 0.9rem;
             line-height: 1.6;
         }
 
-        .info-box strong {
+        .buttons {
+            display: flex;
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 18px 30px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
             display: block;
-            margin-bottom: 5px;
+        }
+
+        .btn-login {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-register {
+            background: white;
+            color: #667eea;
+            border: 3px solid #667eea;
+        }
+
+        .btn-register:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .features {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px solid #f0f0f0;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 15px 0;
+            text-align: left;
+            color: #666;
+        }
+
+        .feature-icon {
+            font-size: 1.8rem;
+        }
+
+        @media (max-width: 600px) {
+            .buttons {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
 <body>
 
-    <div class="login-container">
+    <div class="welcome-container">
         <div class="logo">
-            <h1>📚 IELTS Course</h1>
+            <h1>📚 IELTS Platform</h1>
             <p>8-Week Intensive Program</p>
         </div>
 
-        <div class="error-message" id="errorMessage">
-            ❌ Invalid username or password. Please try again.
+        <div class="welcome-text">
+            Welcome to your comprehensive IELTS preparation platform. Track your progress, complete daily tasks, and achieve your target score.
         </div>
 
-        <form id="loginForm" onsubmit="return handleLogin(event)">
-            <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" placeholder="Enter your username" required>
+        <div class="buttons">
+            <a href="login.html" class="btn btn-login">Login</a>
+            <a href="register.html" class="btn btn-register">Register</a>
+        </div>
+
+        <div class="features">
+            <div class="feature-item">
+                <div class="feature-icon">✅</div>
+                <div>Structured 8-week curriculum</div>
             </div>
-
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" placeholder="Enter your password" required>
+            <div class="feature-item">
+                <div class="feature-icon">📊</div>
+                <div>Track your progress in real-time</div>
             </div>
-
-            <button type="submit" class="login-btn">Login to Course</button>
-        </form>
-
-        <div class="info-box">
-            <strong>ℹ️ Student Login</strong>
-            Use the username and password provided by your instructor to access the course materials.
+            <div class="feature-item">
+                <div class="feature-icon">🎯</div>
+                <div>Personalized learning dashboard</div>
+            </div>
         </div>
     </div>
-
-    <script src="credentials.js"></script>
-    <script>
-        function handleLogin(event) {
-            event.preventDefault();
-            
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value.trim();
-            const errorMessage = document.getElementById('errorMessage');
-
-            // Check credentials
-            const isValid = CREDENTIALS.some(cred => 
-                cred.username === username && cred.password === password
-            );
-
-            if (isValid) {
-                // Store login status
-                sessionStorage.setItem('loggedIn', 'true');
-                sessionStorage.setItem('username', username);
-                // Redirect to dashboard
-                window.location.href = 'dashboard.html';
-            } else {
-                // Show error
-                errorMessage.classList.add('show');
-                setTimeout(() => {
-                    errorMessage.classList.remove('show');
-                }, 3000);
-            }
-
-            return false;
-        }
-    </script>
 
 </body>
 </html>
