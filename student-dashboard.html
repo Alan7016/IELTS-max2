@@ -15,7 +15,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);QA
             min-height: 100vh;
             padding: 20px;
         }
@@ -23,6 +23,35 @@
         .container {
             max-width: 1400px;
             margin: 0 auto;
+        }
+
+        .loading-screen {
+            text-align: center;
+            padding: 100px 20px;
+        }
+
+        .loading-screen .spinner {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-screen h2 {
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .main-content {
+            display: none;
+        }
+
+        .main-content.visible {
+            display: block;
         }
 
         .header {
@@ -267,205 +296,206 @@
 </head>
 <body>
     <div class="container">
-        <div id="loadingScreen" style="text-align: center; padding: 100px 20px;">
-        <div style="font-size: 3rem; margin-bottom: 20px;">⏳</div>
-        <h2 style="color: white; font-size: 1.5rem;">Loading your progress...</h2>
+        <!-- Loading Screen -->
+        <div class="loading-screen" id="loadingScreen">
+            <div class="spinner">⏳</div>
+            <h2>Loading your progress...</h2>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content" id="mainContent">
+            <!-- Header -->
+            <div class="header">
+                <div class="welcome">
+                    <h1>👋 Hi, <span id="studentName">Loading...</span>!</h1>
+                    <p>Welcome to your IELTS learning journey</p>
+                </div>
+                <div class="user-info">
+                    <div class="name" id="studentFullName">-</div>
+                    <div class="group">📚 <span id="studentGroup">-</span></div>
+                    <button class="logout-btn" onclick="logout()">Logout</button>
+                </div>
+            </div>
+
+            <!-- Week 1: Education -->
+            <div class="week-section">
+                <div class="week-title">📖 Week 1: Education</div>
+                <div class="week-description">Foundation skills and academic vocabulary</div>
+
+                <div class="days-grid">
+                    <!-- Day 1 -->
+                    <a href="/week1/day1/day1.html" class="day-link" id="day1-link">
+                        <div class="day-card" id="day1">
+                            <div class="day-header">
+                                <div class="day-number">Day 1</div>
+                                <div class="day-status-icon">
+                                    <span id="lock1" style="display: none;">🔒</span>
+                                    <span id="check1" style="display: none;">✅</span>
+                                </div>
+                            </div>
+                            <div class="day-title">Education Basics</div>
+                            <span class="status-badge not-started" id="status1">Not Started</span>
+                            <div class="progress-container">
+                                <div class="progress-label">
+                                    <span id="progress-text1">0/6 tasks</span>
+                                    <span id="percentage1">0%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill red" id="progress1" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div class="day-stats">
+                                <div class="stat-item">
+                                    <span>⏱️</span>
+                                    <span id="time1">0 min</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span>📝</span>
+                                    <span>6 exercises</span>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+
+                    <!-- Day 2 -->
+                    <a href="/week1/day2/day2.html" class="day-link" id="day2-link">
+                        <div class="day-card" id="day2">
+                            <div class="day-header">
+                                <div class="day-number">Day 2</div>
+                                <div class="day-status-icon">
+                                    <span id="lock2" style="display: none;">🔒</span>
+                                    <span id="check2" style="display: none;">✅</span>
+                                </div>
+                            </div>
+                            <div class="day-title">Reading & Listening</div>
+                            <span class="status-badge not-started" id="status2">Not Started</span>
+                            <div class="progress-container">
+                                <div class="progress-label">
+                                    <span id="progress-text2">0/7 tasks</span>
+                                    <span id="percentage2">0%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill red" id="progress2" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div class="day-stats">
+                                <div class="stat-item">
+                                    <span>⏱️</span>
+                                    <span id="time2">0 min</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span>📝</span>
+                                    <span>7 exercises</span>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+
+                    <!-- Day 3 -->
+                    <a href="#" class="day-link" id="day3-link">
+                        <div class="day-card" id="day3">
+                            <div class="day-header">
+                                <div class="day-number">Day 3</div>
+                                <div class="day-status-icon">
+                                    <span id="lock3" style="display: none;">🔒</span>
+                                    <span id="check3" style="display: none;">✅</span>
+                                </div>
+                            </div>
+                            <div class="day-title">Writing Skills</div>
+                            <span class="status-badge not-started" id="status3">Not Started</span>
+                            <div class="progress-container">
+                                <div class="progress-label">
+                                    <span id="progress-text3">0/7 tasks</span>
+                                    <span id="percentage3">0%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill red" id="progress3" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div class="day-stats">
+                                <div class="stat-item">
+                                    <span>⏱️</span>
+                                    <span id="time3">0 min</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span>📝</span>
+                                    <span>7 exercises</span>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+
+                    <!-- Day 4 -->
+                    <a href="#" class="day-link" id="day4-link">
+                        <div class="day-card" id="day4">
+                            <div class="day-header">
+                                <div class="day-number">Day 4</div>
+                                <div class="day-status-icon">
+                                    <span id="lock4" style="display: none;">🔒</span>
+                                    <span id="check4" style="display: none;">✅</span>
+                                </div>
+                            </div>
+                            <div class="day-title">Speaking Practice</div>
+                            <span class="status-badge not-started" id="status4">Not Started</span>
+                            <div class="progress-container">
+                                <div class="progress-label">
+                                    <span id="progress-text4">0/7 tasks</span>
+                                    <span id="percentage4">0%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill red" id="progress4" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div class="day-stats">
+                                <div class="stat-item">
+                                    <span>⏱️</span>
+                                    <span id="time4">0 min</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span>📝</span>
+                                    <span>7 exercises</span>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+
+                    <!-- Day 5 -->
+                    <a href="#" class="day-link" id="day5-link">
+                        <div class="day-card" id="day5">
+                            <div class="day-header">
+                                <div class="day-number">Day 5</div>
+                                <div class="day-status-icon">
+                                    <span id="lock5" style="display: none;">🔒</span>
+                                    <span id="check5" style="display: none;">✅</span>
+                                </div>
+                            </div>
+                            <div class="day-title">Review & Practice</div>
+                            <span class="status-badge not-started" id="status5">Not Started</span>
+                            <div class="progress-container">
+                                <div class="progress-label">
+                                    <span id="progress-text5">0/7 tasks</span>
+                                    <span id="percentage5">0%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill red" id="progress5" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div class="day-stats">
+                                <div class="stat-item">
+                                    <span>⏱️</span>
+                                    <span id="time5">0 min</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span>📝</span>
+                                    <span>7 exercises</span>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <!-- Main Content (hidden until loaded) -->
-    <div id="mainContent" style="display: none;">
-        <!-- Header -->
-        <div class="header">
-            <div class="welcome">
-                <h1>👋 Hi, <span id="studentName">Loading...</span>!</h1>
-                <p>Welcome to your IELTS learning journey</p>
-            </div>
-            <div class="user-info">
-                <div class="name" id="studentFullName">-</div>
-                <div class="group">📚 <span id="studentGroup">-</span></div>
-                <button class="logout-btn" onclick="logout()">Logout</button>
-            </div>
-        </div>
-
-        <!-- Week 1: Education -->
-        <div class="week-section">
-            <div class="week-title">📖 Week 1: Education</div>
-            <div class="week-description">Foundation skills and academic vocabulary</div>
-
-            <div class="days-grid">
-                <!-- Day 1 -->
-                <a href="/week1/day1/day1.html" class="day-link" id="day1-link">
-                    <div class="day-card" id="day1">
-                        <div class="day-header">
-                            <div class="day-number">Day 1</div>
-                            <div class="day-status-icon">
-                                <span id="lock1" style="display: none;">🔒</span>
-                                <span id="check1" style="display: none;">✅</span>
-                            </div>
-                        </div>
-                        <div class="day-title">Education Basics</div>
-                        <span class="status-badge not-started" id="status1">Not Started</span>
-                        <div class="progress-container">
-                            <div class="progress-label">
-                                <span id="progress-text1">0/6 tasks</span>
-                                <span id="percentage1">0%</span>
-                            </div>
-                            <div class="progress-bar">
-                                <div class="progress-fill red" id="progress1" style="width: 0%"></div>
-                            </div>
-                        </div>
-                        <div class="day-stats">
-                            <div class="stat-item">
-                                <span>⏱️</span>
-                                <span id="time1">0 min</span>
-                            </div>
-                            <div class="stat-item">
-                                <span>📝</span>
-                                <span>6 exercises</span>
-                            </div>
-                        </div>
-                    </div>
-                </a>
-
-                <!-- Day 2 -->
-                <a href="/week1/day2/day2.html" class="day-link" id="day2-link">
-                    <div class="day-card" id="day2">
-                        <div class="day-header">
-                            <div class="day-number">Day 2</div>
-                            <div class="day-status-icon">
-                                <span id="lock2" style="display: none;">🔒</span>
-                                <span id="check2" style="display: none;">✅</span>
-                            </div>
-                        </div>
-                        <div class="day-title">Reading & Listening</div>
-                        <span class="status-badge not-started" id="status2">Not Started</span>
-                        <div class="progress-container">
-                            <div class="progress-label">
-                                <span id="progress-text2">0/7 tasks</span>
-                                <span id="percentage2">0%</span>
-                            </div>
-                            <div class="progress-bar">
-                                <div class="progress-fill red" id="progress2" style="width: 0%"></div>
-                            </div>
-                        </div>
-                        <div class="day-stats">
-                            <div class="stat-item">
-                                <span>⏱️</span>
-                                <span id="time2">0 min</span>
-                            </div>
-                            <div class="stat-item">
-                                <span>📝</span>
-                                <span>7 exercises</span>
-                            </div>
-                        </div>
-                    </div>
-                </a>
-
-                <!-- Day 3 -->
-                <a href="#" class="day-link" id="day3-link">
-                    <div class="day-card" id="day3">
-                        <div class="day-header">
-                            <div class="day-number">Day 3</div>
-                            <div class="day-status-icon">
-                                <span id="lock3" style="display: none;">🔒</span>
-                                <span id="check3" style="display: none;">✅</span>
-                            </div>
-                        </div>
-                        <div class="day-title">Writing Skills</div>
-                        <span class="status-badge not-started" id="status3">Not Started</span>
-                        <div class="progress-container">
-                            <div class="progress-label">
-                                <span id="progress-text3">0/7 tasks</span>
-                                <span id="percentage3">0%</span>
-                            </div>
-                            <div class="progress-bar">
-                                <div class="progress-fill red" id="progress3" style="width: 0%"></div>
-                            </div>
-                        </div>
-                        <div class="day-stats">
-                            <div class="stat-item">
-                                <span>⏱️</span>
-                                <span id="time3">0 min</span>
-                            </div>
-                            <div class="stat-item">
-                                <span>📝</span>
-                                <span>7 exercises</span>
-                            </div>
-                        </div>
-                    </div>
-                </a>
-
-                <!-- Day 4 -->
-                <a href="#" class="day-link" id="day4-link">
-                    <div class="day-card" id="day4">
-                        <div class="day-header">
-                            <div class="day-number">Day 4</div>
-                            <div class="day-status-icon">
-                                <span id="lock4" style="display: none;">🔒</span>
-                                <span id="check4" style="display: none;">✅</span>
-                            </div>
-                        </div>
-                        <div class="day-title">Speaking Practice</div>
-                        <span class="status-badge not-started" id="status4">Not Started</span>
-                        <div class="progress-container">
-                            <div class="progress-label">
-                                <span id="progress-text4">0/7 tasks</span>
-                                <span id="percentage4">0%</span>
-                            </div>
-                            <div class="progress-bar">
-                                <div class="progress-fill red" id="progress4" style="width: 0%"></div>
-                            </div>
-                        </div>
-                        <div class="day-stats">
-                            <div class="stat-item">
-                                <span>⏱️</span>
-                                <span id="time4">0 min</span>
-                            </div>
-                            <div class="stat-item">
-                                <span>📝</span>
-                                <span>7 exercises</span>
-                            </div>
-                        </div>
-                    </div>
-                </a>
-
-                <!-- Day 5 -->
-                <a href="#" class="day-link" id="day5-link">
-                    <div class="day-card" id="day5">
-                        <div class="day-header">
-                            <div class="day-number">Day 5</div>
-                            <div class="day-status-icon">
-                                <span id="lock5" style="display: none;">🔒</span>
-                                <span id="check5" style="display: none;">✅</span>
-                            </div>
-                        </div>
-                        <div class="day-title">Review & Practice</div>
-                        <span class="status-badge not-started" id="status5">Not Started</span>
-                        <div class="progress-container">
-                            <div class="progress-label">
-                                <span id="progress-text5">0/7 tasks</span>
-                                <span id="percentage5">0%</span>
-                            </div>
-                            <div class="progress-bar">
-                                <div class="progress-fill red" id="progress5" style="width: 0%"></div>
-                            </div>
-                        </div>
-                        <div class="day-stats">
-                            <div class="stat-item">
-                                <span>⏱️</span>
-                                <span id="time5">0 min</span>
-                            </div>
-                            <div class="stat-item">
-                                <span>📝</span>
-                                <span>7 exercises</span>
-                            </div>
-                        </div>
-                    </div>
-                </a>
-            </div>
-        </div>
-            </div> <!-- Close mainContent -->
-        </div> <!-- Close container -->
 
     <script>
         // ============================================
@@ -482,53 +512,53 @@
         // ============================================
         // PAGE INITIALIZATION
         // ============================================
-       document.addEventListener('DOMContentLoaded', async function() {
-    try {
-        // Check if user is logged in
-        const userStr = localStorage.getItem('user');
-        if (!userStr) {
-            window.location.href = '/login.html';
-            return;
-        }
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                // Check if user is logged in
+                const userStr = localStorage.getItem('user');
+                if (!userStr) {
+                    window.location.href = '/login.html';
+                    return;
+                }
 
-        const user = JSON.parse(userStr);
-        if (user.type !== 'student') {
-            window.location.href = '/login.html';
-            return;
-        }
+                const user = JSON.parse(userStr);
+                if (user.type !== 'student') {
+                    window.location.href = '/login.html';
+                    return;
+                }
 
-        // Get student from database
-        const { data: studentData, error } = await supabaseClient
-            .from('students')
-            .select('*')
-            .eq('username', user.username)
-            .single();
+                // Get student from database
+                const { data: studentData, error } = await supabaseClient
+                    .from('students')
+                    .select('*')
+                    .eq('username', user.username)
+                    .single();
 
-        if (error || !studentData) {
-            console.error('Error loading student:', error);
-            alert('Error loading student data');
-            return;
-        }
+                if (error || !studentData) {
+                    console.error('Error loading student:', error);
+                    alert('Error loading student data');
+                    return;
+                }
 
-        currentStudent = studentData;
+                currentStudent = studentData;
 
-        // Display user info
-        document.getElementById('studentName').textContent = currentStudent.name.split(' ')[0];
-        document.getElementById('studentFullName').textContent = currentStudent.name;
-        document.getElementById('studentGroup').textContent = currentStudent.student_group;
+                // Display user info
+                document.getElementById('studentName').textContent = currentStudent.name.split(' ')[0];
+                document.getElementById('studentFullName').textContent = currentStudent.name;
+                document.getElementById('studentGroup').textContent = currentStudent.student_group;
 
-        // Load progress FIRST
-        await loadProgress();
+                // Load progress
+                await loadProgress();
 
-        // ONLY THEN show the content
-        document.getElementById('loadingScreen').style.display = 'none';
-        document.getElementById('mainContent').style.display = 'block';
+                // Hide loading, show content
+                document.getElementById('loadingScreen').style.display = 'none';
+                document.getElementById('mainContent').classList.add('visible');
 
-    } catch (error) {
-        console.error('Error initializing:', error);
-        alert('Error loading dashboard. Please try again.');
-    }
-}); );
+            } catch (error) {
+                console.error('Error initializing dashboard:', error);
+                alert('Error loading dashboard. Please refresh the page.');
+            }
+        });
 
         // ============================================
         // LOAD PROGRESS WITH DAY AVAILABILITY CHECK
