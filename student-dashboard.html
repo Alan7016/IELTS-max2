@@ -267,6 +267,13 @@
 </head>
 <body>
     <div class="container">
+        <div id="loadingScreen" style="text-align: center; padding: 100px 20px;">
+        <div style="font-size: 3rem; margin-bottom: 20px;">⏳</div>
+        <h2 style="color: white; font-size: 1.5rem;">Loading your progress...</h2>
+    </div>
+
+    <!-- Main Content (hidden until loaded) -->
+    <div id="mainContent" style="display: none;">
         <!-- Header -->
         <div class="header">
             <div class="welcome">
@@ -457,7 +464,8 @@
                 </a>
             </div>
         </div>
-    </div>
+            </div> <!-- Close mainContent -->
+        </div> <!-- Close container -->
 
     <script>
         // ============================================
@@ -474,44 +482,53 @@
         // ============================================
         // PAGE INITIALIZATION
         // ============================================
-        document.addEventListener('DOMContentLoaded', async function() {
-            // Check if user is logged in
-            const userStr = localStorage.getItem('user');
-            if (!userStr) {
-                window.location.href = '/login.html';
-                return;
-            }
+       document.addEventListener('DOMContentLoaded', async function() {
+    try {
+        // Check if user is logged in
+        const userStr = localStorage.getItem('user');
+        if (!userStr) {
+            window.location.href = '/login.html';
+            return;
+        }
 
-            const user = JSON.parse(userStr);
-            if (user.type !== 'student') {
-                window.location.href = '/login.html';
-                return;
-            }
+        const user = JSON.parse(userStr);
+        if (user.type !== 'student') {
+            window.location.href = '/login.html';
+            return;
+        }
 
-            // Get student from database
-            const { data: studentData, error } = await supabaseClient
-                .from('students')
-                .select('*')
-                .eq('username', user.username)
-                .single();
+        // Get student from database
+        const { data: studentData, error } = await supabaseClient
+            .from('students')
+            .select('*')
+            .eq('username', user.username)
+            .single();
 
-            if (error || !studentData) {
-                console.error('Error loading student:', error);
-                alert('Error loading student data');
-                return;
-            }
+        if (error || !studentData) {
+            console.error('Error loading student:', error);
+            alert('Error loading student data');
+            return;
+        }
 
-            currentStudent = studentData;
+        currentStudent = studentData;
 
-            // Display user info
-           // Display user info
-document.getElementById('studentName').textContent = currentStudent.name.split(' ')[0];
-document.getElementById('studentFullName').textContent = currentStudent.name;
-document.getElementById('studentGroup').textContent = currentStudent.student_group;
+        // Display user info
+        document.getElementById('studentName').textContent = currentStudent.name.split(' ')[0];
+        document.getElementById('studentFullName').textContent = currentStudent.name;
+        document.getElementById('studentGroup').textContent = currentStudent.student_group;
 
-            // Load progress
-            await loadProgress();
-        });
+        // Load progress FIRST
+        await loadProgress();
+
+        // ONLY THEN show the content
+        document.getElementById('loadingScreen').style.display = 'none';
+        document.getElementById('mainContent').style.display = 'block';
+
+    } catch (error) {
+        console.error('Error initializing:', error);
+        alert('Error loading dashboard. Please try again.');
+    }
+}); );
 
         // ============================================
         // LOAD PROGRESS WITH DAY AVAILABILITY CHECK
