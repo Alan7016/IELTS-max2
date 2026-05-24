@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Super Admin Dashboard - IELTS Platform</title>
+    <title>Super Admin Dashboard - IELTS MAX</title>
     <link rel="icon" type="image/png" href="/favicon.png">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -14,53 +15,66 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f6fa;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
         }
 
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: white;
             padding: 30px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        .header-content {
-            max-width: 1400px;
-            margin: 0 auto;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
         .header h1 {
+            color: #667eea;
             font-size: 2rem;
-            margin-bottom: 5px;
-        }
-
-        .header p {
-            opacity: 0.9;
         }
 
         .logout-btn {
-            background: rgba(255,255,255,0.2);
+            background: #dc3545;
             color: white;
-            border: 2px solid white;
-            padding: 10px 20px;
+            border: none;
+            padding: 12px 30px;
             border-radius: 8px;
             cursor: pointer;
-            font-weight: 600;
+            font-weight: bold;
+            transition: all 0.3s;
         }
 
         .logout-btn:hover {
-            background: white;
-            color: #667eea;
+            background: #c82333;
+            transform: translateY(-2px);
         }
 
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 30px 20px;
+        .admin-section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .admin-section h2 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.5rem;
+        }
+
+        .section-description {
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 1rem;
         }
 
         .stats-grid {
@@ -71,662 +85,435 @@
         }
 
         .stat-card {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        .stat-card h3 {
-            color: #666;
-            font-size: 0.9rem;
-            margin-bottom: 10px;
-        }
-
-        .stat-card .value {
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: #667eea;
-        }
-
-        .stat-card .subtext {
-            color: #999;
-            font-size: 0.85rem;
-            margin-top: 5px;
-        }
-
-        .students-section {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            padding: 30px;
-        }
-
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .section-title {
-            font-size: 1.5rem;
-            color: #333;
-        }
-
-        .filter-group {
-            display: flex;
-            gap: 10px;
-        }
-
-        .filter-btn {
-            padding: 8px 16px;
-            border: 2px solid #ddd;
-            background: white;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .filter-btn.active {
-            background: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            border-color: #667eea;
-        }
-
-        .students-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .students-table thead {
-            background: #f8f9fa;
-        }
-
-        .students-table th {
-            padding: 15px;
-            text-align: left;
-            font-weight: 600;
-            color: #666;
-            border-bottom: 2px solid #dee2e6;
-        }
-
-        .students-table td {
-            padding: 15px;
-            border-bottom: 1px solid #dee2e6;
-        }
-
-        .students-table tbody tr {
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .students-table tbody tr:hover {
-            background: #f8f9fa;
-        }
-
-        .progress-cell {
-            width: 200px;
-        }
-
-        .mini-progress-bar {
-            width: 100%;
-            height: 8px;
-            background: #e0e0e0;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        .mini-progress-fill {
-            height: 100%;
-            transition: width 0.3s;
-        }
-
-        .mini-progress-fill.red {
-            background: #dc3545;
-        }
-
-        .mini-progress-fill.yellow {
-            background: #ffc107;
-        }
-
-        .mini-progress-fill.green {
-            background: #28a745;
-        }
-
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 8px;
-        }
-
-        .status-dot.red {
-            background: #dc3545;
-        }
-
-        .status-dot.yellow {
-            background: #ffc107;
-        }
-
-        .status-dot.green {
-            background: #28a745;
-        }
-
-        /* Modal styles */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
-            overflow-y: auto;
-        }
-
-        .modal.active {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 12px;
-            max-width: 900px;
-            width: 100%;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        .modal-header {
             padding: 25px;
-            border-bottom: 1px solid #dee2e6;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            border-radius: 10px;
+            text-align: center;
         }
 
-        .modal-header h2 {
-            color: #333;
-        }
-
-        .close-btn {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #999;
-        }
-
-        .close-btn:hover {
-            color: #333;
-        }
-
-        .modal-body {
-            padding: 25px;
-        }
-
-        .task-list {
-            margin-top: 20px;
-        }
-
-        .task-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
+        .stat-number {
+            font-size: 3rem;
+            font-weight: bold;
             margin-bottom: 10px;
         }
 
-        .task-info {
-            flex: 1;
+        .stat-label {
+            font-size: 1.1rem;
+            opacity: 0.9;
         }
 
-        .task-name {
-            font-weight: 600;
+        .teacher-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .teacher-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .teacher-name {
+            font-size: 1.2rem;
+            font-weight: bold;
             color: #333;
             margin-bottom: 5px;
         }
 
-        .task-status {
+        .teacher-username {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* Day Availability Control Styles */
+        .day-controls {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .day-controls h3 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+
+        .day-toggle-list {
             display: flex;
-            align-items: center;
+            flex-direction: column;
             gap: 15px;
         }
 
-        .task-status-badge {
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            font-weight: 600;
+        .day-toggle-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            transition: all 0.3s ease;
         }
 
-        .task-status-badge.completed {
-            background: #d4edda;
-            color: #155724;
+        .day-toggle-item:hover {
+            background: #e9ecef;
         }
 
-        .task-status-badge.in-progress {
-            background: #fff3cd;
-            color: #856404;
+        .day-info {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
         }
 
-        .task-status-badge.not-started {
-            background: #f8d7da;
-            color: #721c24;
+        .day-number {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #333;
         }
 
-        .task-time {
-            color: #667eea;
-            font-weight: 600;
+        .day-status {
+            font-size: 0.9rem;
+            color: #666;
         }
 
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #999;
+        /* iPhone-style Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
         }
 
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #999;
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
         }
 
-        .empty-state-icon {
-            font-size: 4rem;
-            margin-bottom: 20px;
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #28a745;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .teacher-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="header-content">
-            <div>
-                <h1>👑 Super Admin Dashboard</h1>
-                <p><span id="teacherName">Loading...</span> | All Groups</p>
-            </div>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>👑 Super Admin Dashboard</h1>
             <button class="logout-btn" onclick="logout()">Logout</button>
         </div>
-    </div>
 
-    <div class="container">
-        <!-- Statistics -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <h3>TOTAL STUDENTS</h3>
-                <div class="value" id="totalStudents">-</div>
-                <div class="subtext">in your group</div>
-            </div>
-            <div class="stat-card">
-                <h3>WEEK 1 COMPLETION</h3>
-                <div class="value"><span id="completedStudents">-</span>/<span id="totalStudents2">-</span></div>
-                <div class="subtext">students completed</div>
-            </div>
-            <div class="stat-card">
-                <h3>AVERAGE PROGRESS</h3>
-                <div class="value" id="avgProgress">-%</div>
-                <div class="subtext">across all students</div>
-            </div>
-            <div class="stat-card">
-                <h3>AVERAGE TIME</h3>
-                <div class="value" id="avgTime">- min</div>
-                <div class="subtext">per day completed</div>
-            </div>
-        </div>
-
-        <!-- Students Table -->
-        <div class="students-section">
-            <div class="section-header">
-                <h2 class="section-title">📊 Student Progress</h2>
-                <div class="filter-group">
-                    <button class="filter-btn active" onclick="filterStudents('all')">All</button>
-                    <button class="filter-btn" onclick="filterStudents('completed')">Completed</button>
-                    <button class="filter-btn" onclick="filterStudents('in-progress')">In Progress</button>
-                    <button class="filter-btn" onclick="filterStudents('not-started')">Not Started</button>
+        <!-- Statistics Section -->
+        <div class="admin-section">
+            <h2>📊 Platform Statistics</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalStudents">0</div>
+                    <div class="stat-label">Total Students</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">13</div>
+                    <div class="stat-label">Total Teachers</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="activeStudents">0</div>
+                    <div class="stat-label">Active This Week</div>
                 </div>
             </div>
+        </div>
 
-            <div id="studentsTableContainer">
-                <div class="loading">Loading students...</div>
+        <!-- Day Availability Control Section -->
+        <div class="admin-section">
+            <h2>📅 Day Availability Control</h2>
+            <p class="section-description">Control which days students can access. Toggle ON to unlock a day for all students.</p>
+            
+            <div class="day-controls">
+                <h3>Week 1: Education</h3>
+                <div class="day-toggle-list">
+                    <div class="day-toggle-item">
+                        <div class="day-info">
+                            <span class="day-number">Day 1</span>
+                            <span class="day-status" id="status-1-1">Unlocked</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="toggle-1-1" checked onchange="toggleDayAvailability(1, 1, this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="day-toggle-item">
+                        <div class="day-info">
+                            <span class="day-number">Day 2</span>
+                            <span class="day-status" id="status-1-2">Locked</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="toggle-1-2" onchange="toggleDayAvailability(1, 2, this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="day-toggle-item">
+                        <div class="day-info">
+                            <span class="day-number">Day 3</span>
+                            <span class="day-status" id="status-1-3">Locked</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="toggle-1-3" onchange="toggleDayAvailability(1, 3, this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="day-toggle-item">
+                        <div class="day-info">
+                            <span class="day-number">Day 4</span>
+                            <span class="day-status" id="status-1-4">Locked</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="toggle-1-4" onchange="toggleDayAvailability(1, 4, this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="day-toggle-item">
+                        <div class="day-info">
+                            <span class="day-number">Day 5</span>
+                            <span class="day-status" id="status-1-5">Locked</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="toggle-1-5" onchange="toggleDayAvailability(1, 5, this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Teachers Section -->
+        <div class="admin-section">
+            <h2>👨‍🏫 All Teachers</h2>
+            <p class="section-description">13 teachers registered in the platform</p>
+            <div class="teacher-grid" id="teachersList">
+                <!-- Teachers will be loaded here -->
             </div>
         </div>
     </div>
 
-    <!-- Student Detail Modal -->
-    <div class="modal" id="studentModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="modalStudentName">Student Details</h2>
-                <button class="close-btn" onclick="closeModal()">&times;</button>
-            </div>
-            <div class="modal-body" id="modalBody">
-                <div class="loading">Loading details...</div>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script>
-        // Initialize Supabase - FIXED!
+        // ============================================
+        // SUPABASE CONFIGURATION
+        // ============================================
         const SUPABASE_URL = 'https://nbfceuhuauizyucugejr.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_0mFIGJkA_DKZfUiDAWFdrA_nXt0hF6H';
+        const SUPABASE_KEY = 'sb_publishable_0mFIGJkA_DKZfUiDAWFdrA_nXt0hF6H';
+        
         const { createClient } = supabase;
-        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let currentTeacher = null;
-        let allStudents = [];
-        let currentFilter = 'all';
-
-        window.addEventListener('load', async () => {
+        // ============================================
+        // PAGE INITIALIZATION
+        // ============================================
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Check if user is logged in and is super admin
             const userStr = localStorage.getItem('user');
             if (!userStr) {
-                window.location.href = 'login.html';
+                window.location.href = '/login.html';
                 return;
             }
 
-            currentTeacher = JSON.parse(userStr);
-            
-            if (currentTeacher.type !== 'teacher' || !currentTeacher.isSuperAdmin) {
-                window.location.href = 'login.html';
+            const user = JSON.parse(userStr);
+            if (user.role !== 'super_admin') {
+                alert('Access denied! Super admin only.');
+                window.location.href = '/login.html';
                 return;
             }
 
-            document.getElementById('teacherName').textContent = currentTeacher.name;
-
-            await loadDashboardData();
+            // Load dashboard data
+            await loadStatistics();
+            await loadTeachers();
+            await loadDayAvailability();
         });
 
-        async function loadDashboardData() {
+        // ============================================
+        // LOAD STATISTICS
+        // ============================================
+        async function loadStatistics() {
             try {
-                // Get ALL students from ALL groups (super admin)
-                const { data: students, error } = await supabaseClient
+                // Get total students
+                const { data: students, error: studentsError } = await supabaseClient
                     .from('students')
-                    .select(`
-                        *,
-                        day_summary (
-                            week,
-                            day,
-                            completed_tasks,
-                            total_tasks,
-                            percentage,
-                            total_time_spent_minutes
-                        )
-                    `)
-                    .order('student_group')
-                    .order('name');
+                    .select('id');
 
-                if (error) throw error;
+                if (!studentsError && students) {
+                    document.getElementById('totalStudents').textContent = students.length;
+                }
 
-                allStudents = students || [];
+                // Get active students (those who have progress in the last 7 days)
+                const sevenDaysAgo = new Date();
+                sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-                // Calculate statistics
-                updateStatistics();
-                renderStudentsTable();
+                const { data: activeData, error: activeError } = await supabaseClient
+                    .from('day_summary')
+                    .select('student_id')
+                    .gte('last_updated', sevenDaysAgo.toISOString());
+
+                if (!activeError && activeData) {
+                    const uniqueStudents = new Set(activeData.map(d => d.student_id));
+                    document.getElementById('activeStudents').textContent = uniqueStudents.size;
+                }
 
             } catch (error) {
-                console.error('Error loading dashboard:', error);
+                console.error('Error loading statistics:', error);
             }
         }
 
-        function updateStatistics() {
-            const total = allStudents.length;
-            document.getElementById('totalStudents').textContent = total;
-            document.getElementById('totalStudents2').textContent = total;
-
-            if (total === 0) {
-                document.getElementById('completedStudents').textContent = '0';
-                document.getElementById('avgProgress').textContent = '0%';
-                document.getElementById('avgTime').textContent = '0 min';
-                return;
-            }
-
-            // Calculate completed students (100% on all days)
-            const completed = allStudents.filter(s => {
-                if (!s.day_summary || s.day_summary.length === 0) return false;
-                // Check if all 5 days are 100%
-                const completedDays = s.day_summary.filter(d => d.percentage === 100).length;
-                return completedDays === 5;
-            }).length;
-
-            document.getElementById('completedStudents').textContent = completed;
-
-            // Average progress
-            let totalProgress = 0;
-            let totalTime = 0;
-            let daysCount = 0;
-
-            allStudents.forEach(student => {
-                if (student.day_summary) {
-                    student.day_summary.forEach(day => {
-                        totalProgress += day.percentage || 0;
-                        totalTime += day.total_time_spent_minutes || 0;
-                        daysCount++;
-                    });
-                }
-            });
-
-            const avgProgress = daysCount > 0 ? Math.round(totalProgress / daysCount) : 0;
-            const avgTime = daysCount > 0 ? Math.round(totalTime / daysCount) : 0;
-
-            document.getElementById('avgProgress').textContent = avgProgress + '%';
-            document.getElementById('avgTime').textContent = avgTime + ' min';
-        }
-
-        function renderStudentsTable() {
-            const container = document.getElementById('studentsTableContainer');
-
-            if (allStudents.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">📭</div>
-                        <h3>No students yet</h3>
-                        <p>Students will appear here once they register</p>
-                    </div>
-                `;
-                return;
-            }
-
-            // Filter students
-            let filteredStudents = allStudents;
-            if (currentFilter !== 'all') {
-                filteredStudents = allStudents.filter(student => {
-                    const status = getStudentStatus(student);
-                    return status === currentFilter;
-                });
-            }
-
-            let tableHTML = `
-                <table class="students-table">
-                    <thead>
-                        <tr>
-                            <th>Student Name</th>
-                            <th>Group</th>
-                            <th>Week 1 Progress</th>
-                            <th>Status</th>
-                            <th>Last Active</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-
-            filteredStudents.forEach(student => {
-                const progress = calculateWeekProgress(student);
-                const status = getStudentStatus(student);
-                const lastLogin = student.last_login ? new Date(student.last_login).toLocaleDateString() : 'Never';
-
-                let statusColor = 'red';
-                if (progress >= 80) statusColor = 'green';
-                else if (progress >= 30) statusColor = 'yellow';
-
-                let statusText = 'Not Started';
-                if (progress === 100) statusText = 'Completed';
-                else if (progress > 0) statusText = 'In Progress';
-
-                tableHTML += `
-                    <tr onclick="showStudentDetails('${student.id}')">
-                        <td><strong>${student.name}</strong></td>
-                        <td><span style="background: #e7f3ff; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; color: #667eea;">${student.student_group}</span></td>
-                        <td class="progress-cell">
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <div class="mini-progress-bar" style="flex: 1;">
-                                    <div class="mini-progress-fill ${statusColor}" style="width: ${progress}%"></div>
-                                </div>
-                                <span style="font-size: 0.85rem; color: #666;">${progress}%</span>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="status-dot ${statusColor}"></span>
-                            ${statusText}
-                        </td>
-                        <td style="color: #999;">${lastLogin}</td>
-                    </tr>
-                `;
-            });
-
-            tableHTML += `
-                    </tbody>
-                </table>
-            `;
-
-            container.innerHTML = tableHTML;
-        }
-
-        function calculateWeekProgress(student) {
-            if (!student.day_summary || student.day_summary.length === 0) return 0;
-            
-            const totalDays = 5;
-            const completedDays = student.day_summary.filter(d => d.percentage === 100).length;
-            return Math.round((completedDays / totalDays) * 100);
-        }
-
-        function getStudentStatus(student) {
-            const progress = calculateWeekProgress(student);
-            if (progress === 100) return 'completed';
-            if (progress > 0) return 'in-progress';
-            return 'not-started';
-        }
-
-        function filterStudents(filter) {
-            currentFilter = filter;
-            
-            // Update active button
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
-
-            renderStudentsTable();
-        }
-
-        async function showStudentDetails(studentId) {
-            const modal = document.getElementById('studentModal');
-            const modalBody = document.getElementById('modalBody');
-            modal.classList.add('active');
-
-            modalBody.innerHTML = '<div class="loading">Loading details...</div>';
-
+        // ============================================
+        // LOAD TEACHERS
+        // ============================================
+        async function loadTeachers() {
             try {
-                const student = allStudents.find(s => s.id === studentId);
-                if (!student) return;
-
-                document.getElementById('modalStudentName').textContent = student.name;
-
-                // Get detailed task progress
-                const { data: taskProgress, error } = await supabaseClient
-                    .from('task_progress')
+                const { data: teachers, error } = await supabaseClient
+                    .from('teachers')
                     .select('*')
-                    .eq('student_id', studentId)
-                    .eq('week', 1)
-                    .order('day')
-                    .order('task_number');
+                    .order('username');
 
-                if (error) throw error;
-
-                // Render detailed view
-                let detailsHTML = '';
-
-                for (let day = 1; day <= 5; day++) {
-                    const dayTasks = taskProgress.filter(t => t.day === day);
-                    const daySummary = student.day_summary?.find(d => d.day === day);
-                    
-                    const percentage = daySummary?.percentage || 0;
-                    const totalTime = daySummary?.total_time_spent_minutes || 0;
-
-                    detailsHTML += `
-                        <div style="margin-bottom: 30px;">
-                            <h3 style="color: #667eea; margin-bottom: 15px;">📅 Day ${day}</h3>
-                            <div style="display: flex; gap: 20px; margin-bottom: 15px;">
-                                <div style="flex: 1; background: #f8f9fa; padding: 15px; border-radius: 8px;">
-                                    <div style="color: #666; font-size: 0.9rem;">Progress</div>
-                                    <div style="font-size: 1.5rem; font-weight: bold; color: #667eea;">${percentage}%</div>
-                                </div>
-                                <div style="flex: 1; background: #f8f9fa; padding: 15px; border-radius: 8px;">
-                                    <div style="color: #666; font-size: 0.9rem;">Time Spent</div>
-                                    <div style="font-size: 1.5rem; font-weight: bold; color: #667eea;">${totalTime} min</div>
-                                </div>
-                            </div>
-                            <div class="task-list">
-                    `;
-
-                    for (let taskNum = 1; taskNum <= 7; taskNum++) {
-                        const task = dayTasks.find(t => t.task_number === taskNum);
-                        const status = task?.status || 'not_started';
-                        const timeSpent = task?.time_spent_seconds ? Math.round(task.time_spent_seconds / 60) : 0;
-
-                        let statusBadge = '';
-                        if (status === 'completed') statusBadge = '<span class="task-status-badge completed">✅ Completed</span>';
-                        else if (status === 'in_progress') statusBadge = '<span class="task-status-badge in-progress">⏳ In Progress</span>';
-                        else statusBadge = '<span class="task-status-badge not-started">⏹️ Not Started</span>';
-
-                        detailsHTML += `
-                            <div class="task-item">
-                                <div class="task-info">
-                                    <div class="task-name">Task ${taskNum}</div>
-                                </div>
-                                <div class="task-status">
-                                    ${statusBadge}
-                                    <div class="task-time">${timeSpent > 0 ? timeSpent + ' min' : '-'}</div>
-                                </div>
-                            </div>
-                        `;
-                    }
-
-                    detailsHTML += `
-                            </div>
-                        </div>
-                    `;
+                if (error) {
+                    console.error('Error loading teachers:', error);
+                    return;
                 }
 
-                modalBody.innerHTML = detailsHTML;
+                const teachersList = document.getElementById('teachersList');
+                teachersList.innerHTML = '';
+
+                teachers.forEach(teacher => {
+                    const teacherCard = document.createElement('div');
+                    teacherCard.className = 'teacher-card';
+                    teacherCard.innerHTML = `
+                        <div class="teacher-name">👨‍🏫 ${teacher.full_name || teacher.username}</div>
+                        <div class="teacher-username">@${teacher.username}</div>
+                    `;
+                    teachersList.appendChild(teacherCard);
+                });
 
             } catch (error) {
-                console.error('Error loading student details:', error);
-                modalBody.innerHTML = '<div style="color: #dc3545; text-align: center; padding: 40px;">Error loading details</div>';
+                console.error('Error loading teachers:', error);
             }
         }
 
-        function closeModal() {
-            document.getElementById('studentModal').classList.remove('active');
+        // ============================================
+        // DAY AVAILABILITY CONTROL
+        // ============================================
+        async function loadDayAvailability() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('day_availability')
+                    .select('*')
+                    .eq('week', 1)
+                    .order('day');
+                
+                if (error) {
+                    console.error('Error loading day availability:', error);
+                    return;
+                }
+                
+                // Update toggles based on database
+                data.forEach(dayData => {
+                    const toggle = document.getElementById(`toggle-1-${dayData.day}`);
+                    const status = document.getElementById(`status-1-${dayData.day}`);
+                    
+                    if (toggle) {
+                        toggle.checked = dayData.is_unlocked;
+                    }
+                    if (status) {
+                        status.textContent = dayData.is_unlocked ? 'Unlocked' : 'Locked';
+                        status.style.color = dayData.is_unlocked ? '#28a745' : '#dc3545';
+                    }
+                });
+                
+            } catch (error) {
+                console.error('Error in loadDayAvailability:', error);
+            }
         }
 
-        // Close modal on outside click
-        document.getElementById('studentModal').addEventListener('click', (e) => {
-            if (e.target.id === 'studentModal') {
-                closeModal();
+        async function toggleDayAvailability(week, day, isUnlocked) {
+            try {
+                const adminUser = JSON.parse(localStorage.getItem('user'));
+                
+                const { error } = await supabaseClient
+                    .from('day_availability')
+                    .update({
+                        is_unlocked: isUnlocked,
+                        unlocked_by: adminUser.username,
+                        unlocked_at: new Date().toISOString()
+                    })
+                    .eq('week', week)
+                    .eq('day', day);
+                
+                if (error) {
+                    console.error('Error updating day availability:', error);
+                    alert('Failed to update day availability');
+                    return;
+                }
+                
+                // Update status text
+                const status = document.getElementById(`status-${week}-${day}`);
+                if (status) {
+                    status.textContent = isUnlocked ? 'Unlocked' : 'Locked';
+                    status.style.color = isUnlocked ? '#28a745' : '#dc3545';
+                }
+                
+                console.log(`Day ${day} ${isUnlocked ? 'unlocked' : 'locked'} successfully`);
+                
+            } catch (error) {
+                console.error('Error in toggleDayAvailability:', error);
             }
-        });
+        }
 
+        // ============================================
+        // LOGOUT
+        // ============================================
         function logout() {
             localStorage.removeItem('user');
-            window.location.href = 'login.html';
+            window.location.href = '/login.html';
         }
     </script>
 </body>
