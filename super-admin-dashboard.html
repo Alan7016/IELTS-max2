@@ -585,7 +585,7 @@
     try {
         const { data: students, error } = await supabaseClient
             .from('students')
-            .select('id, full_name, username, group_name')
+            .select('id, name, username, student_group')
             .order('full_name');
 
         if (error) {
@@ -607,9 +607,9 @@
             const studentCard = document.createElement('div');
             studentCard.className = 'student-card';
             studentCard.innerHTML = `
-                <div class="student-name">👨‍🎓 ${student.full_name}</div>
+                <div class="student-name">👨‍🎓 ${student.name}</div>
                 <div class="student-info">@${student.username}</div>
-                <div class="student-info">📚 Group: ${student.group_name}</div>
+                <div class="student-info">📚 Group: ${student.student_group}</div>
             `;
             container.appendChild(studentCard);
         });
