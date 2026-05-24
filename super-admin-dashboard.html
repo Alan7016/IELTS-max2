@@ -361,7 +361,7 @@
             }
 
             const user = JSON.parse(userStr);
-if (user.type !== 'super_admin') {  // CHANGE 'role' to 'type'
+if (!user.isSuperAdmin) {  // CHANGE 'role' to 'type'
     alert('Access denied! Super admin only.');
     window.location.href = '/login.html';
     return;
