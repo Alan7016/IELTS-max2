@@ -581,82 +581,45 @@
         // ============================================
         // LOAD ALL STUDENTS
         // ============================================
-        async function loadAllStudents() {
-            try {
-                const { data: students, error } = await supabaseClient
-                    .from('students')
-                    .select('*')
-                    .order('full_name');
+       async function loadAllStudents() {
+    try {
+        const { data: students, error } = await supabaseClient
+            .from('students')
+            .select('id, full_name, username, group_name')
+            .order('full_name');
 
-                if (error) {
-                    console.error('Error loading students:', error);
-                    return;
-                }
-
-                allStudentsData = students;
-
-                // Get progress for all students
-                const { data: progressData } = await supabaseClient
-                    .from('day_summary')
-                    .select('student_id, week, day, percentage, total_time_spent_minutes')
-                    .eq('week', 1);
-
-                // Create progress map
-                const progressMap = {};
-                if (progressData) {
-                    progressData.forEach(p => {
-                        if (!progressMap[p.student_id]) {
-                            progressMap[p.student_id] = [];
-                        }
-                        progressMap[p.student_id].push(p);
-                    });
-                }
-
-                // Display students
-                const container = document.getElementById('allStudentsList');
-                container.innerHTML = '';
-
-                if (students.length === 0) {
-                    container.innerHTML = '<div class="empty-state">No students registered yet</div>';
-                    return;
-                }
-
-                students.forEach(student => {
-                    const progress = progressMap[student.id] || [];
-                    const completedDays = progress.filter(p => p.percentage === 100).length;
-                    const totalTime = progress.reduce((sum, p) => sum + (p.total_time_spent_minutes || 0), 0);
-                    const avgProgress = progress.length > 0 
-                        ? Math.round(progress.reduce((sum, p) => sum + p.percentage, 0) / progress.length)
-                        : 0;
-
-                    const studentCard = document.createElement('div');
-                    studentCard.className = 'student-card';
-                    studentCard.innerHTML = `
-                        <div class="student-name">👨‍🎓 ${student.full_name}</div>
-                        <div class="student-info">@${student.username}</div>
-                        <div class="student-info">📚 Group: ${student.group_name}</div>
-                        <div class="student-progress">
-                            <div class="progress-item">
-                                <span class="label">Completed</span>
-                                <span class="value">${completedDays}/5 days</span>
-                            </div>
-                            <div class="progress-item">
-                                <span class="label">Avg Progress</span>
-                                <span class="value">${avgProgress}%</span>
-                            </div>
-                            <div class="progress-item">
-                                <span class="label">Time Spent</span>
-                                <span class="value">${totalTime} min</span>
-                            </div>
-                        </div>
-                    `;
-                    container.appendChild(studentCard);
-                });
-
-            } catch (error) {
-                console.error('Error loading all students:', error);
-            }
+        if (error) {
+            console.error('Error loading students:', error);
+            document.getElementById('allStudentsList').innerHTML = 
+                '<div class="empty-state">Error loading students. Please refresh.</div>';
+            return;
         }
+
+        const container = document.getElementById('allStudentsList');
+        container.innerHTML = '';
+
+        if (!students || students.length === 0) {
+            container.innerHTML = '<div class="empty-state">No students registered yet</div>';
+            return;
+        }
+
+        students.forEach(student => {
+            const studentCard = document.createElement('div');
+            studentCard.className = 'student-card';
+            studentCard.innerHTML = `
+                <div class="student-name">👨‍🎓 ${student.full_name}</div>
+                <div class="student-info">@${student.username}</div>
+                <div class="student-info">📚 Group: ${student.group_name}</div>
+            `;
+            container.appendChild(studentCard);
+        });
+
+    } catch (error) {
+        console.error('Error loading students:', error);
+        document.getElementById('allStudentsList').innerHTML = 
+            '<div class="empty-state">Error loading students</div>';
+    }
+}
 
         // ============================================
         // LOAD ACTIVE STUDENTS
