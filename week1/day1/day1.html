@@ -1627,7 +1627,7 @@
     const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
 
     // Current user and tracking variables
-    let currentUser = null;
+    let currentStudent = null;
     let sessionStartTime = Date.now();
     let totalTimeSpent = 0;
     const WEEK = 1;
@@ -1664,8 +1664,24 @@
                 return;
             }
             
-            currentUser = JSON.parse(userStr);
-            console.log('Current user:', currentUser);
+            const user = JSON.parse(userStr);
+            console.log('Current user:', user);
+            
+            // Get full student data from database
+            const { data: studentData, error: studentError } = await supabaseClient
+                .from('students')
+                .select('*')
+                .eq('username', user.username)
+                .single();
+            
+            if (studentError || !studentData) {
+                console.error('Error loading student:', studentError);
+                alert('Error loading student data');
+                return;
+            }
+            
+            currentStudent = studentData;
+            console.log('Student loaded:', currentStudent);
             
             // Load existing progress
             await loadProgress();
@@ -1685,7 +1701,7 @@
             const { data: dayData, error: dayError } = await supabaseClient
                 .from('day_summary')
                 .select('*')
-                .eq('student_id', currentUser.id)
+                .eq('student_id', currentStudent.id)
                 .eq('week', WEEK)
                 .eq('day', DAY)
                 .single();
@@ -1702,7 +1718,7 @@
             const { data: tasks, error: tasksError } = await supabaseClient
                 .from('task_progress')
                 .select('*')
-                .eq('student_id', currentUser.id)
+                .eq('student_id', currentStudent.id)
                 .eq('week', WEEK)
                 .eq('day', DAY);
             
@@ -1748,7 +1764,7 @@
             const { error } = await supabaseClient
                 .from('task_progress')
                 .upsert({
-                    student_id: currentUser.id,
+                    student_id: currentStudent.id,
                     week: WEEK,
                     day: DAY,
                     task_number: taskNumber,
@@ -1788,7 +1804,7 @@
             const { error } = await supabaseClient
                 .from('day_summary')
                 .upsert({
-                    student_id: currentUser.id,
+                    student_id: currentStudent.id,
                     week: WEEK,
                     day: DAY,
                     completed_tasks: TOTAL_TASKS,
