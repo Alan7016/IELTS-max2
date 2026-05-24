@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WEEK 1 - DAY 1 (Education)</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
+        
         * {
             margin: 0;
             padding: 0;
@@ -1614,361 +1616,575 @@
     </div>
 
     <script>
-        let currentTask = 0;
-        const totalTasks = 10; // Including break as a "task"
-        const taskOrder = ['task1', 'task2', 'task3', 'break', 'task4', 'task5', 'task6'];
+    // ============================================
+    // SUPABASE CONFIGURATION & INITIALIZATION
+    // ============================================
+    const SUPABASE_URL = 'https://nbfceuhuauizyucugejr.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_0mFIGJkA_DKZfUiDAWFdrA_nXt0hF6H';
+    
+    const { createClient } = supabase;
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        function startLearning() {
-            document.getElementById('splashScreen').classList.add('hidden');
-            setTimeout(() => {
-                document.getElementById('mainContainer').classList.add('active');
-            }, 500);
-        }
+    // Current user and tracking variables
+    let currentUser = null;
+    let sessionStartTime = Date.now();
+    let totalTimeSpent = 0;
+    const WEEK = 1;
+    const DAY = 1;
+    const TOTAL_TASKS = 6; // task1, task2, task3, task4, task5, task6 (break is not a task)
 
-        function toggleVocab() {
-            const content = document.getElementById('vocabContent');
-            const arrow = document.getElementById('vocabArrow');
-            content.classList.toggle('active');
-            arrow.textContent = content.classList.contains('active') ? '▲' : '▼';
-        }
+    // Task tracking
+    let completedTasks = new Set();
+    let taskStartTimes = {};
 
-        function showAnswers(taskNum) {
-            document.getElementById('answers' + taskNum).classList.add('show');
-        }
+    // ============================================
+    // PAGE INITIALIZATION
+    // ============================================
+    document.addEventListener('DOMContentLoaded', async function() {
+        await initializePage();
+        
+        // Add input listeners for Task 1 validation
+        const qIds = ['q1_1', 'q1_2', 'q1_3', 'q1_4', 'q1_5', 'q1_6', 'q1_7', 'q1_8', 'q1_9', 'q1_10'];
+        qIds.forEach(qId => {
+            const input = document.getElementById(qId);
+            if (input) {
+                input.addEventListener('input', validateTask1);
+            }
+        });
+    });
 
-        // Task 1: Check answers with individual feedback
-        function checkTask1Answers() {
-            const answers = {
-                'q1_1': ['overcome'],
-                'q1_2': ['study'],
-                'q1_3': ['concentrate'],
-                'q1_4': ['find'],
-                'q1_5': ['taking', 'doing'],
-                'q1_6': ['learn'],
-                'q1_7': ['doing'],
-                'q1_8': ['revise', 'prepare'],
-                'q1_9': ['revise'],
-                'q1_10': ['taught']
-            };
-
-            // Check ALL answers and show feedback for ALL
-            for (let qId in answers) {
-                const input = document.getElementById(qId);
-                const feedback = document.getElementById('fb' + qId.substring(2));
-                const userAnswer = input.value.trim().toLowerCase();
-                
-                const correctAnswers = answers[qId];
-                const isCorrect = correctAnswers.some(ans => ans.toLowerCase() === userAnswer);
-                
-                if (isCorrect) {
-                    // Correct answer
-                    input.classList.remove('incorrect');
-                    input.classList.add('correct');
-                    feedback.textContent = '✅';
-                    feedback.className = 'answer-feedback correct';
-                } else {
-                    // Incorrect or empty - show as incorrect
-                    input.classList.remove('correct');
-                    input.classList.add('incorrect');
-                    feedback.textContent = '❌';
-                    feedback.className = 'answer-feedback incorrect';
-                }
+    async function initializePage() {
+        try {
+            // Get user from localStorage
+            const userStr = localStorage.getItem('user');
+            if (!userStr) {
+                alert('Please log in first!');
+                window.location.href = '/login.html';
+                return;
             }
             
-            // Show "Show Answers" button
-            document.getElementById('showAnswersDiv1').style.display = 'block';
+            currentUser = JSON.parse(userStr);
+            console.log('Current user:', currentUser);
             
-            // Enable Next button
-            const nextBtn = document.getElementById('nextBtn1');
+            // Load existing progress
+            await loadProgress();
+            
+            // Start time tracking
+            startTimeTracking();
+            
+        } catch (error) {
+            console.error('Initialization error:', error);
+            alert('Error loading progress. Please try again.');
+        }
+    }
+
+    async function loadProgress() {
+        try {
+            // Check if day is already completed
+            const { data: dayData, error: dayError } = await supabaseClient
+                .from('day_summary')
+                .select('*')
+                .eq('student_id', currentUser.id)
+                .eq('week', WEEK)
+                .eq('day', DAY)
+                .single();
+            
+            if (!dayError && dayData && dayData.percentage === 100) {
+                // Day already completed - show completion screen
+                document.querySelectorAll('.task-card').forEach(card => card.classList.remove('active'));
+                document.getElementById('completion').classList.add('active');
+                updateProgressBar(100);
+                return;
+            }
+            
+            // Load individual task progress
+            const { data: tasks, error: tasksError } = await supabaseClient
+                .from('task_progress')
+                .select('*')
+                .eq('student_id', currentUser.id)
+                .eq('week', WEEK)
+                .eq('day', DAY);
+            
+            if (tasks) {
+                tasks.forEach(task => {
+                    if (task.status === 'completed') {
+                        completedTasks.add(task.task_number);
+                    }
+                    if (task.time_spent_seconds) {
+                        totalTimeSpent += task.time_spent_seconds;
+                    }
+                });
+                
+                // Update progress bar
+                updateProgressBar((completedTasks.size / TOTAL_TASKS) * 100);
+            }
+            
+        } catch (error) {
+            console.error('Error loading progress:', error);
+        }
+    }
+
+    function updateProgressBar(percentage) {
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        
+        progressBar.style.width = percentage + '%';
+        progressText.textContent = `${completedTasks.size} / ${TOTAL_TASKS} Tasks`;
+    }
+
+    async function markTaskComplete(taskNumber) {
+        try {
+            // Skip if already completed
+            if (completedTasks.has(taskNumber)) {
+                return;
+            }
+            
+            completedTasks.add(taskNumber);
+            
+            const timeSpent = Math.floor((Date.now() - sessionStartTime) / 1000);
+            
+            // Upsert task progress
+            const { error } = await supabaseClient
+                .from('task_progress')
+                .upsert({
+                    student_id: currentUser.id,
+                    week: WEEK,
+                    day: DAY,
+                    task_number: taskNumber,
+                    status: 'completed',
+                    time_spent_seconds: timeSpent,
+                    started_at: new Date(sessionStartTime).toISOString(),
+                    completed_at: new Date().toISOString()
+                }, {
+                    onConflict: 'student_id,week,day,task_number'
+                });
+            
+            if (error) {
+                console.error('Error saving task progress:', error);
+                return;
+            }
+            
+            console.log(`Task ${taskNumber} marked complete`);
+            
+            // Update progress bar
+            updateProgressBar((completedTasks.size / TOTAL_TASKS) * 100);
+            
+            // Check if all tasks completed
+            if (completedTasks.size === TOTAL_TASKS) {
+                await markDayComplete();
+            }
+            
+        } catch (error) {
+            console.error('Error marking task complete:', error);
+        }
+    }
+
+    async function markDayComplete() {
+        try {
+            const totalMinutes = Math.floor(totalTimeSpent / 60);
+            
+            // Update day summary
+            const { error } = await supabaseClient
+                .from('day_summary')
+                .upsert({
+                    student_id: currentUser.id,
+                    week: WEEK,
+                    day: DAY,
+                    completed_tasks: TOTAL_TASKS,
+                    total_tasks: TOTAL_TASKS,
+                    percentage: 100,
+                    total_time_spent_minutes: totalMinutes,
+                    last_updated: new Date().toISOString()
+                }, {
+                    onConflict: 'student_id,week,day'
+                });
+            
+            if (error) {
+                console.error('Error marking day complete:', error);
+                return;
+            }
+            
+            console.log('✅ Day 1 marked as 100% complete!');
+            
+        } catch (error) {
+            console.error('Error marking day complete:', error);
+        }
+    }
+
+    function startTimeTracking() {
+        // Update time every 30 seconds
+        setInterval(() => {
+            totalTimeSpent = Math.floor((Date.now() - sessionStartTime) / 1000);
+        }, 30000);
+    }
+
+    // ============================================
+    // ORIGINAL TASK NAVIGATION CODE
+    // ============================================
+    let currentTask = 0;
+    const totalTasks = 10; // Including break as a "task"
+    const taskOrder = ['task1', 'task2', 'task3', 'break', 'task4', 'task5', 'task6'];
+
+    function startLearning() {
+        document.getElementById('splashScreen').classList.add('hidden');
+        setTimeout(() => {
+            document.getElementById('mainContainer').classList.add('active');
+        }, 500);
+    }
+
+    function toggleVocab() {
+        const content = document.getElementById('vocabContent');
+        const arrow = document.getElementById('vocabArrow');
+        content.classList.toggle('active');
+        arrow.textContent = content.classList.contains('active') ? '▲' : '▼';
+    }
+
+    function showAnswers(taskNum) {
+        document.getElementById('answers' + taskNum).classList.add('show');
+    }
+
+    // ============================================
+    // TASK 1: Check answers with individual feedback
+    // ============================================
+    function checkTask1Answers() {
+        const answers = {
+            'q1_1': ['overcome'],
+            'q1_2': ['study'],
+            'q1_3': ['concentrate'],
+            'q1_4': ['find'],
+            'q1_5': ['taking', 'doing'],
+            'q1_6': ['learn'],
+            'q1_7': ['doing'],
+            'q1_8': ['revise', 'prepare'],
+            'q1_9': ['revise'],
+            'q1_10': ['taught']
+        };
+
+        // Check ALL answers and show feedback for ALL
+        for (let qId in answers) {
+            const input = document.getElementById(qId);
+            const feedback = document.getElementById('fb' + qId.substring(2));
+            const userAnswer = input.value.trim().toLowerCase();
+            
+            const correctAnswers = answers[qId];
+            const isCorrect = correctAnswers.some(ans => ans.toLowerCase() === userAnswer);
+            
+            if (isCorrect) {
+                input.classList.remove('incorrect');
+                input.classList.add('correct');
+                feedback.textContent = '✅';
+                feedback.className = 'answer-feedback correct';
+            } else {
+                input.classList.remove('correct');
+                input.classList.add('incorrect');
+                feedback.textContent = '❌';
+                feedback.className = 'answer-feedback incorrect';
+            }
+        }
+        
+        // Show "Show Answers" button
+        document.getElementById('showAnswersDiv1').style.display = 'block';
+        
+        // Enable Next button
+        const nextBtn = document.getElementById('nextBtn1');
+        nextBtn.disabled = false;
+        nextBtn.style.opacity = '1';
+        nextBtn.style.cursor = 'pointer';
+    }
+
+    // Validate Task 1 - enable buttons when all filled
+    function validateTask1() {
+        const qIds = ['q1_1', 'q1_2', 'q1_3', 'q1_4', 'q1_5', 'q1_6', 'q1_7', 'q1_8', 'q1_9', 'q1_10'];
+        let allFilled = true;
+        
+        for (let qId of qIds) {
+            const input = document.getElementById(qId);
+            if (!input.value.trim()) {
+                allFilled = false;
+                break;
+            }
+        }
+        
+        const checkBtn = document.getElementById('checkBtn1');
+        const nextBtn = document.getElementById('nextBtn1');
+        const showAnswersDiv = document.getElementById('showAnswersDiv1');
+        
+        if (allFilled) {
+            checkBtn.disabled = false;
+            checkBtn.style.opacity = '1';
+            checkBtn.style.cursor = 'pointer';
+            
             nextBtn.disabled = false;
             nextBtn.style.opacity = '1';
             nextBtn.style.cursor = 'pointer';
+            
+            showAnswersDiv.style.display = 'block';
+        } else {
+            checkBtn.disabled = true;
+            checkBtn.style.opacity = '0.5';
+            checkBtn.style.cursor = 'not-allowed';
+            
+            nextBtn.disabled = true;
+            nextBtn.style.opacity = '0.5';
+            nextBtn.style.cursor = 'not-allowed';
+            
+            showAnswersDiv.style.display = 'none';
         }
+    }
 
-        // Validate Task 1 - enable buttons when all filled
-        function validateTask1() {
-            const qIds = ['q1_1', 'q1_2', 'q1_3', 'q1_4', 'q1_5', 'q1_6', 'q1_7', 'q1_8', 'q1_9', 'q1_10'];
-            let allFilled = true;
-            
-            for (let qId of qIds) {
-                const input = document.getElementById(qId);
-                if (!input.value.trim()) {
-                    allFilled = false;
-                    break;
-                }
-            }
-            
-            const checkBtn = document.getElementById('checkBtn1');
-            const nextBtn = document.getElementById('nextBtn1');
-            const showAnswersDiv = document.getElementById('showAnswersDiv1');
-            
-            if (allFilled) {
-                // Enable all buttons
-                checkBtn.disabled = false;
-                checkBtn.style.opacity = '1';
-                checkBtn.style.cursor = 'pointer';
-                
-                nextBtn.disabled = false;
-                nextBtn.style.opacity = '1';
-                nextBtn.style.cursor = 'pointer';
-                
-                showAnswersDiv.style.display = 'block';
-            } else {
-                // Disable all buttons
-                checkBtn.disabled = true;
-                checkBtn.style.opacity = '0.5';
-                checkBtn.style.cursor = 'not-allowed';
-                
-                nextBtn.disabled = true;
-                nextBtn.style.opacity = '0.5';
-                nextBtn.style.cursor = 'not-allowed';
-                
-                showAnswersDiv.style.display = 'none';
-            }
+    // Toggle answer key for Task 1
+    function toggleAnswers1() {
+        const answersDiv = document.getElementById('answers1');
+        const toggleText = document.getElementById('answersToggle1');
+        
+        if (answersDiv.style.display === 'none') {
+            answersDiv.style.display = 'block';
+            toggleText.textContent = '▲ Hide Answers';
+        } else {
+            answersDiv.style.display = 'none';
+            toggleText.textContent = '▼ Show Answers';
         }
+    }
 
-        // Add listeners to Task 1 inputs
-        document.addEventListener('DOMContentLoaded', function() {
-            const qIds = ['q1_1', 'q1_2', 'q1_3', 'q1_4', 'q1_5', 'q1_6', 'q1_7', 'q1_8', 'q1_9', 'q1_10'];
-            qIds.forEach(qId => {
-                const input = document.getElementById(qId);
-                if (input) {
-                    input.addEventListener('input', validateTask1);
-                }
-            });
-        });
+    // ============================================
+    // TASK 3: Check answers (radio buttons + text inputs)
+    // ============================================
+    function checkTask3Answers() {
+        // TRUE/FALSE/NOT GIVEN answers
+        const tfngAnswers = {
+            'q3_1': 'FALSE',
+            'q3_2': 'TRUE',
+            'q3_3': 'NOT GIVEN',
+            'q3_4': 'TRUE',
+            'q3_5': 'TRUE',
+            'q3_6': 'FALSE',
+            'q3_7': 'NOT GIVEN'
+        };
 
-        // Toggle answer key for Task 1
-        function toggleAnswers1() {
-            const answersDiv = document.getElementById('answers1');
-            const toggleText = document.getElementById('answersToggle1');
+        // Check radio button questions
+        for (let qId in tfngAnswers) {
+            const selected = document.querySelector(`input[name="${qId}"]:checked`);
+            const questionDiv = document.getElementById(qId);
+            const feedback = document.getElementById('fb' + qId.substring(1));
             
-            if (answersDiv.style.display === 'none') {
-                answersDiv.style.display = 'block';
-                toggleText.textContent = '▲ Hide Answers';
-            } else {
-                answersDiv.style.display = 'none';
-                toggleText.textContent = '▼ Show Answers';
-            }
-        }
-
-        // Task 3: Check answers (radio buttons + text inputs)
-        function checkTask3Answers() {
-            // TRUE/FALSE/NOT GIVEN answers
-            const tfngAnswers = {
-                'q3_1': 'FALSE',
-                'q3_2': 'TRUE',
-                'q3_3': 'NOT GIVEN',
-                'q3_4': 'TRUE',
-                'q3_5': 'TRUE',
-                'q3_6': 'FALSE',
-                'q3_7': 'NOT GIVEN'
-            };
-
-            // Check radio button questions
-            for (let qId in tfngAnswers) {
-                const selected = document.querySelector(`input[name="${qId}"]:checked`);
-                const questionDiv = document.getElementById(qId);
-                const feedback = document.getElementById('fb' + qId.substring(1)); // fb3_1, fb3_2, etc.
+            if (selected) {
+                const userAnswer = selected.value;
+                const correctAnswer = tfngAnswers[qId];
                 
-                if (selected) {
-                    const userAnswer = selected.value;
-                    const correctAnswer = tfngAnswers[qId];
-                    
-                    if (userAnswer === correctAnswer) {
-                        questionDiv.classList.remove('incorrect');
-                        questionDiv.classList.add('correct');
-                        feedback.textContent = '✅';
-                        feedback.className = 'question-feedback correct';
-                    } else {
-                        questionDiv.classList.remove('correct');
-                        questionDiv.classList.add('incorrect');
-                        feedback.textContent = '❌';
-                        feedback.className = 'question-feedback incorrect';
-                    }
-                } else {
-                    // No answer selected
-                    questionDiv.classList.remove('correct', 'incorrect');
-                    feedback.textContent = '';
-                    feedback.className = 'question-feedback';
-                }
-            }
-
-            // Check text input questions (8-13)
-            const textAnswers = {
-                'q3_8': ['teacher'],
-                'q3_9': ['doing'],
-                'q3_10': ['school'],
-                'q3_11': ['evaluation', 'evaluated'],
-                'q3_12': ['society'],
-                'q3_13': ['communication']
-            };
-
-            for (let qId in textAnswers) {
-                const input = document.getElementById(qId);
-                const feedback = document.getElementById('fb' + qId.substring(1));
-                const userAnswer = input.value.trim().toLowerCase();
-                
-                const correctAnswers = textAnswers[qId];
-                const isCorrect = correctAnswers.some(ans => ans.toLowerCase() === userAnswer);
-                
-                if (userAnswer === '') {
-                    input.classList.remove('correct', 'incorrect');
-                    feedback.textContent = '';
-                    feedback.className = 'answer-feedback';
-                } else if (isCorrect) {
-                    input.classList.remove('incorrect');
-                    input.classList.add('correct');
+                if (userAnswer === correctAnswer) {
+                    questionDiv.classList.remove('incorrect');
+                    questionDiv.classList.add('correct');
                     feedback.textContent = '✅';
-                    feedback.className = 'answer-feedback correct';
+                    feedback.className = 'question-feedback correct';
                 } else {
-                    input.classList.remove('correct');
-                    input.classList.add('incorrect');
+                    questionDiv.classList.remove('correct');
+                    questionDiv.classList.add('incorrect');
                     feedback.textContent = '❌';
-                    feedback.className = 'answer-feedback incorrect';
+                    feedback.className = 'question-feedback incorrect';
                 }
-            }
-        }
-
-        // Toggle answer key for Task 3
-        function toggleAnswers3() {
-            const answersDiv = document.getElementById('answers3');
-            const toggleText = document.getElementById('answersToggle3');
-            
-            if (answersDiv.style.display === 'none') {
-                answersDiv.style.display = 'block';
-                toggleText.textContent = '▲ Hide Answers';
             } else {
-                answersDiv.style.display = 'none';
-                toggleText.textContent = '▼ Show Answers';
+                questionDiv.classList.remove('correct', 'incorrect');
+                feedback.textContent = '';
+                feedback.className = 'question-feedback';
             }
         }
 
-        // Task 4: Placeholder check function (just shows "Check complete!" for now)
-        function checkTask4Answers() {
-            alert('Answers checked! Click "Show Answers" below to see the answer key.');
-        }
+        // Check text input questions (8-13)
+        const textAnswers = {
+            'q3_8': ['teacher'],
+            'q3_9': ['doing'],
+            'q3_10': ['school'],
+            'q3_11': ['evaluation', 'evaluated'],
+            'q3_12': ['society'],
+            'q3_13': ['communication']
+        };
 
-        function toggleAnswers4() {
-            const answersDiv = document.getElementById('answers4');
-            const toggleText = document.getElementById('answersToggle4');
+        for (let qId in textAnswers) {
+            const input = document.getElementById(qId);
+            const feedback = document.getElementById('fb' + qId.substring(1));
+            const userAnswer = input.value.trim().toLowerCase();
             
-            if (answersDiv.style.display === 'none') {
-                answersDiv.style.display = 'block';
-                toggleText.textContent = '▲ Hide Answers';
+            const correctAnswers = textAnswers[qId];
+            const isCorrect = correctAnswers.some(ans => ans.toLowerCase() === userAnswer);
+            
+            if (userAnswer === '') {
+                input.classList.remove('correct', 'incorrect');
+                feedback.textContent = '';
+                feedback.className = 'answer-feedback';
+            } else if (isCorrect) {
+                input.classList.remove('incorrect');
+                input.classList.add('correct');
+                feedback.textContent = '✅';
+                feedback.className = 'answer-feedback correct';
             } else {
-                answersDiv.style.display = 'none';
-                toggleText.textContent = '▼ Show Answers';
+                input.classList.remove('correct');
+                input.classList.add('incorrect');
+                feedback.textContent = '❌';
+                feedback.className = 'answer-feedback incorrect';
             }
         }
+    }
 
-        // Task 5: Placeholder check function
-        function checkTask5Answers() {
-            alert('Answers checked! Click "Show Answers" below to see the answer key.');
+    function toggleAnswers3() {
+        const answersDiv = document.getElementById('answers3');
+        const toggleText = document.getElementById('answersToggle3');
+        
+        if (answersDiv.style.display === 'none') {
+            answersDiv.style.display = 'block';
+            toggleText.textContent = '▲ Hide Answers';
+        } else {
+            answersDiv.style.display = 'none';
+            toggleText.textContent = '▼ Show Answers';
         }
+    }
 
-        function toggleAnswers5() {
-            const answersDiv = document.getElementById('answers5');
-            const toggleText = document.getElementById('answersToggle5');
+    // ============================================
+    // TASK 4: Placeholder check function
+    // ============================================
+    function checkTask4Answers() {
+        alert('Answers checked! Click "Show Answers" below to see the answer key.');
+    }
+
+    function toggleAnswers4() {
+        const answersDiv = document.getElementById('answers4');
+        const toggleText = document.getElementById('answersToggle4');
+        
+        if (answersDiv.style.display === 'none') {
+            answersDiv.style.display = 'block';
+            toggleText.textContent = '▲ Hide Answers';
+        } else {
+            answersDiv.style.display = 'none';
+            toggleText.textContent = '▼ Show Answers';
+        }
+    }
+
+    // ============================================
+    // TASK 5: Placeholder check function
+    // ============================================
+    function checkTask5Answers() {
+        alert('Answers checked! Click "Show Answers" below to see the answer key.');
+    }
+
+    function toggleAnswers5() {
+        const answersDiv = document.getElementById('answers5');
+        const toggleText = document.getElementById('answersToggle5');
+        
+        if (answersDiv.style.display === 'none') {
+            answersDiv.style.display = 'block';
+            toggleText.textContent = '▲ Hide Answers';
+        } else {
+            answersDiv.style.display = 'none';
+            toggleText.textContent = '▼ Show Answers';
+        }
+    }
+
+    // ============================================
+    // TASK 6: Placeholder check function
+    // ============================================
+    function checkTask6Answers() {
+        alert('Answers checked! Click "Show Answers" below to see the answer key.');
+    }
+
+    function toggleAnswers6() {
+        const answersDiv = document.getElementById('answers6');
+        const toggleText = document.getElementById('answersToggle6');
+        
+        if (answersDiv.style.display === 'none') {
+            answersDiv.style.display = 'block';
+            toggleText.textContent = '▲ Hide Answers';
+        } else {
+            answersDiv.style.display = 'none';
+            toggleText.textContent = '▼ Show Answers';
+        }
+    }
+
+    function completeTask(taskNum) {
+        if (document.getElementById('answers' + taskNum)) {
+            document.getElementById('answers' + taskNum).classList.add('show');
+        }
+        
+        setTimeout(() => {
+            nextTask(taskOrder[currentTask]);
+        }, 800);
+    }
+
+    // ============================================
+    // NEXT TASK NAVIGATION WITH PROGRESS TRACKING
+    // ============================================
+    async function nextTask(currentTaskId) {
+        // Mark current task as complete (except break)
+        if (currentTaskId !== 'break') {
+            const taskIndex = taskOrder.indexOf(currentTaskId);
+            let taskNumber = taskIndex + 1;
             
-            if (answersDiv.style.display === 'none') {
-                answersDiv.style.display = 'block';
-                toggleText.textContent = '▲ Hide Answers';
-            } else {
-                answersDiv.style.display = 'none';
-                toggleText.textContent = '▼ Show Answers';
+            // Adjust for break (break is at index 3, so tasks after it need -1)
+            if (taskIndex > 3) {
+                taskNumber = taskIndex; // task4 becomes 4, task5 becomes 5, task6 becomes 6
             }
-        }
-
-        // Task 6: Placeholder check function
-        function checkTask6Answers() {
-            alert('Answers checked! Click "Show Answers" below to see the answer key.');
-        }
-
-        function toggleAnswers6() {
-            const answersDiv = document.getElementById('answers6');
-            const toggleText = document.getElementById('answersToggle6');
             
-            if (answersDiv.style.display === 'none') {
-                answersDiv.style.display = 'block';
-                toggleText.textContent = '▲ Hide Answers';
-            } else {
-                answersDiv.style.display = 'none';
-                toggleText.textContent = '▼ Show Answers';
-            }
+            await markTaskComplete(taskNumber);
         }
+        
+        // Stop timer if leaving task3
+        if (currentTaskId === 'task3' && window.task3Timer) {
+            clearInterval(window.task3Timer);
+        }
+        
+        // Hide current task
+        const current = document.getElementById(currentTaskId);
+        current.classList.remove('active');
 
-        function completeTask(taskNum) {
-            // Show answers first
-            if (document.getElementById('answers' + taskNum)) {
-                document.getElementById('answers' + taskNum).classList.add('show');
-            }
+        // Move to next task
+        currentTask++;
+        
+        if (currentTask < taskOrder.length) {
+            const nextTaskId = taskOrder[currentTask];
+            document.getElementById(nextTaskId).classList.add('active');
             
-            // Wait a moment for answers to appear, then move to next task
-            setTimeout(() => {
-                nextTask(taskOrder[currentTask]);
-            }, 800);
-        }
-
-        function nextTask(currentTaskId) {
-            // Stop timer if leaving task3
-            if (currentTaskId === 'task3' && window.task3Timer) {
-                clearInterval(window.task3Timer);
+            // Start timer if entering task3
+            if (nextTaskId === 'task3') {
+                startTask3Timer();
             }
             
-            // Hide current task
-            const current = document.getElementById(currentTaskId);
-            current.classList.remove('active');
-
-            // Move to next task
-            currentTask++;
+            // Update progress (excluding break from count)
+            let progressCount = currentTask;
+            if (currentTask >= 4) progressCount--; // Subtract 1 if we've passed the break
             
-            if (currentTask < taskOrder.length) {
-                const nextTaskId = taskOrder[currentTask];
-                document.getElementById(nextTaskId).classList.add('active');
-                
-                // Start timer if entering task3
-                if (nextTaskId === 'task3') {
-                    startTask3Timer();
-                }
-                
-                // Update progress (excluding break from count)
-                let progressCount = currentTask;
-                if (currentTask >= 4) progressCount--; // Subtract 1 if we've passed the break
-                
-                const percentage = (progressCount / 9) * 100; // 9 actual tasks
-                document.getElementById('progressBar').style.width = percentage + '%';
-                document.getElementById('progressText').textContent = progressCount + ' / 9 Tasks';
-                
-                // Scroll to top
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            } else {
-                // Show completion
-                document.getElementById('completion').classList.add('active');
-                document.getElementById('progressBar').style.width = '100%';
-                document.getElementById('progressText').textContent = '9 / 9 Tasks - Complete!';
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+            const percentage = (progressCount / 6) * 100; // 6 actual tasks
+            document.getElementById('progressBar').style.width = percentage + '%';
+            document.getElementById('progressText').textContent = progressCount + ' / 6 Tasks';
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            // Show completion
+            document.getElementById('completion').classList.add('active');
+            document.getElementById('progressBar').style.width = '100%';
+            document.getElementById('progressText').textContent = '6 / 6 Tasks - Complete!';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }
+
+    // ============================================
+    // TIMER FOR TASK 3 (Reading Passage)
+    // ============================================
+    function startTask3Timer() {
+        let seconds = 0;
+        const timerDisplay = document.getElementById('timer3');
+        
+        window.task3Timer = setInterval(() => {
+            seconds++;
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            timerDisplay.textContent = 
+                String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+            
+            // Change color after 20 minutes
+            if (seconds >= 1200) {
+                timerDisplay.style.color = '#dc3545';
             }
-        }
-
-        // Timer for Task 3 (Reading Passage)
-        function startTask3Timer() {
-            let seconds = 0;
-            const timerDisplay = document.getElementById('timer3');
-            
-            window.task3Timer = setInterval(() => {
-                seconds++;
-                const mins = Math.floor(seconds / 60);
-                const secs = seconds % 60;
-                timerDisplay.textContent = 
-                    String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
-                
-                // Change color after 20 minutes (just visual, no blocking)
-                if (seconds >= 1200) { // 20 minutes = 1200 seconds
-                    timerDisplay.style.color = '#dc3545'; // Red color
-                }
-            }, 1000);
-        }
-    </script>
+        }, 1000);
+    }
+</script>
 </body>
 </html>
