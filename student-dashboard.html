@@ -504,9 +504,10 @@
             currentStudent = studentData;
 
             // Display user info
-            document.getElementById('studentName').textContent = currentStudent.full_name.split(' ')[0];
-            document.getElementById('studentFullName').textContent = currentStudent.full_name;
-            document.getElementById('studentGroup').textContent = currentStudent.group_name;
+           // Display user info
+document.getElementById('studentName').textContent = currentStudent.name.split(' ')[0];
+document.getElementById('studentFullName').textContent = currentStudent.name;
+document.getElementById('studentGroup').textContent = currentStudent.student_group;
 
             // Load progress
             await loadProgress();
