@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WEEK 1 - DAY 2 (Education)</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -1685,518 +1686,684 @@
     </div>
 
     <script>
-        // Vocabulary toggle
-        function toggleVocab() {
-            const content = document.getElementById('vocab-content');
-            const arrow = document.getElementById('vocab-arrow');
-            content.classList.toggle('active');
-            arrow.textContent = content.classList.contains('active') ? '▲' : '▼';
-        }
+    // ============================================
+    // SUPABASE CONFIGURATION & INITIALIZATION
+    // ============================================
+    const SUPABASE_URL = 'https://nbfceuhuauizyucugejr.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_0mFIGJkA_DKZfUiDAWFdrA_nXt0hF6H';
+    
+    const { createClient } = supabase;
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // Task navigation with progress saving
-        function nextTask(currentTaskId) {
-            const tasks = ['task1', 'task2', 'task3', 'break-screen', 'task4', 'task5', 'task6', 'task7'];
-            const currentIndex = tasks.indexOf(currentTaskId);
+    // Current user and tracking variables
+    let currentUser = null;
+    let sessionStartTime = Date.now();
+    let totalTimeSpent = 0;
+    const WEEK = 1;
+    const DAY = 2; // ← DAY 2!
+    const TOTAL_TASKS = 7; // Day 2 has 7 tasks
+
+    // Task tracking
+    let completedTasks = new Set();
+
+    // ============================================
+    // PAGE INITIALIZATION
+    // ============================================
+    document.addEventListener('DOMContentLoaded', async function() {
+        await initializePage();
+        
+        // Add validation listeners for tasks
+        setupTaskValidation();
+    });
+
+    async function initializePage() {
+        try {
+            // Get user from localStorage
+            const userStr = localStorage.getItem('user');
+            if (!userStr) {
+                alert('Please log in first!');
+                window.location.href = '/login.html';
+                return;
+            }
             
-            document.getElementById(currentTaskId).classList.remove('active');
+            currentUser = JSON.parse(userStr);
+            console.log('Current user:', currentUser);
             
-            if (currentIndex < tasks.length - 1) {
-                const nextTaskId = tasks[currentIndex + 1];
-                document.getElementById(nextTaskId).classList.add('active');
-                // Save progress to localStorage
-                localStorage.setItem('day2_current_task', nextTaskId);
-                window.scrollTo(0, 0);
-            } else {
+            // Load existing progress
+            await loadProgress();
+            
+            // Start time tracking
+            startTimeTracking();
+            
+        } catch (error) {
+            console.error('Initialization error:', error);
+            alert('Error loading progress. Please try again.');
+        }
+    }
+
+    async function loadProgress() {
+        try {
+            // Check if day is already completed
+            const { data: dayData, error: dayError } = await supabaseClient
+                .from('day_summary')
+                .select('*')
+                .eq('student_id', currentUser.id)
+                .eq('week', WEEK)
+                .eq('day', DAY)
+                .single();
+            
+            if (!dayError && dayData && dayData.percentage === 100) {
+                // Day already completed - show completion screen
+                document.querySelectorAll('.task-card').forEach(card => card.classList.remove('active'));
                 document.getElementById('completion-screen').classList.add('active');
-                // Clear progress when completed
-                localStorage.removeItem('day2_current_task');
-                window.scrollTo(0, 0);
-            }
-        }
-
-        function previousTask(currentTaskId) {
-            const tasks = ['task1', 'task2', 'task3', 'break-screen', 'task4', 'task5', 'task6', 'task7'];
-            const currentIndex = tasks.indexOf(currentTaskId);
-            
-            if (currentIndex > 0) {
-                document.getElementById(currentTaskId).classList.remove('active');
-                const prevTaskId = tasks[currentIndex - 1];
-                document.getElementById(prevTaskId).classList.add('active');
-                // Save progress to localStorage
-                localStorage.setItem('day2_current_task', prevTaskId);
-                window.scrollTo(0, 0);
-            }
-        }
-
-        // Load saved progress on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            const savedTask = localStorage.getItem('day2_current_task');
-            if (savedTask) {
-                // Hide task1 (default active)
-                document.getElementById('task1').classList.remove('active');
-                // Show saved task
-                document.getElementById(savedTask).classList.add('active');
-            }
-        });
-
-        // Task 1 validation and checking
-        function validateTask1() {
-            // Check all radio buttons Q1-3
-            const radios = ['q1', 'q2', 'q3'];
-            let radiosChecked = radios.every(name => document.querySelector(`input[name="${name}"]:checked`));
-            
-            // Check all text inputs Q4-8
-            const textIds = ['q1_4', 'q1_5', 'q1_6', 'q1_7', 'q1_8'];
-            let allFilled = textIds.every(id => document.getElementById(id).value.trim() !== '');
-            
-            const checkBtn = document.getElementById('checkBtn1');
-            const nextBtn = document.getElementById('nextBtn1');
-            const showAnswersDiv = document.getElementById('showAnswersDiv1');
-            
-            if (radiosChecked && allFilled) {
-                checkBtn.disabled = false;
-                checkBtn.style.opacity = '1';
-                checkBtn.style.cursor = 'pointer';
-                
-                nextBtn.disabled = false;
-                nextBtn.style.opacity = '1';
-                nextBtn.style.cursor = 'pointer';
-                
-                showAnswersDiv.style.display = 'block';
-            } else {
-                checkBtn.disabled = true;
-                checkBtn.style.opacity = '0.5';
-                checkBtn.style.cursor = 'not-allowed';
-                
-                nextBtn.disabled = true;
-                nextBtn.style.opacity = '0.5';
-                nextBtn.style.cursor = 'not-allowed';
-                
-                showAnswersDiv.style.display = 'none';
-            }
-        }
-
-        function checkTask1Answers() {
-            // Check radio buttons
-            const radioAnswers = { 'q1': 'B', 'q2': 'C', 'q3': 'E' };
-            
-            for (let name in radioAnswers) {
-                const selected = document.querySelector(`input[name="${name}"]:checked`);
-                const questionDiv = document.getElementById(name + '_mc');
-                const feedback = document.getElementById('fb1_' + name.substring(1));
-                
-                if (selected && selected.value === radioAnswers[name]) {
-                    questionDiv.classList.add('correct');
-                    questionDiv.classList.remove('incorrect');
-                    feedback.textContent = '✅';
-                    feedback.className = 'question-feedback correct';
-                } else {
-                    questionDiv.classList.add('incorrect');
-                    questionDiv.classList.remove('correct');
-                    feedback.textContent = '❌';
-                    feedback.className = 'question-feedback incorrect';
-                }
+                return;
             }
             
-            // Check text inputs
-            const textAnswers = {
-                'q1_4': ['education authority'],
-                'q1_5': ['case manager'],
-                'q1_6': ['research area'],
-                'q1_7': ['18 months'],
-                'q1_8': ['academic institution']
-            };
+            // Load individual task progress
+            const { data: tasks, error: tasksError } = await supabaseClient
+                .from('task_progress')
+                .select('*')
+                .eq('student_id', currentUser.id)
+                .eq('week', WEEK)
+                .eq('day', DAY);
             
-            for (let id in textAnswers) {
-                const input = document.getElementById(id);
-                const feedback = document.getElementById('fb' + id.substring(2));
-                const userAnswer = input.value.trim().toLowerCase();
-                
-                const isCorrect = textAnswers[id].some(ans => ans.toLowerCase() === userAnswer);
-                
-                if (isCorrect) {
-                    input.classList.add('correct');
-                    input.classList.remove('incorrect');
-                    feedback.textContent = '✅';
-                    feedback.className = 'answer-feedback correct';
-                } else {
-                    input.classList.add('incorrect');
-                    input.classList.remove('correct');
-                    feedback.textContent = '❌';
-                    feedback.className = 'answer-feedback incorrect';
-                }
-            }
-        }
-
-        function toggleAnswers1() {
-            const answers = document.getElementById('answers1');
-            const toggle = document.getElementById('answersToggle1');
-            if (answers.style.display === 'none') {
-                answers.style.display = 'block';
-                toggle.textContent = '▲ Hide Answers';
-            } else {
-                answers.style.display = 'none';
-                toggle.textContent = '▼ Show Answers';
-            }
-        }
-
-        // Add input listeners for Task 1
-        document.addEventListener('DOMContentLoaded', function() {
-            // Radio buttons
-            ['q1', 'q2', 'q3'].forEach(name => {
-                document.querySelectorAll(`input[name="${name}"]`).forEach(radio => {
-                    radio.addEventListener('change', validateTask1);
-                });
-            });
-            
-            // Text inputs
-            ['q1_4', 'q1_5', 'q1_6', 'q1_7', 'q1_8'].forEach(id => {
-                const input = document.getElementById(id);
-                if (input) {
-                    input.addEventListener('input', validateTask1);
-                }
-            });
-        });
-
-        // Task 4 validation and checking
-        function validateTask4() {
-            const textIds = ['q4_1', 'q4_2', 'q4_3', 'q4_4'];
-            const selectIds = ['q4_5', 'q4_6', 'q4_7', 'q4_8', 'q4_9'];
-            
-            let allFilled = textIds.every(id => document.getElementById(id).value.trim() !== '') &&
-                           selectIds.every(id => document.getElementById(id).value !== '');
-            
-            const checkBtn = document.getElementById('checkBtn4');
-            const nextBtn = document.getElementById('nextBtn4');
-            const showAnswersDiv = document.getElementById('showAnswersDiv4');
-            
-            if (allFilled) {
-                checkBtn.disabled = false;
-                checkBtn.style.opacity = '1';
-                checkBtn.style.cursor = 'pointer';
-                nextBtn.disabled = false;
-                nextBtn.style.opacity = '1';
-                nextBtn.style.cursor = 'pointer';
-                showAnswersDiv.style.display = 'block';
-            } else {
-                checkBtn.disabled = true;
-                checkBtn.style.opacity = '0.5';
-                checkBtn.style.cursor = 'not-allowed';
-                nextBtn.disabled = true;
-                nextBtn.style.opacity = '0.5';
-                nextBtn.style.cursor = 'not-allowed';
-                showAnswersDiv.style.display = 'none';
-            }
-        }
-
-        function checkTask4Answers() {
-            const textAnswers = {
-                'q4_1': ['not that difficult'],
-                'q4_2': ['highly knowledgeable', 'knowledgeable'],
-                'q4_3': ['alone'],
-                'q4_4': ['not pass']
-            };
-            
-            const selectAnswers = {
-                'q4_5': 'd',
-                'q4_6': 'a',
-                'q4_7': 'e',
-                'q4_8': 'c',
-                'q4_9': 'b'
-            };
-            
-            for (let id in textAnswers) {
-                const input = document.getElementById(id);
-                const feedback = document.getElementById('fb' + id.substring(2));
-                const userAnswer = input.value.trim().toLowerCase();
-                const isCorrect = textAnswers[id].some(ans => ans.toLowerCase() === userAnswer);
-                
-                if (isCorrect) {
-                    input.classList.add('correct');
-                    input.classList.remove('incorrect');
-                    feedback.textContent = '✅';
-                    feedback.className = 'answer-feedback correct';
-                } else {
-                    input.classList.add('incorrect');
-                    input.classList.remove('correct');
-                    feedback.textContent = '❌';
-                    feedback.className = 'answer-feedback incorrect';
-                }
-            }
-            
-            for (let id in selectAnswers) {
-                const select = document.getElementById(id);
-                const feedback = document.getElementById('fb' + id.substring(2));
-                const userAnswer = select.value.toLowerCase();
-                
-                if (userAnswer === selectAnswers[id]) {
-                    select.classList.add('correct');
-                    select.classList.remove('incorrect');
-                    feedback.textContent = '✅';
-                    feedback.className = 'answer-feedback correct';
-                } else {
-                    select.classList.add('incorrect');
-                    select.classList.remove('correct');
-                    feedback.textContent = '❌';
-                    feedback.className = 'answer-feedback incorrect';
-                }
-            }
-        }
-
-        function toggleAnswers4() {
-            const answers = document.getElementById('answers4');
-            const toggle = document.getElementById('answersToggle4');
-            if (answers.style.display === 'none') {
-                answers.style.display = 'block';
-                toggle.textContent = '▲ Hide Answers';
-            } else {
-                answers.style.display = 'none';
-                toggle.textContent = '▼ Show Answers';
-            }
-        }
-
-        // Task 5 validation and checking
-        function validateTask5() {
-            // Check all radio buttons (Q1-10)
-            const radioNames = ['q5_1', 'q5_2', 'q5_3', 'q5_4', 'q5_5', 'q5_6', 'q5_7', 'q5_8', 'q5_9', 'q5_10'];
-            let radiosChecked = radioNames.every(name => document.querySelector(`input[name="${name}"]:checked`));
-            
-            // Check all selects (Q11-25)
-            const selectIds = [];
-            for (let i = 11; i <= 25; i++) {
-                selectIds.push('q5_' + i);
-            }
-            let selectsFilled = selectIds.every(id => document.getElementById(id).value !== '');
-            
-            const checkBtn = document.getElementById('checkBtn5');
-            const nextBtn = document.getElementById('nextBtn5');
-            const showAnswersDiv = document.getElementById('showAnswersDiv5');
-            
-            if (radiosChecked && selectsFilled) {
-                checkBtn.disabled = false;
-                checkBtn.style.opacity = '1';
-                checkBtn.style.cursor = 'pointer';
-                nextBtn.disabled = false;
-                nextBtn.style.opacity = '1';
-                nextBtn.style.cursor = 'pointer';
-                showAnswersDiv.style.display = 'block';
-            } else {
-                checkBtn.disabled = true;
-                checkBtn.style.opacity = '0.5';
-                checkBtn.style.cursor = 'not-allowed';
-                nextBtn.disabled = true;
-                nextBtn.style.opacity = '0.5';
-                nextBtn.style.cursor = 'not-allowed';
-                showAnswersDiv.style.display = 'none';
-            }
-        }
-
-        function checkTask5Answers() {
-            // MCQ answers
-            const mcqAnswers = {
-                'q5_1': 'C', 'q5_2': 'D', 'q5_3': 'C', 'q5_4': 'B', 'q5_5': 'C',
-                'q5_6': 'B', 'q5_7': 'C', 'q5_8': 'B', 'q5_9': 'C', 'q5_10': 'D'
-            };
-            
-            for (let name in mcqAnswers) {
-                const selected = document.querySelector(`input[name="${name}"]:checked`);
-                const questionDiv = document.getElementById(name);
-                const feedback = document.getElementById('fb' + name);
-                
-                if (selected && selected.value === mcqAnswers[name]) {
-                    questionDiv.classList.add('correct');
-                    questionDiv.classList.remove('incorrect');
-                    feedback.textContent = '✅';
-                    feedback.className = 'question-feedback correct';
-                } else {
-                    questionDiv.classList.add('incorrect');
-                    questionDiv.classList.remove('correct');
-                    feedback.textContent = '❌';
-                    feedback.className = 'question-feedback incorrect';
-                }
-            }
-            
-            // Part 2 gap filling answers
-            const gapAnswers = {
-                'q5_11': 'accumulate',
-                'q5_12': 'inspired',
-                'q5_13': 'prototype',
-                'q5_14': 'conventional',
-                'q5_15': 'innovate'
-            };
-            
-            // Part 3 vocabulary matching answers
-            const vocabAnswers = {
-                'q5_16': 'C', 'q5_17': 'A', 'q5_18': 'E', 'q5_19': 'B', 'q5_20': 'D',
-                'q5_21': 'G', 'q5_22': 'F', 'q5_23': 'H', 'q5_24': 'I', 'q5_25': 'J'
-            };
-            
-            const allSelectAnswers = {...gapAnswers, ...vocabAnswers};
-            
-            for (let id in allSelectAnswers) {
-                const select = document.getElementById(id);
-                const feedback = document.getElementById('fb' + id);
-                const userAnswer = select.value;
-                
-                if (userAnswer === allSelectAnswers[id]) {
-                    select.classList.add('correct');
-                    select.classList.remove('incorrect');
-                    feedback.textContent = '✅';
-                    feedback.className = 'answer-feedback correct';
-                } else {
-                    select.classList.add('incorrect');
-                    select.classList.remove('correct');
-                    feedback.textContent = '❌';
-                    feedback.className = 'answer-feedback incorrect';
-                }
-            }
-        }
-
-        function toggleAnswers5() {
-            const answers = document.getElementById('answers5');
-            const toggle = document.getElementById('answersToggle5');
-            if (answers.style.display === 'none') {
-                answers.style.display = 'block';
-                toggle.textContent = '▲ Hide Answers';
-            } else {
-                answers.style.display = 'none';
-                toggle.textContent = '▼ Show Answers';
-            }
-        }
-
-        // Task 6 validation and checking
-        function validateTask6() {
-            // Check all text inputs (Q1-20)
-            const textIds = [];
-            for (let i = 1; i <= 20; i++) {
-                textIds.push('q6_' + i);
-            }
-            let textFilled = textIds.every(id => document.getElementById(id).value.trim() !== '');
-            
-            // Check all radio buttons (Q21-26)
-            const radioNames = ['q6_21', 'q6_22', 'q6_23', 'q6_24', 'q6_25', 'q6_26'];
-            let radiosChecked = radioNames.every(name => document.querySelector(`input[name="${name}"]:checked`));
-            
-            const checkBtn = document.getElementById('checkBtn6');
-            const nextBtn = document.getElementById('nextBtn6');
-            const showAnswersDiv = document.getElementById('showAnswersDiv6');
-            
-            if (textFilled && radiosChecked) {
-                checkBtn.disabled = false;
-                checkBtn.style.opacity = '1';
-                checkBtn.style.cursor = 'pointer';
-                nextBtn.disabled = false;
-                nextBtn.style.opacity = '1';
-                nextBtn.style.cursor = 'pointer';
-                showAnswersDiv.style.display = 'block';
-            } else {
-                checkBtn.disabled = true;
-                checkBtn.style.opacity = '0.5';
-                checkBtn.style.cursor = 'not-allowed';
-                nextBtn.disabled = true;
-                nextBtn.style.opacity = '0.5';
-                nextBtn.style.cursor = 'not-allowed';
-                showAnswersDiv.style.display = 'none';
-            }
-        }
-
-        function checkTask6Answers() {
-            const textAnswers = {
-                'q6_1': ['relax'], 'q6_2': ['phrases'], 'q6_3': ['contain'], 'q6_4': ['nature'],
-                'q6_5': ['pathways'], 'q6_6': ['processing'], 'q6_7': ['connectivity'], 'q6_8': ['purpose'],
-                'q6_9': ['will'], 'q6_10': ['structure'], 'q6_11': ['ideas'], 'q6_12': ['system'],
-                'q6_13': ['requirements'], 'q6_14': ['connections'], 'q6_15': ['avoided'], 'q6_16': ['detail'],
-                'q6_17': ['correct'], 'q6_18': ['nature'], 'q6_19': ['will'], 'q6_20': ['detail']
-            };
-            
-            for (let id in textAnswers) {
-                const input = document.getElementById(id);
-                const feedback = document.getElementById('fb' + id);
-                const userAnswer = input.value.trim().toLowerCase();
-                const isCorrect = textAnswers[id].some(ans => ans.toLowerCase() === userAnswer);
-                
-                if (isCorrect) {
-                    input.classList.add('correct');
-                    input.classList.remove('incorrect');
-                    feedback.textContent = '✅';
-                    feedback.className = 'answer-feedback correct';
-                } else {
-                    input.classList.add('incorrect');
-                    input.classList.remove('correct');
-                    feedback.textContent = '❌';
-                    feedback.className = 'answer-feedback incorrect';
-                }
-            }
-            
-            const radioAnswers = {
-                'q6_21': 'c', 'q6_22': 'a', 'q6_23': 'b', 'q6_24': 'b', 'q6_25': 'a', 'q6_26': 'c'
-            };
-            
-            for (let name in radioAnswers) {
-                const selected = document.querySelector(`input[name="${name}"]:checked`);
-                const questionDiv = document.getElementById(name);
-                const feedback = document.getElementById('fb' + name);
-                
-                if (selected && selected.value === radioAnswers[name]) {
-                    questionDiv.classList.add('correct');
-                    questionDiv.classList.remove('incorrect');
-                    feedback.textContent = '✅';
-                    feedback.className = 'question-feedback correct';
-                } else {
-                    questionDiv.classList.add('incorrect');
-                    questionDiv.classList.remove('correct');
-                    feedback.textContent = '❌';
-                    feedback.className = 'question-feedback incorrect';
-                }
-            }
-        }
-
-        function toggleAnswers6() {
-            const answers = document.getElementById('answers6');
-            const toggle = document.getElementById('answersToggle6');
-            if (answers.style.display === 'none') {
-                answers.style.display = 'block';
-                toggle.textContent = '▲ Hide Answers';
-            } else {
-                answers.style.display = 'none';
-                toggle.textContent = '▼ Show Answers';
-            }
-        }
-
-        // Add event listeners when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            // Task 4 listeners
-            ['q4_1', 'q4_2', 'q4_3', 'q4_4'].forEach(id => {
-                const input = document.getElementById(id);
-                if (input) input.addEventListener('input', validateTask4);
-            });
-            ['q4_5', 'q4_6', 'q4_7', 'q4_8', 'q4_9'].forEach(id => {
-                const select = document.getElementById(id);
-                if (select) select.addEventListener('change', validateTask4);
-            });
-            
-            // Task 5 listeners
-            for (let i = 1; i <= 10; i++) {
-                document.querySelectorAll(`input[name="q5_${i}"]`).forEach(radio => {
-                    radio.addEventListener('change', validateTask5);
+            if (tasks) {
+                tasks.forEach(task => {
+                    if (task.status === 'completed') {
+                        completedTasks.add(task.task_number);
+                    }
+                    if (task.time_spent_seconds) {
+                        totalTimeSpent += task.time_spent_seconds;
+                    }
                 });
             }
-            for (let i = 11; i <= 25; i++) {
-                const select = document.getElementById('q5_' + i);
-                if (select) select.addEventListener('change', validateTask5);
+            
+        } catch (error) {
+            console.error('Error loading progress:', error);
+        }
+    }
+
+    async function markTaskComplete(taskNumber) {
+        try {
+            // Skip if already completed
+            if (completedTasks.has(taskNumber)) {
+                return;
             }
             
-            // Task 6 listeners
-            for (let i = 1; i <= 20; i++) {
-                const input = document.getElementById('q6_' + i);
-                if (input) input.addEventListener('input', validateTask6);
-            }
-            for (let i = 21; i <= 26; i++) {
-                document.querySelectorAll(`input[name="q6_${i}"]`).forEach(radio => {
-                    radio.addEventListener('change', validateTask6);
+            completedTasks.add(taskNumber);
+            
+            const timeSpent = Math.floor((Date.now() - sessionStartTime) / 1000);
+            
+            // Upsert task progress
+            const { error } = await supabaseClient
+                .from('task_progress')
+                .upsert({
+                    student_id: currentUser.id,
+                    week: WEEK,
+                    day: DAY,
+                    task_number: taskNumber,
+                    status: 'completed',
+                    time_spent_seconds: timeSpent,
+                    started_at: new Date(sessionStartTime).toISOString(),
+                    completed_at: new Date().toISOString()
+                }, {
+                    onConflict: 'student_id,week,day,task_number'
                 });
+            
+            if (error) {
+                console.error('Error saving task progress:', error);
+                return;
             }
+            
+            console.log(`Task ${taskNumber} marked complete`);
+            
+            // Check if all tasks completed
+            if (completedTasks.size === TOTAL_TASKS) {
+                await markDayComplete();
+            }
+            
+        } catch (error) {
+            console.error('Error marking task complete:', error);
+        }
+    }
+
+    async function markDayComplete() {
+        try {
+            const totalMinutes = Math.floor(totalTimeSpent / 60);
+            
+            // Update day summary
+            const { error } = await supabaseClient
+                .from('day_summary')
+                .upsert({
+                    student_id: currentUser.id,
+                    week: WEEK,
+                    day: DAY,
+                    completed_tasks: TOTAL_TASKS,
+                    total_tasks: TOTAL_TASKS,
+                    percentage: 100,
+                    total_time_spent_minutes: totalMinutes,
+                    last_updated: new Date().toISOString()
+                }, {
+                    onConflict: 'student_id,week,day'
+                });
+            
+            if (error) {
+                console.error('Error marking day complete:', error);
+                return;
+            }
+            
+            console.log('✅ Day 2 marked as 100% complete!');
+            
+        } catch (error) {
+            console.error('Error marking day complete:', error);
+        }
+    }
+
+    function startTimeTracking() {
+        // Update time every 30 seconds
+        setInterval(() => {
+            totalTimeSpent = Math.floor((Date.now() - sessionStartTime) / 1000);
+        }, 30000);
+    }
+
+    // ============================================
+    // TASK VALIDATION SETUP
+    // ============================================
+    function setupTaskValidation() {
+        // Task 1 validation listeners
+        ['q1', 'q2', 'q3'].forEach(name => {
+            document.querySelectorAll(`input[name="${name}"]`).forEach(radio => {
+                if (radio) radio.addEventListener('change', validateTask1);
+            });
         });
-    </script>
+        
+        ['q1_4', 'q1_5', 'q1_6', 'q1_7', 'q1_8'].forEach(id => {
+            const input = document.getElementById(id);
+            if (input) input.addEventListener('input', validateTask1);
+        });
+
+        // Task 4 listeners
+        ['q4_1', 'q4_2', 'q4_3', 'q4_4'].forEach(id => {
+            const input = document.getElementById(id);
+            if (input) input.addEventListener('input', validateTask4);
+        });
+        ['q4_5', 'q4_6', 'q4_7', 'q4_8', 'q4_9'].forEach(id => {
+            const select = document.getElementById(id);
+            if (select) select.addEventListener('change', validateTask4);
+        });
+        
+        // Task 5 listeners
+        for (let i = 1; i <= 10; i++) {
+            document.querySelectorAll(`input[name="q5_${i}"]`).forEach(radio => {
+                if (radio) radio.addEventListener('change', validateTask5);
+            });
+        }
+        for (let i = 11; i <= 25; i++) {
+            const select = document.getElementById('q5_' + i);
+            if (select) select.addEventListener('change', validateTask5);
+        }
+        
+        // Task 6 listeners
+        for (let i = 1; i <= 20; i++) {
+            const input = document.getElementById('q6_' + i);
+            if (input) input.addEventListener('input', validateTask6);
+        }
+        for (let i = 21; i <= 26; i++) {
+            document.querySelectorAll(`input[name="q6_${i}"]`).forEach(radio => {
+                if (radio) radio.addEventListener('change', validateTask6);
+            });
+        }
+    }
+
+    // ============================================
+    // ORIGINAL DAY 2 CODE - KEEP ALL FUNCTIONS
+    // ============================================
+    
+    // Vocabulary toggle
+    function toggleVocab() {
+        const content = document.getElementById('vocab-content');
+        const arrow = document.getElementById('vocab-arrow');
+        content.classList.toggle('active');
+        arrow.textContent = content.classList.contains('active') ? '▲' : '▼';
+    }
+
+    // Task navigation with progress saving
+    async function nextTask(currentTaskId) {
+        const tasks = ['task1', 'task2', 'task3', 'break-screen', 'task4', 'task5', 'task6', 'task7'];
+        const currentIndex = tasks.indexOf(currentTaskId);
+        
+        // Mark task complete (skip break-screen)
+        if (currentTaskId !== 'break-screen') {
+            let taskNumber = currentIndex + 1;
+            if (currentIndex >= 4) taskNumber--; // Adjust for break
+            await markTaskComplete(taskNumber);
+        }
+        
+        document.getElementById(currentTaskId).classList.remove('active');
+        
+        if (currentIndex < tasks.length - 1) {
+            const nextTaskId = tasks[currentIndex + 1];
+            document.getElementById(nextTaskId).classList.add('active');
+            // Save progress to localStorage
+            localStorage.setItem('day2_current_task', nextTaskId);
+            window.scrollTo(0, 0);
+        } else {
+            document.getElementById('completion-screen').classList.add('active');
+            // Clear progress when completed
+            localStorage.removeItem('day2_current_task');
+            window.scrollTo(0, 0);
+        }
+    }
+
+    function previousTask(currentTaskId) {
+        const tasks = ['task1', 'task2', 'task3', 'break-screen', 'task4', 'task5', 'task6', 'task7'];
+        const currentIndex = tasks.indexOf(currentTaskId);
+        
+        if (currentIndex > 0) {
+            document.getElementById(currentTaskId).classList.remove('active');
+            const prevTaskId = tasks[currentIndex - 1];
+            document.getElementById(prevTaskId).classList.add('active');
+            localStorage.setItem('day2_current_task', prevTaskId);
+            window.scrollTo(0, 0);
+        }
+    }
+
+    // Load saved progress on page load - already handled in DOMContentLoaded above
+
+    // Task 1 validation and checking
+    function validateTask1() {
+        const radios = ['q1', 'q2', 'q3'];
+        let radiosChecked = radios.every(name => document.querySelector(`input[name="${name}"]:checked`));
+        
+        const textIds = ['q1_4', 'q1_5', 'q1_6', 'q1_7', 'q1_8'];
+        let allFilled = textIds.every(id => document.getElementById(id).value.trim() !== '');
+        
+        const checkBtn = document.getElementById('checkBtn1');
+        const nextBtn = document.getElementById('nextBtn1');
+        const showAnswersDiv = document.getElementById('showAnswersDiv1');
+        
+        if (radiosChecked && allFilled) {
+            checkBtn.disabled = false;
+            checkBtn.style.opacity = '1';
+            checkBtn.style.cursor = 'pointer';
+            
+            nextBtn.disabled = false;
+            nextBtn.style.opacity = '1';
+            nextBtn.style.cursor = 'pointer';
+            
+            showAnswersDiv.style.display = 'block';
+        } else {
+            checkBtn.disabled = true;
+            checkBtn.style.opacity = '0.5';
+            checkBtn.style.cursor = 'not-allowed';
+            
+            nextBtn.disabled = true;
+            nextBtn.style.opacity = '0.5';
+            nextBtn.style.cursor = 'not-allowed';
+            
+            showAnswersDiv.style.display = 'none';
+        }
+    }
+
+    function checkTask1Answers() {
+        const radioAnswers = { 'q1': 'B', 'q2': 'C', 'q3': 'E' };
+        
+        for (let name in radioAnswers) {
+            const selected = document.querySelector(`input[name="${name}"]:checked`);
+            const questionDiv = document.getElementById(name + '_mc');
+            const feedback = document.getElementById('fb1_' + name.substring(1));
+            
+            if (selected && selected.value === radioAnswers[name]) {
+                questionDiv.classList.add('correct');
+                questionDiv.classList.remove('incorrect');
+                feedback.textContent = '✅';
+                feedback.className = 'question-feedback correct';
+            } else {
+                questionDiv.classList.add('incorrect');
+                questionDiv.classList.remove('correct');
+                feedback.textContent = '❌';
+                feedback.className = 'question-feedback incorrect';
+            }
+        }
+        
+        const textAnswers = {
+            'q1_4': ['education authority'],
+            'q1_5': ['case manager'],
+            'q1_6': ['research area'],
+            'q1_7': ['18 months'],
+            'q1_8': ['academic institution']
+        };
+        
+        for (let id in textAnswers) {
+            const input = document.getElementById(id);
+            const feedback = document.getElementById('fb' + id.substring(2));
+            const userAnswer = input.value.trim().toLowerCase();
+            
+            const isCorrect = textAnswers[id].some(ans => ans.toLowerCase() === userAnswer);
+            
+            if (isCorrect) {
+                input.classList.add('correct');
+                input.classList.remove('incorrect');
+                feedback.textContent = '✅';
+                feedback.className = 'answer-feedback correct';
+            } else {
+                input.classList.add('incorrect');
+                input.classList.remove('correct');
+                feedback.textContent = '❌';
+                feedback.className = 'answer-feedback incorrect';
+            }
+        }
+    }
+
+    function toggleAnswers1() {
+        const answers = document.getElementById('answers1');
+        const toggle = document.getElementById('answersToggle1');
+        if (answers.style.display === 'none') {
+            answers.style.display = 'block';
+            toggle.textContent = '▲ Hide Answers';
+        } else {
+            answers.style.display = 'none';
+            toggle.textContent = '▼ Show Answers';
+        }
+    }
+
+    // Task 4, 5, 6 validation and checking functions
+    function validateTask4() {
+        const textIds = ['q4_1', 'q4_2', 'q4_3', 'q4_4'];
+        const selectIds = ['q4_5', 'q4_6', 'q4_7', 'q4_8', 'q4_9'];
+        
+        let allFilled = textIds.every(id => document.getElementById(id).value.trim() !== '') &&
+                       selectIds.every(id => document.getElementById(id).value !== '');
+        
+        const checkBtn = document.getElementById('checkBtn4');
+        const nextBtn = document.getElementById('nextBtn4');
+        const showAnswersDiv = document.getElementById('showAnswersDiv4');
+        
+        if (allFilled) {
+            checkBtn.disabled = false;
+            checkBtn.style.opacity = '1';
+            checkBtn.style.cursor = 'pointer';
+            nextBtn.disabled = false;
+            nextBtn.style.opacity = '1';
+            nextBtn.style.cursor = 'pointer';
+            showAnswersDiv.style.display = 'block';
+        } else {
+            checkBtn.disabled = true;
+            checkBtn.style.opacity = '0.5';
+            checkBtn.style.cursor = 'not-allowed';
+            nextBtn.disabled = true;
+            nextBtn.style.opacity = '0.5';
+            nextBtn.style.cursor = 'not-allowed';
+            showAnswersDiv.style.display = 'none';
+        }
+    }
+
+    function checkTask4Answers() {
+        const textAnswers = {
+            'q4_1': ['not that difficult'],
+            'q4_2': ['highly knowledgeable', 'knowledgeable'],
+            'q4_3': ['alone'],
+            'q4_4': ['not pass']
+        };
+        
+        const selectAnswers = {
+            'q4_5': 'd',
+            'q4_6': 'a',
+            'q4_7': 'e',
+            'q4_8': 'c',
+            'q4_9': 'b'
+        };
+        
+        for (let id in textAnswers) {
+            const input = document.getElementById(id);
+            const feedback = document.getElementById('fb' + id.substring(2));
+            const userAnswer = input.value.trim().toLowerCase();
+            const isCorrect = textAnswers[id].some(ans => ans.toLowerCase() === userAnswer);
+            
+            if (isCorrect) {
+                input.classList.add('correct');
+                input.classList.remove('incorrect');
+                feedback.textContent = '✅';
+                feedback.className = 'answer-feedback correct';
+            } else {
+                input.classList.add('incorrect');
+                input.classList.remove('correct');
+                feedback.textContent = '❌';
+                feedback.className = 'answer-feedback incorrect';
+            }
+        }
+        
+        for (let id in selectAnswers) {
+            const select = document.getElementById(id);
+            const feedback = document.getElementById('fb' + id.substring(2));
+            const userAnswer = select.value.toLowerCase();
+            
+            if (userAnswer === selectAnswers[id]) {
+                select.classList.add('correct');
+                select.classList.remove('incorrect');
+                feedback.textContent = '✅';
+                feedback.className = 'answer-feedback correct';
+            } else {
+                select.classList.add('incorrect');
+                select.classList.remove('correct');
+                feedback.textContent = '❌';
+                feedback.className = 'answer-feedback incorrect';
+            }
+        }
+    }
+
+    function toggleAnswers4() {
+        const answers = document.getElementById('answers4');
+        const toggle = document.getElementById('answersToggle4');
+        if (answers.style.display === 'none') {
+            answers.style.display = 'block';
+            toggle.textContent = '▲ Hide Answers';
+        } else {
+            answers.style.display = 'none';
+            toggle.textContent = '▼ Show Answers';
+        }
+    }
+
+    // Task 5 validation and checking
+    function validateTask5() {
+        const radioNames = ['q5_1', 'q5_2', 'q5_3', 'q5_4', 'q5_5', 'q5_6', 'q5_7', 'q5_8', 'q5_9', 'q5_10'];
+        let radiosChecked = radioNames.every(name => document.querySelector(`input[name="${name}"]:checked`));
+        
+        const selectIds = [];
+        for (let i = 11; i <= 25; i++) {
+            selectIds.push('q5_' + i);
+        }
+        let selectsFilled = selectIds.every(id => document.getElementById(id).value !== '');
+        
+        const checkBtn = document.getElementById('checkBtn5');
+        const nextBtn = document.getElementById('nextBtn5');
+        const showAnswersDiv = document.getElementById('showAnswersDiv5');
+        
+        if (radiosChecked && selectsFilled) {
+            checkBtn.disabled = false;
+            checkBtn.style.opacity = '1';
+            checkBtn.style.cursor = 'pointer';
+            nextBtn.disabled = false;
+            nextBtn.style.opacity = '1';
+            nextBtn.style.cursor = 'pointer';
+            showAnswersDiv.style.display = 'block';
+        } else {
+            checkBtn.disabled = true;
+            checkBtn.style.opacity = '0.5';
+            checkBtn.style.cursor = 'not-allowed';
+            nextBtn.disabled = true;
+            nextBtn.style.opacity = '0.5';
+            nextBtn.style.cursor = 'not-allowed';
+            showAnswersDiv.style.display = 'none';
+        }
+    }
+
+    function checkTask5Answers() {
+        const mcqAnswers = {
+            'q5_1': 'C', 'q5_2': 'D', 'q5_3': 'C', 'q5_4': 'B', 'q5_5': 'C',
+            'q5_6': 'B', 'q5_7': 'C', 'q5_8': 'B', 'q5_9': 'C', 'q5_10': 'D'
+        };
+        
+        for (let name in mcqAnswers) {
+            const selected = document.querySelector(`input[name="${name}"]:checked`);
+            const questionDiv = document.getElementById(name);
+            const feedback = document.getElementById('fb' + name);
+            
+            if (selected && selected.value === mcqAnswers[name]) {
+                questionDiv.classList.add('correct');
+                questionDiv.classList.remove('incorrect');
+                feedback.textContent = '✅';
+                feedback.className = 'question-feedback correct';
+            } else {
+                questionDiv.classList.add('incorrect');
+                questionDiv.classList.remove('correct');
+                feedback.textContent = '❌';
+                feedback.className = 'question-feedback incorrect';
+            }
+        }
+        
+        const gapAnswers = {
+            'q5_11': 'accumulate',
+            'q5_12': 'inspired',
+            'q5_13': 'prototype',
+            'q5_14': 'conventional',
+            'q5_15': 'innovate'
+        };
+        
+        const vocabAnswers = {
+            'q5_16': 'C', 'q5_17': 'A', 'q5_18': 'E', 'q5_19': 'B', 'q5_20': 'D',
+            'q5_21': 'G', 'q5_22': 'F', 'q5_23': 'H', 'q5_24': 'I', 'q5_25': 'J'
+        };
+        
+        const allSelectAnswers = {...gapAnswers, ...vocabAnswers};
+        
+        for (let id in allSelectAnswers) {
+            const select = document.getElementById(id);
+            const feedback = document.getElementById('fb' + id);
+            const userAnswer = select.value;
+            
+            if (userAnswer === allSelectAnswers[id]) {
+                select.classList.add('correct');
+                select.classList.remove('incorrect');
+                feedback.textContent = '✅';
+                feedback.className = 'answer-feedback correct';
+            } else {
+                select.classList.add('incorrect');
+                select.classList.remove('correct');
+                feedback.textContent = '❌';
+                feedback.className = 'answer-feedback incorrect';
+            }
+        }
+    }
+
+    function toggleAnswers5() {
+        const answers = document.getElementById('answers5');
+        const toggle = document.getElementById('answersToggle5');
+        if (answers.style.display === 'none') {
+            answers.style.display = 'block';
+            toggle.textContent = '▲ Hide Answers';
+        } else {
+            answers.style.display = 'none';
+            toggle.textContent = '▼ Show Answers';
+        }
+    }
+
+    // Task 6 validation and checking
+    function validateTask6() {
+        const textIds = [];
+        for (let i = 1; i <= 20; i++) {
+            textIds.push('q6_' + i);
+        }
+        let textFilled = textIds.every(id => document.getElementById(id).value.trim() !== '');
+        
+        const radioNames = ['q6_21', 'q6_22', 'q6_23', 'q6_24', 'q6_25', 'q6_26'];
+        let radiosChecked = radioNames.every(name => document.querySelector(`input[name="${name}"]:checked`));
+        
+        const checkBtn = document.getElementById('checkBtn6');
+        const nextBtn = document.getElementById('nextBtn6');
+        const showAnswersDiv = document.getElementById('showAnswersDiv6');
+        
+        if (textFilled && radiosChecked) {
+            checkBtn.disabled = false;
+            checkBtn.style.opacity = '1';
+            checkBtn.style.cursor = 'pointer';
+            nextBtn.disabled = false;
+            nextBtn.style.opacity = '1';
+            nextBtn.style.cursor = 'pointer';
+            showAnswersDiv.style.display = 'block';
+        } else {
+            checkBtn.disabled = true;
+            checkBtn.style.opacity = '0.5';
+            checkBtn.style.cursor = 'not-allowed';
+            nextBtn.disabled = true;
+            nextBtn.style.opacity = '0.5';
+            nextBtn.style.cursor = 'not-allowed';
+            showAnswersDiv.style.display = 'none';
+        }
+    }
+
+    function checkTask6Answers() {
+        const textAnswers = {
+            'q6_1': ['relax'], 'q6_2': ['phrases'], 'q6_3': ['contain'], 'q6_4': ['nature'],
+            'q6_5': ['pathways'], 'q6_6': ['processing'], 'q6_7': ['connectivity'], 'q6_8': ['purpose'],
+            'q6_9': ['will'], 'q6_10': ['structure'], 'q6_11': ['ideas'], 'q6_12': ['system'],
+            'q6_13': ['requirements'], 'q6_14': ['connections'], 'q6_15': ['avoided'], 'q6_16': ['detail'],
+            'q6_17': ['correct'], 'q6_18': ['nature'], 'q6_19': ['will'], 'q6_20': ['detail']
+        };
+        
+        for (let id in textAnswers) {
+            const input = document.getElementById(id);
+            const feedback = document.getElementById('fb' + id);
+            const userAnswer = input.value.trim().toLowerCase();
+            const isCorrect = textAnswers[id].some(ans => ans.toLowerCase() === userAnswer);
+            
+            if (isCorrect) {
+                input.classList.add('correct');
+                input.classList.remove('incorrect');
+                feedback.textContent = '✅';
+                feedback.className = 'answer-feedback correct';
+            } else {
+                input.classList.add('incorrect');
+                input.classList.remove('correct');
+                feedback.textContent = '❌';
+                feedback.className = 'answer-feedback incorrect';
+            }
+        }
+        
+        const radioAnswers = {
+            'q6_21': 'c', 'q6_22': 'a', 'q6_23': 'b', 'q6_24': 'b', 'q6_25': 'a', 'q6_26': 'c'
+        };
+        
+        for (let name in radioAnswers) {
+            const selected = document.querySelector(`input[name="${name}"]:checked`);
+            const questionDiv = document.getElementById(name);
+            const feedback = document.getElementById('fb' + name);
+            
+            if (selected && selected.value === radioAnswers[name]) {
+                questionDiv.classList.add('correct');
+                questionDiv.classList.remove('incorrect');
+                feedback.textContent = '✅';
+                feedback.className = 'question-feedback correct';
+            } else {
+                questionDiv.classList.add('incorrect');
+                questionDiv.classList.remove('correct');
+                feedback.textContent = '❌';
+                feedback.className = 'question-feedback incorrect';
+            }
+        }
+    }
+
+    function toggleAnswers6() {
+        const answers = document.getElementById('answers6');
+        const toggle = document.getElementById('answersToggle6');
+        if (answers.style.display === 'none') {
+            answers.style.display = 'block';
+            toggle.textContent = '▲ Hide Answers';
+        } else {
+            answers.style.display = 'none';
+            toggle.textContent = '▼ Show Answers';
+        }
+    }
+</script>
 </body>
 </html>
