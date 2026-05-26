@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IELTS Reading Practice – Why Good Ideas Fail</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background-color: #ffffff; line-height: 1.4; font-size: 16px; }
+
+        .header {
+            background-color: #ffffff;
+            padding: 12px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            height: 60px;
+        }
+
+        .telegram-link {
+            color: #0088cc;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .telegram-link:hover { text-decoration: underline; }
+        .telegram-link::before {
+            content: '';
+            display: inline-block;
+            width: 20px; height: 20px;
+            background-color: currentColor;
+            -webkit-mask-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.78 18.65l.28-4.23l7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3L3.64 12c-.88-.25-.89-1.37.2-1.64l16.56-6.4c.75-.29 1.4.22 1.2.94l-2.67 12.61c-.22.95-1.13 1.18-1.78.73l-4.5-3.32l-2.23 2.15c-.47.44-1.29.21-1.48-.37z"/></svg>');
+            mask-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.78 18.65l.28-4.23l7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3L3.64 12c-.88-.25-.89-1.37.2-1.64l16.56-6.4c.75-.29 1.4.22 1.2.94l-2.67 12.61c-.22.95-1.13 1.18-1.78.73l-4.5-3.32l-2.23 2.15c-.47.44-1.29.21-1.48-.37z"/></svg>');
+            background-size: contain;
+            background-repeat: no-repeat;
+        }
+
+        .timer-container {
+            display: flex;
+            align-items: center;
+            color: #333;
+            font-size: 16px;
+            font-weight: 500;
+        }
+        .timer-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 15px;
+        }
+        .timer-controls button {
+            background: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 50%;
+            padding: 0;
+            cursor: pointer;
+            width: 32px; height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .timer-controls button:hover { background: #e0e0e0; }
+        .timer-controls button svg { width: 20px; height: 20px; fill: #333; }
+
+        .main-container {
+            margin-top: 60px;
+            display: flex;
+            flex-direction: column;
+            background: #ffffff;
+            height: calc(100vh - 60px);
+        }
+        .part-header {
+            background-color: #f1f2ec;
+            padding: 15px 20px;
+            border: 1px solid #e0e0e0;
+            text-align: left;
+            margin: 10px 20px;
+            border-radius: 5px;
+        }
+        .part-header p { margin: 0; }
+        .part-header p:first-child { margin-bottom: 5px; }
+
+        .panels-container { display: flex; flex: 1; overflow: hidden; }
+
+        .passage-panel {
+            flex: 1;
+            padding: 20px 20px 100px;
+            overflow-y: auto;
+            min-width: 200px;
+        }
+        .reading-passage h4.text-center { font-size: 22px; font-weight: bold; margin-bottom: 15px; text-align: center; }
+        .reading-passage p { margin-bottom: 1.2em; }
+        .reading-passage .expert-heading { font-weight: bold; margin: 20px 0 8px; font-size: 16px; }
+
+        .resizer {
+            width: 10px;
+            cursor: col-resize;
+            background-color: #f0f0f0;
+            background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="30" viewBox="0 0 10 30"><path d="M4 11h2v2H4zM4 15h2v2H4zM4 19h2v2H4z" fill="%23888"/></svg>');
+            background-repeat: no-repeat;
+            background-position: center;
+            flex-shrink: 0;
+        }
+
+        .questions-panel {
+            flex: 1;
+            padding: 20px 20px 100px;
+            overflow-y: auto;
+            min-width: 200px;
+            border-left: 1px solid #e0e0e0;
+        }
+
+        /* Questions */
+        .question { margin-bottom: 40px; }
+        .question p { margin-bottom: 10px; }
+        .question-prompt { margin-bottom: 20px; }
+        .question ul { list-style: none; padding-left: 0; }
+        .question ul li { margin-bottom: 5px; }
+
+        /* T/F/NG */
+        .tf-question { margin-bottom: 25px; padding: 10px 0; border-radius: 4px; }
+        .tf-question-line { display: flex; align-items: flex-start; margin-bottom: 15px; padding: 5px 0; border-radius: 4px; }
+        .tf-question-number {
+            border: 2px solid #ccc;
+            padding: 2px 8px;
+            margin-right: 10px;
+            border-radius: 3px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .tf-question-text { padding-top: 3px; }
+        .tf-options { padding-left: 5px; }
+        .tf-option { display: flex; align-items: center; margin-bottom: 12px; cursor: pointer; }
+        .tf-option input[type="radio"] { margin-right: 10px; transform: scale(1.2); }
+        .tf-question.correct .tf-question-line { background-color: #e9f7ef; }
+        .tf-question.incorrect .tf-question-line { background-color: #f8d7da; }
+
+        /* Answer inputs */
+        .answer-input {
+            border: 1px solid #888;
+            border-radius: 4px;
+            background-color: #fff;
+            padding: 2px 5px;
+            font-size: 16px;
+            text-align: center;
+            margin: 0 4px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .answer-input.active-input { border-color: #4a90e2; box-shadow: 0 0 3px 1px rgba(74,144,226,0.5); }
+        .answer-input::placeholder { color: #999; font-weight: bold; }
+        .answer-input.correct { border-color: #28a745; background-color: #e9f7ef; }
+        .answer-input.incorrect { border-color: #dc3545; background-color: #f8d7da; color: #721c24; }
+
+        /* Notes completion summary text */
+        .notes-section { margin-top: 20px; }
+        .notes-section h5 { font-size: 15px; font-weight: bold; margin: 16px 0 8px; }
+        .notes-section ul { list-style: none; padding-left: 0; }
+        .notes-section ul li { margin-bottom: 10px; font-size: 15px; line-height: 1.8; }
+        .notes-section .sub-list { margin-left: 20px; }
+
+        /* Correct answer display after check */
+        .correct-answer-display {
+            font-weight: bold;
+            color: #28a745;
+            margin-left: 10px;
+            font-size: 14px;
+        }
+
+        /* Bottom nav */
+        .nav-row {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            background: #ffffff;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            height: 80px;
+            z-index: 100;
+            border-top: 1px solid #e0e0e0;
+        }
+        .footer__questionWrapper___1tZ46 {
+            display: flex;
+            align-items: center;
+            margin-right: 20px;
+        }
+        .footer__questionNo___3WNct {
+            background: none;
+            border: none;
+            padding: 10px 15px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .footer__questionNo___3WNct:hover { background-color: #f8f9fa; }
+        .footer__subquestionWrapper___9GgoP {
+            display: flex;
+            gap: 2px;
+            margin-left: 10px;
+        }
+        .subQuestion {
+            width: 32px; height: 32px;
+            border: 1px solid #ccc;
+            background: white;
+            color: #333;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 2px;
+        }
+        .subQuestion.answered { background-color: #e9ecef; border-color: #ddd; }
+        .subQuestion.correct { background-color: #28a745; color: white; border-color: #28a745; }
+        .subQuestion.incorrect { background-color: #dc3545; color: white; border-color: #dc3545; }
+        .subQuestion.active { background-color: #4a90e2; color: white; border-color: #4a90e2; }
+        .subQuestion:hover { background-color: #f0f0f0; border-color: #999; }
+
+        .footer__deliverButton___3FM07 {
+            margin-left: auto;
+            margin-right: 20px;
+            background: white;
+            border: 1px solid #ccc;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 15px;
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 150px;
+            justify-content: center;
+        }
+        .footer__deliverButton___3FM07:hover { background-color: #e0e0e0; }
+
+        /* Nav arrows */
+        .nav-arrows {
+            position: fixed;
+            bottom: 100px; right: 20px;
+            display: flex;
+            gap: 5px;
+            z-index: 101;
+        }
+        .nav-arrow {
+            width: 50px; height: 50px;
+            background: #333;
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: bold;
+        }
+        .nav-arrow:hover { background: #555; }
+        .nav-arrow:disabled { background: #ccc; cursor: not-allowed; }
+
+        /* Context menu */
+        .context-menu {
+            position: absolute;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            display: none;
+            min-width: 140px;
+        }
+        .context-menu-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            font-size: 16px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .context-menu-item:hover { background-color: #f8f9fa; }
+        .context-menu-item:last-child { border-bottom: none; }
+        .highlight { background-color: #ffff00; }
+        .comment-highlight { background-color: #90EE90; position: relative; cursor: help; }
+        .comment-tooltip {
+            position: absolute;
+            bottom: 100%; left: 50%;
+            transform: translateX(-50%);
+            background: #333; color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            white-space: nowrap;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .comment-highlight:hover .comment-tooltip { opacity: 1; }
+
+        /* Results modal */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            z-index: 2000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-overlay.hidden { display: none; }
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .modal-close-btn {
+            position: absolute; top: 10px; right: 15px;
+            background: none; border: none;
+            font-size: 28px; cursor: pointer; color: #888;
+        }
+        .results-summary { margin: 15px 0; font-size: 18px; }
+        .results-summary p { margin-bottom: 8px; }
+        .results-details-container { overflow-y: auto; padding-right: 10px; }
+        .result-row {
+            display: grid;
+            grid-template-columns: 40px 1fr 1fr;
+            gap: 15px;
+            padding: 8px 5px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 15px;
+        }
+        .result-row.incorrect { background-color: #f8d7da; }
+        .result-row .q-num { font-weight: bold; }
+        .result-row .correct-ans { color: #155724; font-weight: 500; }
+
+        .hidden { display: none !important; }
+
+        .attemptedCount { font-size: 14px; color: #666; margin-left: 5px; font-weight: 400; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="timer-container">
+        <span class="timer-display">20:00</span>
+        <div class="timer-controls">
+            <button id="timer-toggle-btn" title="Pause/Resume Timer">
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M8 5v14l11-7L8 5z"/></svg>
+            </button>
+            <button id="timer-reset-btn" title="Reset Timer">
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+            </button>
+        </div>
+    </div>
+    <a href="https://t.me/IELTS_sv" target="_blank" class="telegram-link">
+        IELTS by AB
+    </a>
+</div>
+
+<div class="main-container" id="main-container">
+    <div id="passage-header-container">
+        <div id="part-header-1" class="part-header">
+            <p><strong>Part 1</strong></p>
+            <p>Read the text and answer questions 1–13.</p>
+        </div>
+    </div>
+
+    <div class="panels-container">
+        <!-- PASSAGE PANEL -->
+        <div class="passage-panel" id="passage-panel">
+            <div id="passage-text-1" class="reading-passage">
+                <h4 class="text-center">Why Good Ideas Fail</h4>
+
+                <p>As part of a marketing course, two marketing experts comment on a hypothetical case study involving TF, a fictional retail giant specialising in home furnishing. The experts give concrete solutions and advice to assist students.</p>
+
+                <p class="expert-heading">Hypothetical case study:</p>
+                <p>TF became a retail success in the 1970s when it succeeded in spotting homeware trends and meeting the needs of its then trendy young customers. However, by 2004, the TF stores were failing and a rethink was clearly necessary. Tibal Fisher, TF's founder and CEO, decided to change its focus under the new brand name of TF's Nextstage. His aim was to recapture the now ageing customers that had given him his early success and target consumers aged 60+ with devices and gadgets specifically designed to assist them with the problems associated with ageing: mobile phones with screens that were easy to read; kitchen gadgets with comfortable grips; electronic devices that were easy to set and adjust. TF's market research proved to be very positive, showing strong consumer support for the products.</p>
+
+                <p>In 2007, the stores were remodelled at a cost of US $40 million and the new brand was launched. Each store was made more comfortable and featured a coffee shop to help increase traffic — Tibal had predicted that if they could get customers into the stores then the products would sell themselves. However, by 2009 it was clear that the idea was a failure and the stores consistently remained empty. Customers complained that the new stores felt like a senior centre and reminded them that they were growing old.</p>
+
+                <p class="expert-heading">Expert 1: Donna Sturgess, global head of innovation, GlaxoSmithKline</p>
+                <p>The TF team's customer research efforts are a classic case of missing the subconscious associations at work in consumers' minds. Tibal and his executives looked only at surface attitudes. Since those attitudes make up a relatively small part of the total consumer response, the executives are clueless about the reason for the poor sales. It's critical for companies to understand that every customer relates to a brand emotionally, and it's those emotions that trigger — or block — purchases.</p>
+
+                <p>That's why we've focused on using emotional strategies behind branding for a number of years now. A great example is Alli (pronounced 'ally'), a drug to aid weight loss. The product deals with a highly emotional issue, so in marketing it, we faced the same challenge that the new TF stores are facing: the very thought of buying the product reminds customers that they have problems they feel negatively about. In the case of TF's Nextstage, the problems are age and infirmity. In the case of Alli, the problems are excessive weight and all its consequences. There's always a risk that consumers' negative feelings will discourage them from starting or staying on a diet. So, after extensive market research, we took a number of steps to inject emotions into the whole process of using the product.</p>
+
+                <p>First we came up with a name that sounds like a helpful partner. We also aimed to make the container both beautiful and functional — something that didn't just hold pills but could later be used to store diet guides and recipes. Traditional market research is unlikely to uncover ideas like this, so we use a wide variety of techniques. Even simple techniques such as one-on-one interviews, or ethnographical observation that involves going into people's houses to examine their behaviour, can provide valuable data.</p>
+
+                <p class="expert-heading">Expert 2: Alex Lee, president of OXO International, maker of OXO Good Grips household products</p>
+                <p>This retailer can get back on track by remembering a principle that applies to consumers in general and those aged 60+ in particular: they're attracted by brands they associate with the type of people they'd like to be — not the type they really are. That's why marketing campaigns for surf gear feature surfers, not the city dwellers who will wear the products while doing their shopping.</p>
+
+                <p>I was reminded of this principle a few years ago when we wanted to find out how far we could apply our design philosophy of making things easier to use in order to move from our core business, kitchen tools, into other products. We conducted what are known as focus groups, where participants were asked to look at photos of people and pick those they perceived to be users and non-users of our products. Consistently they picked people who looked fit as the sort who would use our products, and people who looked old and boring as the sort who wouldn't. Yet the participants, all owners of our products, looked a lot more like the latter than the former.</p>
+
+                <p>Although the needs of elderly users and those with deteriorating vision or dexterity are very much taken into consideration when we develop new designs, we try to create products that appeal to 20- and 30-year-olds. We believe that referring to these products as helping tools would serve only to harm the brand in our customers' eyes. That's why our philosophy of universal design, which involves creating products that are comfortably useable by the largest possible range of people, is never explicitly stated as part of our marketing position.</p>
+
+                <p>We've found that market research does not need to be very sophisticated. For instance, we have conducted simple surveys in the lobby of our building offering free products in exchange for people's opinions. Some may call this unscientific but we have uncovered great insights this way. Sometimes the most important signals come from an executive's own instincts. In Tibal Fisher's case, this could have told him what his surveys and focus groups didn't: 60-plus-year-olds won't support a business that expects them to act their age.</p>
+            </div>
+        </div>
+
+        <div class="resizer" id="resizer"></div>
+
+        <!-- QUESTIONS PANEL -->
+        <div class="questions-panel" id="questions-panel">
+            <div id="questions-1" class="question-set">
+                <div class="questions-container">
+
+                    <!-- Q1-5: True/False/Not Given -->
+                    <div class="question" data-q-start="1" data-q-end="5">
+                        <div class="question-prompt">
+                            <p><strong>Questions 1–5</strong><br>
+                            Do the following statements agree with the information given in Reading Passage?<br>
+                            In boxes 1–5 on your answer sheet, write</p>
+                            <ul style="list-style:none;padding-left:0;">
+                                <li><strong>TRUE</strong> &nbsp;&nbsp;if the statement agrees with the information</li>
+                                <li><strong>FALSE</strong> &nbsp;&nbsp;if the statement contradicts the information</li>
+                                <li><strong>NOT GIVEN</strong> &nbsp;&nbsp;if there is no information on this</li>
+                            </ul>
+                        </div>
+
+                        <div class="tf-question" data-q-start="1" data-q-end="1">
+                            <div class="tf-question-line">
+                                <span class="tf-question-number">1</span>
+                                <span class="tf-question-text">The TF Nextstage stores planned to sell products to make life easier for older people.</span>
+                            </div>
+                            <div class="tf-options">
+                                <label class="tf-option"><input type="radio" name="q1" value="TRUE"> TRUE</label>
+                                <label class="tf-option"><input type="radio" name="q1" value="FALSE"> FALSE</label>
+                                <label class="tf-option"><input type="radio" name="q1" value="NOT GIVEN"> NOT GIVEN</label>
+                            </div>
+                        </div>
+
+                        <div class="tf-question" data-q-start="2" data-q-end="2">
+                            <div class="tf-question-line">
+                                <span class="tf-question-number">2</span>
+                                <span class="tf-question-text">TF's market research indicated that people liked the products.</span>
+                            </div>
+                            <div class="tf-options">
+                                <label class="tf-option"><input type="radio" name="q2" value="TRUE"> TRUE</label>
+                                <label class="tf-option"><input type="radio" name="q2" value="FALSE"> FALSE</label>
+                                <label class="tf-option"><input type="radio" name="q2" value="NOT GIVEN"> NOT GIVEN</label>
+                            </div>
+                        </div>
+
+                        <div class="tf-question" data-q-start="3" data-q-end="3">
+                            <div class="tf-question-line">
+                                <span class="tf-question-number">3</span>
+                                <span class="tf-question-text">It cost more than expected to remodel the TF stores.</span>
+                            </div>
+                            <div class="tf-options">
+                                <label class="tf-option"><input type="radio" name="q3" value="TRUE"> TRUE</label>
+                                <label class="tf-option"><input type="radio" name="q3" value="FALSE"> FALSE</label>
+                                <label class="tf-option"><input type="radio" name="q3" value="NOT GIVEN"> NOT GIVEN</label>
+                            </div>
+                        </div>
+
+                        <div class="tf-question" data-q-start="4" data-q-end="4">
+                            <div class="tf-question-line">
+                                <span class="tf-question-number">4</span>
+                                <span class="tf-question-text">The TF Nextstage coffee shops sold their own brand of food and drink.</span>
+                            </div>
+                            <div class="tf-options">
+                                <label class="tf-option"><input type="radio" name="q4" value="TRUE"> TRUE</label>
+                                <label class="tf-option"><input type="radio" name="q4" value="FALSE"> FALSE</label>
+                                <label class="tf-option"><input type="radio" name="q4" value="NOT GIVEN"> NOT GIVEN</label>
+                            </div>
+                        </div>
+
+                        <div class="tf-question" data-q-start="5" data-q-end="5">
+                            <div class="tf-question-line">
+                                <span class="tf-question-number">5</span>
+                                <span class="tf-question-text">TF Nextstage customers liked the atmosphere in the new stores.</span>
+                            </div>
+                            <div class="tf-options">
+                                <label class="tf-option"><input type="radio" name="q5" value="TRUE"> TRUE</label>
+                                <label class="tf-option"><input type="radio" name="q5" value="FALSE"> FALSE</label>
+                                <label class="tf-option"><input type="radio" name="q5" value="NOT GIVEN"> NOT GIVEN</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Q6-13: Notes Completion -->
+                    <div class="question" data-q-start="6" data-q-end="13">
+                        <div class="question-prompt">
+                            <p><strong>Questions 6–13</strong><br>
+                            Complete the notes below.<br>
+                            Choose <strong>NO MORE THAN TWO WORDS</strong> from the passage for each answer.<br>
+                            Write your answers in boxes 6–13 on your answer sheet.</p>
+                        </div>
+
+                        <div class="notes-section">
+                            <h5>Feedback from experts</h5>
+
+                            <h5>Donna Sturgess</h5>
+                            <p style="font-weight:bold;margin-bottom:6px;">Problems with customer research:</p>
+                            <ul>
+                                <li>– TF team limited their research to attitudes that occur at a
+                                    <input type="text" class="answer-input" id="q6" placeholder="6" size="12">
+                                    level in customers' minds</li>
+                                <li>– TF didn't consider customers' emotions</li>
+                            </ul>
+
+                            <p style="font-weight:bold;margin:12px 0 6px;">How my company dealt with a similar problem:</p>
+                            <ul>
+                                <li>– Product: Alli</li>
+                                <li>– Use: help people achieve
+                                    <input type="text" class="answer-input" id="q7" placeholder="7" size="12">
+                                </li>
+                                <li>– Marketing aim: help customers see the product in a positive way by:
+                                    <ul class="sub-list">
+                                        <li>– Giving the product a
+                                            <input type="text" class="answer-input" id="q8" placeholder="8" size="12">
+                                            that seems helpful and supportive</li>
+                                        <li>– Giving the product a reusable
+                                            <input type="text" class="answer-input" id="q9" placeholder="9" size="12">
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+
+                            <p style="font-weight:bold;margin:12px 0 6px;">Market research</p>
+                            <ul>
+                                <li>– Does not need to be complex</li>
+                                <li>– Good information can come from interviews or studying the
+                                    <input type="text" class="answer-input" id="q10" placeholder="10" size="12">
+                                    of consumers in the home</li>
+                            </ul>
+
+                            <h5 style="margin-top:20px;">Alex Lee</h5>
+                            <p style="font-weight:bold;margin-bottom:6px;">Problem:</p>
+                            <ul>
+                                <li>– Customers are attracted to the ideal not the reality, e.g. ads for surf gear</li>
+                            </ul>
+
+                            <p style="font-weight:bold;margin:12px 0 6px;">How my company dealt with a similar problem:</p>
+                            <ul>
+                                <li>– We organised
+                                    <input type="text" class="answer-input" id="q11" placeholder="11" size="14">
+                                    to find out what images customers associate with our products</li>
+                                <li>– We do not call our products helping tools in our marketing campaigns</li>
+                            </ul>
+
+                            <p style="font-weight:bold;margin:12px 0 6px;">Market research:</p>
+                            <ul>
+                                <li>– Can be basic, e.g. by doing
+                                    <input type="text" class="answer-input" id="q12" placeholder="12" size="12">
+                                </li>
+                                <li>– Company executives should follow their
+                                    <input type="text" class="answer-input" id="q13" placeholder="13" size="12">
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Nav Arrows -->
+<div class="nav-arrows">
+    <button class="nav-arrow" id="prevBtn" onclick="previousQuestion()">&#8249;</button>
+    <button class="nav-arrow" id="nextBtn" onclick="nextQuestion()">&#8250;</button>
+</div>
+
+<!-- Bottom Nav -->
+<nav class="nav-row" aria-label="Questions">
+    <div class="footer__questionWrapper___1tZ46" role="tablist">
+        <button role="tab" class="footer__questionNo___3WNct">
+            <span>
+                <span class="section-prefix">Part </span>
+                <span class="sectionNr">1</span>
+                <span class="attemptedCount" id="attempted-count">0 of 13</span>
+            </span>
+        </button>
+        <div class="footer__subquestionWrapper___9GgoP" id="subq-wrapper">
+            <button class="subQuestion scorable-item" onclick="goToQuestion(1)" id="sq1">1</button>
+            <button class="subQuestion scorable-item" onclick="goToQuestion(2)" id="sq2">2</button>
+            <button class="subQuestion scorable-item" onclick="goToQuestion(3)" id="sq3">3</button>
+            <button class="subQuestion scorable-item" onclick="goToQuestion(4)" id="sq4">4</button>
+            <button class="subQuestion scorable-item" onclick="goToQuestion(5)" id="sq5">5</button>
+            <button class="subQuestion scorable-item" onclick="goToQuestion(6)" id="sq6">6</button>
+            <button class="subQuestion scorable-item" onclick="goToQuestion(7)" id="sq7">7</button>
+            <button class="subQuestion scorable-item" onclick="goToQuestion(8)" id="sq8">8</button>
+            <button class="subQuestion scorable-item" onclick="goToQuestion(9)" id="sq9">9</button>
+            <button class="subQuestion scorable-item" onclick="goToQuestion(10)" id="sq10">10</button>
+            <button class="subQuestion scorable-item" onclick="goToQuestion(11)" id="sq11">11</button>
+            <button class="subQuestion scorable-item" onclick="goToQuestion(12)" id="sq12">12</button>
+            <button class="subQuestion scorable-item" onclick="goToQuestion(13)" id="sq13">13</button>
+        </div>
+    </div>
+    <button id="deliver-button" class="footer__deliverButton___3FM07">
+        <span>&#10003;</span>
+        <span>Check Answers</span>
+    </button>
+</nav>
+
+<!-- Context Menu -->
+<div id="contextMenu" class="context-menu">
+    <div id="menu-highlight" class="context-menu-item" onclick="highlightText()">Highlight</div>
+    <div id="menu-note" class="context-menu-item" onclick="addNote()">Note</div>
+    <div id="menu-clear" class="context-menu-item" onclick="clearHighlight()">Clear</div>
+    <div id="menu-clear-all" class="context-menu-item" onclick="clearAllHighlights()">Clear All</div>
+</div>
+
+<!-- Results Modal -->
+<div id="results-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+        <button class="modal-close-btn" onclick="closeResultsModal()">&times;</button>
+        <h2>Results</h2>
+        <div class="results-summary">
+            <p>Score: <span id="results-score"></span> / 13</p>
+            <p>IELTS Band: <span id="results-band"></span></p>
+        </div>
+        <div id="results-details" class="results-details-container"></div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    // ---- ANSWER KEY ----
+    const correctAnswers = {
+        '1': 'TRUE',
+        '2': 'TRUE',
+        '3': 'NOT GIVEN',
+        '4': 'NOT GIVEN',
+        '5': 'FALSE',
+        '6': 'surface',
+        '7': 'weight loss',
+        '8': 'name',
+        '9': 'container',
+        '10': 'behaviour',
+        '11': 'focus groups',
+        '12': 'simple surveys',
+        '13': 'instincts'
+    };
+
+    // Band score lookup (scaled from 13 questions)
+    function getBand(score) {
+        if (score >= 12) return '8.5 – 9.0';
+        if (score >= 11) return '8.0';
+        if (score >= 10) return '7.5';
+        if (score >= 9)  return '7.0';
+        if (score >= 8)  return '6.5';
+        if (score >= 7)  return '6.0';
+        if (score >= 6)  return '5.5';
+        if (score >= 5)  return '5.0';
+        if (score >= 4)  return '4.5';
+        return '4.0';
+    }
+
+    // ---- TIMER ----
+    let timeInSeconds = 20 * 60;
+    let timerInterval = null;
+    const timerDisplay = document.querySelector('.timer-display');
+    const timerToggleBtn = document.getElementById('timer-toggle-btn');
+    const timerResetBtn = document.getElementById('timer-reset-btn');
+    const playIcon = '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M8 5v14l11-7L8 5z"/></svg>';
+    const pauseIcon = '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+
+    function startTimer() {
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            timeInSeconds--;
+            const m = Math.floor(timeInSeconds / 60);
+            const s = timeInSeconds % 60;
+            timerDisplay.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+            if (timeInSeconds <= 0) {
+                clearInterval(timerInterval);
+                timerDisplay.textContent = "Time's up!";
+            }
+        }, 1000);
+        timerToggleBtn.innerHTML = pauseIcon;
+    }
+    function pauseTimer() {
+        clearInterval(timerInterval);
+        timerToggleBtn.innerHTML = playIcon;
+    }
+    timerToggleBtn.addEventListener('click', () => {
+        if (timerToggleBtn.innerHTML.includes('M6 19h4')) pauseTimer();
+        else startTimer();
+    });
+    timerResetBtn.addEventListener('click', () => {
+        pauseTimer();
+        timeInSeconds = 20 * 60;
+        timerDisplay.textContent = '20:00';
+        startTimer();
+    });
+    startTimer();
+
+    // ---- NAVIGATION ----
+    let currentQuestion = 1;
+    const totalQuestions = 13;
+
+    // Question→container mapping
+    const qMap = {
+        1: 1, 2: 1, 3: 1, 4: 1, 5: 1,
+        6: 6, 7: 6, 8: 6, 9: 6, 10: 6, 11: 6, 12: 6, 13: 6
+    };
+
+    window.goToQuestion = function(n) {
+        currentQuestion = n;
+        highlightActiveSubQ(n);
+        // Scroll question into view
+        const el = document.getElementById(`q${n}`) ||
+                   document.querySelector(`[name="q${n}"]`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        updateNavArrows();
+    };
+
+    window.previousQuestion = function() {
+        if (currentQuestion > 1) goToQuestion(currentQuestion - 1);
+    };
+    window.nextQuestion = function() {
+        if (currentQuestion < totalQuestions) goToQuestion(currentQuestion + 1);
+    };
+
+    function updateNavArrows() {
+        document.getElementById('prevBtn').disabled = currentQuestion <= 1;
+        document.getElementById('nextBtn').disabled = currentQuestion >= totalQuestions;
+    }
+
+    function highlightActiveSubQ(n) {
+        document.querySelectorAll('.subQuestion').forEach(b => b.classList.remove('active'));
+        const btn = document.getElementById(`sq${n}`);
+        if (btn) btn.classList.add('active');
+    }
+
+    // ---- ANSWERED INDICATOR ----
+    function isAnswered(n) {
+        if (n <= 5) {
+            return !!document.querySelector(`input[name="q${n}"]:checked`);
+        } else {
+            const el = document.getElementById(`q${n}`);
+            return el && el.value.trim().length > 0;
+        }
+    }
+
+    function updateAllIndicators() {
+        let answered = 0;
+        for (let i = 1; i <= totalQuestions; i++) {
+            const btn = document.getElementById(`sq${i}`);
+            if (!btn) continue;
+            if (isAnswered(i)) {
+                if (!btn.classList.contains('correct') && !btn.classList.contains('incorrect')) {
+                    btn.classList.add('answered');
+                }
+                answered++;
+            } else {
+                btn.classList.remove('answered');
+            }
+        }
+        document.getElementById('attempted-count').textContent = `${answered} of ${totalQuestions}`;
+    }
+
+    document.body.addEventListener('input', updateAllIndicators);
+    document.body.addEventListener('change', updateAllIndicators);
+
+    // ---- CHECK ANSWERS ----
+    document.getElementById('deliver-button').addEventListener('click', checkAnswers);
+
+    function normalise(str) {
+        return str.trim().toLowerCase().replace(/\s+/g, ' ');
+    }
+
+    function checkAnswers() {
+        clearInterval(timerInterval);
+        let score = 0;
+        const detailsContainer = document.getElementById('results-details');
+        detailsContainer.innerHTML = '';
+
+        // Clear previous markings
+        document.querySelectorAll('.tf-question').forEach(el => {
+            el.classList.remove('correct', 'incorrect');
+        });
+        document.querySelectorAll('.correct-answer-display').forEach(el => el.remove());
+        document.querySelectorAll('.answer-input').forEach(el => {
+            el.classList.remove('correct', 'incorrect');
+        });
+        document.querySelectorAll('.subQuestion').forEach(b => {
+            b.classList.remove('correct', 'incorrect', 'answered');
+        });
+
+        for (let i = 1; i <= totalQuestions; i++) {
+            const correct = correctAnswers[String(i)];
+            let userAnswer = '';
+            let isCorrect = false;
+
+            if (i <= 5) {
+                const checked = document.querySelector(`input[name="q${i}"]:checked`);
+                userAnswer = checked ? checked.value : '(no answer)';
+                isCorrect = userAnswer === correct;
+
+                // Mark tf-question container
+                const tfEl = document.querySelector(`.tf-question[data-q-start="${i}"]`);
+                if (tfEl) tfEl.classList.add(isCorrect ? 'correct' : 'incorrect');
+
+                // Show correct answer if wrong
+                if (!isCorrect) {
+                    const line = tfEl ? tfEl.querySelector('.tf-question-line') : null;
+                    if (line) {
+                        const span = document.createElement('span');
+                        span.className = 'correct-answer-display';
+                        span.textContent = `✓ ${correct}`;
+                        line.appendChild(span);
+                    }
+                }
+            } else {
+                const inputEl = document.getElementById(`q${i}`);
+                userAnswer = inputEl ? inputEl.value.trim() : '(no answer)';
+                // Accept flexible matching
+                const acceptables = correct.split('/').map(s => normalise(s));
+                isCorrect = acceptables.includes(normalise(userAnswer));
+
+                if (inputEl) {
+                    inputEl.classList.add(isCorrect ? 'correct' : 'incorrect');
+                    // Show correct answer next to input if wrong
+                    if (!isCorrect) {
+                        const existing = inputEl.nextElementSibling;
+                        if (!existing || !existing.classList.contains('correct-answer-display')) {
+                            const span = document.createElement('span');
+                            span.className = 'correct-answer-display';
+                            span.textContent = `✓ ${correct}`;
+                            inputEl.insertAdjacentElement('afterend', span);
+                        }
+                    }
+                }
+            }
+
+            if (isCorrect) score++;
+
+            // Mark sub-question button
+            const sqBtn = document.getElementById(`sq${i}`);
+            if (sqBtn) {
+                sqBtn.classList.remove('answered');
+                sqBtn.classList.add(isCorrect ? 'correct' : 'incorrect');
+            }
+
+            // Add to results detail
+            const row = document.createElement('div');
+            row.className = `result-row ${isCorrect ? '' : 'incorrect'}`;
+            row.innerHTML = `
+                <span class="q-num">${i}</span>
+                <span class="user-ans">${userAnswer}</span>
+                <span class="correct-ans">${correct}</span>
+            `;
+            detailsContainer.appendChild(row);
+        }
+
+        document.getElementById('results-score').textContent = score;
+        document.getElementById('results-band').textContent = getBand(score);
+        document.getElementById('results-modal').classList.remove('hidden');
+    }
+
+    window.closeResultsModal = function() {
+        document.getElementById('results-modal').classList.add('hidden');
+    };
+
+    // ---- RESIZER ----
+    const resizer = document.getElementById('resizer');
+    const passagePanel = document.getElementById('passage-panel');
+    resizer.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        const startX = e.clientX;
+        const startW = passagePanel.offsetWidth;
+        const doDrag = (e) => {
+            const nw = startW + e.clientX - startX;
+            if (nw > 200 && (document.body.clientWidth - nw - resizer.offsetWidth) > 200) {
+                passagePanel.style.flex = `0 0 ${nw}px`;
+            }
+        };
+        const stopDrag = () => {
+            window.removeEventListener('mousemove', doDrag);
+            window.removeEventListener('mouseup', stopDrag);
+        };
+        window.addEventListener('mousemove', doDrag);
+        window.addEventListener('mouseup', stopDrag);
+    });
+
+    // ---- CONTEXT MENU (Highlighting) ----
+    const contextMenu = document.getElementById('contextMenu');
+    let selectedRange = null;
+    const panels = [passagePanel, document.getElementById('questions-panel')];
+
+    document.addEventListener('selectionchange', () => {
+        const sel = window.getSelection();
+        if (sel && !sel.isCollapsed && sel.toString().trim().length > 0) {
+            const range = sel.getRangeAt(0);
+            if (panels.some(p => p.contains(range.commonAncestorContainer))) {
+                selectedRange = range;
+            }
+        }
+    });
+
+    panels.forEach(panel => {
+        panel.addEventListener('contextmenu', (e) => {
+            const target = e.target;
+            const onHighlight = target.closest('.highlight, .comment-highlight');
+            const selActive = selectedRange && selectedRange.toString().trim().length > 0;
+            let show = false;
+            if (onHighlight) {
+                document.getElementById('menu-highlight').style.display = 'none';
+                document.getElementById('menu-note').style.display = 'none';
+                document.getElementById('menu-clear').style.display = 'block';
+                document.getElementById('menu-clear-all').style.display = 'block';
+                contextMenu.targetEl = onHighlight;
+                show = true;
+            } else if (selActive) {
+                document.getElementById('menu-highlight').style.display = 'flex';
+                document.getElementById('menu-note').style.display = 'flex';
+                document.getElementById('menu-clear').style.display = 'none';
+                document.getElementById('menu-clear-all').style.display = 'block';
+                show = true;
+            }
+            if (show) {
+                e.preventDefault();
+                let left = e.pageX, top = e.pageY - contextMenu.offsetHeight - 5;
+                if (left + 150 > window.innerWidth) left = window.innerWidth - 155;
+                contextMenu.style.left = `${left}px`;
+                contextMenu.style.top = `${top}px`;
+                contextMenu.style.display = 'block';
+            }
+        });
+    });
+    document.addEventListener('click', (e) => {
+        if (contextMenu.style.display === 'block' && !contextMenu.contains(e.target)) {
+            contextMenu.style.display = 'none';
+            selectedRange = null;
+        }
+    });
+
+    function unwrap(el) {
+        const p = el.parentNode;
+        while (el.firstChild) p.insertBefore(el.firstChild, el);
+        p.removeChild(el);
+        p.normalize();
+    }
+
+    window.highlightText = () => {
+        if (selectedRange && !selectedRange.collapsed) {
+            const span = document.createElement('span');
+            span.className = 'highlight';
+            span.appendChild(selectedRange.extractContents());
+            selectedRange.insertNode(span);
+        }
+        contextMenu.style.display = 'none';
+        window.getSelection().removeAllRanges();
+    };
+    window.addNote = () => {
+        const note = prompt('Enter your note:');
+        if (note && selectedRange && !selectedRange.collapsed) {
+            const span = document.createElement('span');
+            span.className = 'comment-highlight';
+            const tip = document.createElement('span');
+            tip.className = 'comment-tooltip';
+            tip.textContent = note;
+            span.appendChild(selectedRange.extractContents());
+            span.appendChild(tip);
+            selectedRange.insertNode(span);
+        }
+        contextMenu.style.display = 'none';
+        window.getSelection().removeAllRanges();
+    };
+    window.clearHighlight = () => {
+        if (contextMenu.targetEl) unwrap(contextMenu.targetEl);
+        contextMenu.style.display = 'none';
+        window.getSelection().removeAllRanges();
+    };
+    window.clearAllHighlights = () => {
+        document.querySelectorAll('.highlight, .comment-highlight').forEach(unwrap);
+        contextMenu.style.display = 'none';
+        window.getSelection().removeAllRanges();
+    };
+
+    // ---- INIT ----
+    highlightActiveSubQ(1);
+    updateNavArrows();
+    // Show subquestions by default
+    document.getElementById('subq-wrapper').style.display = 'flex';
+});
+</script>
+</body>
+</html>
