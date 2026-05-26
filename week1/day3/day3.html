@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEEK 1 - DAY 3 (Education)</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .splash-screen {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+        .splash-screen.hidden { opacity: 0; pointer-events: none; }
+        .splash-title { font-size: 4rem; font-weight: bold; color: white; text-align: center; margin-bottom: 2rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        .splash-subtitle { font-size: 2.5rem; color: #f0f0f0; margin-bottom: 3rem; }
+        .splash-button { padding: 20px 60px; font-size: 1.8rem; background: white; color: #667eea; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; box-shadow: 0 8px 20px rgba(0,0,0,0.2); transition: transform 0.2s ease; }
+        .splash-button:hover { transform: translateY(-3px); }
+
+        .container { max-width: 1000px; margin: 0 auto; padding: 20px; display: none; }
+        .container.active { display: block; }
+
+        .header { background: white; padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .header h1 { color: #667eea; font-size: 2rem; margin-bottom: 10px; }
+        .progress-bar { width: 100%; height: 30px; background: #e0e0e0; border-radius: 15px; overflow: hidden; margin-top: 15px; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); transition: width 0.5s ease; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
+
+        .vocab-section { background: white; padding: 25px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .vocab-toggle { width: 100%; padding: 15px 25px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 10px; font-size: 1.3rem; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .vocab-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+        .vocab-content.active { max-height: 3000px; padding-top: 20px; }
+        .vocab-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 15px; }
+        .vocab-item { padding: 12px; background: #f8f9fa; border-left: 4px solid #667eea; border-radius: 5px; }
+        .vocab-word { font-weight: bold; color: #667eea; font-size: 1.1rem; }
+        .vocab-definition { color: #555; margin-top: 5px; }
+
+        .task-card { background: white; padding: 30px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: none; }
+        .task-card.active { display: block; animation: slideIn 0.5s ease; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+        .task-header { border-bottom: 3px solid #667eea; padding-bottom: 15px; margin-bottom: 25px; }
+        .task-title { color: #667eea; font-size: 1.8rem; font-weight: bold; }
+        .task-description { color: #666; margin-top: 10px; font-size: 1.1rem; }
+
+        .btn { padding: 12px 30px; font-size: 1.1rem; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.2s ease; }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102,126,234,0.4); }
+        .btn-success { background: #28a745; color: white; }
+        .btn-success:hover { background: #218838; }
+        .task-buttons { margin-top: 30px; display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
+
+        .answer-section { background: #e8f5e9; padding: 20px; border-radius: 10px; margin-top: 20px; border-left: 5px solid #28a745; display: none; }
+        .answer-title { color: #28a745; font-size: 1.3rem; font-weight: bold; margin-bottom: 15px; }
+
+        input[type="text"] { padding: 8px 12px; border: 2px solid #ddd; border-radius: 5px; font-size: 1rem; transition: border-color 0.2s; }
+        input[type="text"]:focus { outline: none; border-color: #667eea; }
+        input[type="text"].correct { border-color: #28a745; background: #d4edda; }
+        input[type="text"].incorrect { border-color: #dc3545; background: #f8d7da; }
+
+        .answer-feedback { display: inline-block; margin-left: 8px; font-weight: bold; }
+        .answer-feedback.correct { color: #28a745; }
+        .answer-feedback.incorrect { color: #dc3545; }
+
+        /* Task 1 - Paragraph matching */
+        .passage-box { background: #f8f9fa; padding: 25px; border-radius: 10px; margin: 20px 0; border-left: 5px solid #667eea; }
+        .passage-box h3 { color: #667eea; margin-bottom: 15px; }
+        .paragraph-block { margin-bottom: 20px; }
+        .paragraph-label { font-weight: bold; color: #764ba2; font-size: 1.1rem; margin-bottom: 8px; }
+        .paragraph-text { line-height: 1.8; color: #333; }
+
+        .matching-question { background: #f0f4ff; padding: 15px; border-radius: 8px; margin: 12px 0; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .matching-question .q-num { font-weight: bold; color: #667eea; min-width: 25px; }
+        .matching-question .q-text { flex: 1; line-height: 1.6; }
+        .matching-question select { padding: 8px 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 1rem; cursor: pointer; }
+        .matching-question select.correct { border-color: #28a745; background: #d4edda; }
+        .matching-question select.incorrect { border-color: #dc3545; background: #f8d7da; }
+
+        /* Task 2 - PDF links */
+        .pdf-link-card { display: flex; align-items: center; gap: 20px; padding: 20px; background: #f8f9fa; border-radius: 10px; margin: 15px 0; border: 2px solid #e0e0e0; text-decoration: none; transition: all 0.2s; }
+        .pdf-link-card:hover { border-color: #667eea; background: #f0f4ff; transform: translateY(-2px); }
+        .pdf-icon { font-size: 2.5rem; }
+        .pdf-info h3 { color: #333; margin-bottom: 5px; }
+        .pdf-info p { color: #666; font-size: 0.9rem; }
+
+        /* Task 3 - HTML reading link */
+        .reading-link-card { display: block; text-decoration: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 15px; text-align: center; transition: transform 0.2s, box-shadow 0.2s; margin: 20px 0; }
+        .reading-link-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(102,126,234,0.4); }
+        .reading-link-card .link-icon { font-size: 3rem; margin-bottom: 10px; }
+        .reading-link-card h3 { font-size: 1.5rem; margin-bottom: 5px; }
+        .reading-link-card p { opacity: 0.9; }
+
+        /* Task 4 - Listening */
+        .audio-player { width: 100%; margin: 20px 0; border-radius: 10px; }
+        .mcq-question { background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0; }
+        .mcq-question .q-text { font-weight: bold; color: #333; margin-bottom: 12px; line-height: 1.5; }
+        .mcq-option { display: flex; align-items: center; gap: 10px; margin: 8px 0; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
+        .mcq-option:hover { background: #e8f4fd; }
+        .mcq-option input[type="radio"] { cursor: pointer; width: 16px; height: 16px; }
+        .mcq-option label { cursor: pointer; font-size: 1rem; }
+        .mcq-option.correct-opt { background: #d4edda; }
+        .mcq-option.incorrect-opt { background: #f8d7da; }
+
+        /* Task 5 - Video */
+        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 10px; margin: 20px 0; }
+        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+        .gap-sentence { line-height: 2.2; margin: 12px 0; font-size: 1.05rem; }
+        .gap-sentence input { width: 160px; margin: 0 6px; }
+
+        .word-box { background: #fff3cd; padding: 15px 20px; border-radius: 8px; border-left: 5px solid #ffc107; margin: 15px 0; font-size: 1rem; line-height: 1.8; }
+
+        .vocab-match-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        .vocab-match-table th { background: #667eea; color: white; padding: 12px 15px; text-align: left; }
+        .vocab-match-table td { padding: 12px 15px; border-bottom: 1px solid #dee2e6; }
+        .vocab-match-table tbody tr:hover { background: #f8f9fa; }
+        .vocab-match-table select { padding: 6px 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 0.95rem; cursor: pointer; }
+        .vocab-match-table select.correct { border-color: #28a745; background: #d4edda; }
+        .vocab-match-table select.incorrect { border-color: #dc3545; background: #f8d7da; }
+
+        /* Task 6 - Dictation */
+        .transcript-box { background: #f8f9fa; padding: 25px; border-radius: 10px; margin: 20px 0; line-height: 2.5; font-size: 1.05rem; }
+        .transcript-box input { width: 130px; margin: 0 4px; }
+
+        /* Task 7 - HTML listening */
+        /* Break */
+        .break-screen { text-align: center; padding: 60px 30px; }
+        .break-emoji { font-size: 5rem; margin-bottom: 20px; }
+        .break-title { font-size: 2.5rem; color: #667eea; margin-bottom: 15px; }
+        .break-text { font-size: 1.3rem; color: #666; margin-bottom: 30px; }
+
+        /* Completion */
+        .completion { text-align: center; padding: 40px; }
+        .completion-emoji { font-size: 5rem; margin-bottom: 20px; }
+        .completion-title { font-size: 2.5rem; color: #28a745; margin-bottom: 15px; }
+        .completion-text { font-size: 1.2rem; color: #666; }
+
+        .back-btn { position: fixed; top: 20px; left: 20px; padding: 12px 25px; background: white; color: #667eea; border: 2px solid #667eea; border-radius: 8px; cursor: pointer; font-weight: bold; text-decoration: none; display: inline-block; transition: all 0.2s; z-index: 1000; }
+        .back-btn:hover { background: #667eea; color: white; }
+
+        .section-label { font-size: 1.1rem; font-weight: bold; color: #764ba2; margin: 25px 0 10px; padding-bottom: 5px; border-bottom: 2px solid #764ba2; }
+        .info-box { background: #fff3cd; padding: 15px 20px; border-radius: 8px; border-left: 5px solid #ffc107; margin: 15px 0; color: #856404; }
+        .timer-display { font-size: 1.3rem; color: #667eea; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <a href="/student-dashboard.html" class="back-btn">← Dashboard</a>
+
+    <!-- Splash -->
+    <div class="splash-screen" id="splashScreen">
+        <div class="splash-title">WEEK 1</div>
+        <div class="splash-subtitle">(Education) DAY Three</div>
+        <button class="splash-button" onclick="startLearning()">OK</button>
+    </div>
+
+    <!-- Main -->
+    <div class="container" id="mainContainer">
+        <div class="header">
+            <h1>📚 WEEK 1 - DAY 3: Education</h1>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressBar" style="width: 0%;">
+                    <span id="progressText">0 / 7 Tasks</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vocabulary -->
+        <div class="vocab-section">
+            <button class="vocab-toggle" onclick="toggleVocab()">
+                <span>📖 Daily Vocabulary (50 Words)</span>
+                <span id="vocabArrow">▼</span>
+            </button>
+            <div class="vocab-content" id="vocabContent">
+                <div class="vocab-grid">
+                    <div class="vocab-item"><div class="vocab-word">1. motivation (n)</div><div class="vocab-definition">the reason or desire that causes someone to act</div></div>
+                    <div class="vocab-item"><div class="vocab-word">2. retain (v)</div><div class="vocab-definition">to keep or continue to have something</div></div>
+                    <div class="vocab-item"><div class="vocab-word">3. encode (v)</div><div class="vocab-definition">to convert information into a form that can be stored</div></div>
+                    <div class="vocab-item"><div class="vocab-word">4. recall (v)</div><div class="vocab-definition">to bring a memory back into the mind</div></div>
+                    <div class="vocab-item"><div class="vocab-word">5. retrieve (v)</div><div class="vocab-definition">to get or bring back information from memory</div></div>
+                    <div class="vocab-item"><div class="vocab-word">6. contextual (adj)</div><div class="vocab-definition">relating to the situation in which something exists</div></div>
+                    <div class="vocab-item"><div class="vocab-word">7. deteriorate (v)</div><div class="vocab-definition">to become progressively worse</div></div>
+                    <div class="vocab-item"><div class="vocab-word">8. intuitive (adj)</div><div class="vocab-definition">based on feelings rather than conscious reasoning</div></div>
+                    <div class="vocab-item"><div class="vocab-word">9. kinaesthetic (adj)</div><div class="vocab-definition">relating to learning through physical movement and doing</div></div>
+                    <div class="vocab-item"><div class="vocab-word">10. auditory (adj)</div><div class="vocab-definition">relating to the sense of hearing</div></div>
+                    <div class="vocab-item"><div class="vocab-word">11. subconscious (adj)</div><div class="vocab-definition">existing in the part of the mind we are not fully aware of</div></div>
+                    <div class="vocab-item"><div class="vocab-word">12. innovation (n)</div><div class="vocab-definition">a new idea, method, or product</div></div>
+                    <div class="vocab-item"><div class="vocab-word">13. remodel (v)</div><div class="vocab-definition">to change the structure or appearance of something</div></div>
+                    <div class="vocab-item"><div class="vocab-word">14. infirmity (n)</div><div class="vocab-definition">physical or mental weakness, especially due to old age</div></div>
+                    <div class="vocab-item"><div class="vocab-word">15. branding (n)</div><div class="vocab-definition">the promotion of a product using a distinctive design or name</div></div>
+                    <div class="vocab-item"><div class="vocab-word">16. consumer (n)</div><div class="vocab-definition">a person who buys goods or services</div></div>
+                    <div class="vocab-item"><div class="vocab-word">17. sophisticated (adj)</div><div class="vocab-definition">complex, developed, and refined</div></div>
+                    <div class="vocab-item"><div class="vocab-word">18. ethnographical (adj)</div><div class="vocab-definition">relating to the study of human cultures and behaviour</div></div>
+                    <div class="vocab-item"><div class="vocab-word">19. dexterity (n)</div><div class="vocab-definition">skill in performing tasks, especially with the hands</div></div>
+                    <div class="vocab-item"><div class="vocab-word">20. attentional (adj)</div><div class="vocab-definition">relating to the ability to focus the mind</div></div>
+                    <div class="vocab-item"><div class="vocab-word">21. interoception (n)</div><div class="vocab-definition">awareness of internal body sensations</div></div>
+                    <div class="vocab-item"><div class="vocab-word">22. panoramic (adj)</div><div class="vocab-definition">wide and all-encompassing view or awareness</div></div>
+                    <div class="vocab-item"><div class="vocab-word">23. circuitry (n)</div><div class="vocab-definition">the system of mental or neural pathways in the brain</div></div>
+                    <div class="vocab-item"><div class="vocab-word">24. distractibility (n)</div><div class="vocab-definition">the tendency to lose focus easily</div></div>
+                    <div class="vocab-item"><div class="vocab-word">25. cognitive (adj)</div><div class="vocab-definition">relating to mental processes of thinking and understanding</div></div>
+                    <div class="vocab-item"><div class="vocab-word">26. nucleus accumbens (n)</div><div class="vocab-definition">a brain region involved in reward and motivation</div></div>
+                    <div class="vocab-item"><div class="vocab-word">27. refine (v)</div><div class="vocab-definition">to improve something by making small changes</div></div>
+                    <div class="vocab-item"><div class="vocab-word">28. predict (v)</div><div class="vocab-definition">to say what will happen in the future based on evidence</div></div>
+                    <div class="vocab-item"><div class="vocab-word">29. volume (n)</div><div class="vocab-definition">the amount of space that a substance or object occupies</div></div>
+                    <div class="vocab-item"><div class="vocab-word">30. multitasking (n)</div><div class="vocab-definition">doing several things at the same time</div></div>
+                    <div class="vocab-item"><div class="vocab-word">31. literacy (n)</div><div class="vocab-definition">the ability to read and write</div></div>
+                    <div class="vocab-item"><div class="vocab-word">32. visual (adj)</div><div class="vocab-definition">relating to seeing or sight</div></div>
+                    <div class="vocab-item"><div class="vocab-word">33. reward (n)</div><div class="vocab-definition">something given in recognition of effort or achievement</div></div>
+                    <div class="vocab-item"><div class="vocab-word">34. feedback (n)</div><div class="vocab-definition">information about reactions to a performance</div></div>
+                    <div class="vocab-item"><div class="vocab-word">35. practical (adj)</div><div class="vocab-definition">relating to real situations rather than theory</div></div>
+                    <div class="vocab-item"><div class="vocab-word">36. theoretical (adj)</div><div class="vocab-definition">concerned with ideas and principles, not practice</div></div>
+                    <div class="vocab-item"><div class="vocab-word">37. meditation (n)</div><div class="vocab-definition">the practice of focusing the mind for relaxation or awareness</div></div>
+                    <div class="vocab-item"><div class="vocab-word">38. awareness (n)</div><div class="vocab-definition">knowledge or perception of a situation or fact</div></div>
+                    <div class="vocab-item"><div class="vocab-word">39. dilate (v)</div><div class="vocab-definition">to become wider or larger</div></div>
+                    <div class="vocab-item"><div class="vocab-word">40. offset (v)</div><div class="vocab-definition">to reduce or balance the effect of something</div></div>
+                    <div class="vocab-item"><div class="vocab-word">41. dementia (n)</div><div class="vocab-definition">a condition causing memory loss and mental decline</div></div>
+                    <div class="vocab-item"><div class="vocab-word">42. Alzheimer's (n)</div><div class="vocab-definition">a brain disease causing progressive memory loss</div></div>
+                    <div class="vocab-item"><div class="vocab-word">43. aspect (n)</div><div class="vocab-definition">a particular part or feature of something</div></div>
+                    <div class="vocab-item"><div class="vocab-word">44. representation (n)</div><div class="vocab-definition">the way something is shown or described</div></div>
+                    <div class="vocab-item"><div class="vocab-word">45. spinach (n)</div><div class="vocab-definition">a dark green leafy vegetable rich in nutrients</div></div>
+                    <div class="vocab-item"><div class="vocab-word">46. B vitamins (n)</div><div class="vocab-definition">a group of nutrients that support brain and body health</div></div>
+                    <div class="vocab-item"><div class="vocab-word">47. instinct (n)</div><div class="vocab-definition">a natural ability or feeling, not based on reasoning</div></div>
+                    <div class="vocab-item"><div class="vocab-word">48. executive (n)</div><div class="vocab-definition">a senior manager in an organisation</div></div>
+                    <div class="vocab-item"><div class="vocab-word">49. ageing (n)</div><div class="vocab-definition">the process of growing older</div></div>
+                    <div class="vocab-item"><div class="vocab-word">50. strategy (n)</div><div class="vocab-definition">a plan designed to achieve a long-term goal</div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===================== TASK 1 ===================== -->
+        <div class="task-card active" id="task1">
+            <div class="task-header">
+                <div class="task-title">📝 Task 1: Mini Reading — Paragraph Matching</div>
+                <div class="task-description">Read the passage and match each idea (1–5) to the correct paragraph (A–D).</div>
+            </div>
+
+            <div class="passage-box">
+                <div class="paragraph-block">
+                    <div class="paragraph-label">Paragraph A</div>
+                    <div class="paragraph-text">It is possible to predict your performance on a video game simply by measuring the volume of specific structures in your brain, a multi-institutional team of researchers announced this week. The study, headed by Kirk Erickson, a professor of psychology, adds to the evidence that specific parts of the brain profoundly influence a person's ability to refine his or her motor skills, learn new procedures, develop useful strategies and adapt to a quickly changing environment.</div>
+                </div>
+                <div class="paragraph-block">
+                    <div class="paragraph-label">Paragraph B</div>
+                    <div class="paragraph-text">Participants in the study were taught to play Space Fortress, a video game developed at the University of Illinois. Half of the participants were asked to focus on maximising their overall score in the game while also paying attention to the various components of the game. The other participants had to periodically shift priorities, improving their skills in one area for a period of time while also maximising their success at the other tasks. The latter approach, called "variable priority training", encourages the kind of multitasking that is commonly required in daily life.</div>
+                </div>
+                <div class="paragraph-block">
+                    <div class="paragraph-label">Paragraph C</div>
+                    <div class="paragraph-text">The researchers found that players who had a larger nucleus accumbens (an area of the brain) did better than their counterparts in the early stages of the training period. This makes sense, Erickson said, because the nucleus accumbens is part of the brain's reward centre, and a person's motivation for excelling at a video game includes the pleasure that results from achieving a specific goal. This sense of achievement and the emotional reward that accompanies it is likely to be highest in the earliest stages of learning, he said.</div>
+                </div>
+                <div class="paragraph-block">
+                    <div class="paragraph-label">Paragraph D</div>
+                    <div class="paragraph-text">Players with a larger caudate nucleus and putamen (two other areas of the brain), learned more quickly and learned more over the training period. "This study tells us a lot about how the brain works when it is trying to learn a complex task," Erickson said at the conclusion of the research, which was conducted in Illinois. Such information might be useful in education or in treating disability or dementia.</div>
+                </div>
+            </div>
+
+            <div class="section-label">Match each idea to a paragraph:</div>
+
+            <div class="matching-question">
+                <span class="q-num">1.</span>
+                <span class="q-text">The people who took part in the study learnt to play a new video game.</span>
+                <select id="t1q1">
+                    <option value="">Choose...</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                </select>
+                <span class="answer-feedback" id="fb1_1"></span>
+            </div>
+
+            <div class="matching-question">
+                <span class="q-num">2.</span>
+                <span class="q-text">People have a greater feeling of having accomplished something at the beginning of the learning process.</span>
+                <select id="t1q2">
+                    <option value="">Choose...</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                </select>
+                <span class="answer-feedback" id="fb1_2"></span>
+            </div>
+
+            <div class="matching-question">
+                <span class="q-num">3.</span>
+                <span class="q-text">Scientists have discovered that by calculating the volume of areas of the brain they can forecast how well you will carry out a set task.</span>
+                <select id="t1q3">
+                    <option value="">Choose...</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                </select>
+                <span class="answer-feedback" id="fb1_3"></span>
+            </div>
+
+            <div class="matching-question">
+                <span class="q-num">4.</span>
+                <span class="q-text">The study was carried out in Illinois.</span>
+                <select id="t1q4">
+                    <option value="">Choose...</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                </select>
+                <span class="answer-feedback" id="fb1_4"></span>
+            </div>
+
+            <div class="matching-question">
+                <span class="q-num">5.</span>
+                <span class="q-text">There is growing proof that certain areas of the brain strongly affect our ability to acquire new skills.</span>
+                <select id="t1q5">
+                    <option value="">Choose...</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                </select>
+                <span class="answer-feedback" id="fb1_5"></span>
+            </div>
+
+            <div class="task-buttons">
+                <button class="btn btn-success" id="checkBtn1" onclick="checkTask1()">Done</button>
+            </div>
+
+            <div id="showAnswersDiv1" style="display:none; margin-top:20px; text-align:center;">
+                <button class="btn btn-primary" onclick="toggleAnswers1()" id="answersToggle1Btn">▼ Show Answers</button>
+            </div>
+            <div class="answer-section" id="answers1" style="display:none;">
+                <div class="answer-title">✅ Answer Key</div>
+                <p><strong>1.</strong> B &nbsp;&nbsp; <strong>2.</strong> C &nbsp;&nbsp; <strong>3.</strong> A &nbsp;&nbsp; <strong>4.</strong> D &nbsp;&nbsp; <strong>5.</strong> A</p>
+            </div>
+
+            <div class="task-buttons">
+                <button class="btn btn-primary" id="nextBtn1" onclick="nextTask('task1')" disabled style="opacity:0.5;cursor:not-allowed;">Next Task →</button>
+            </div>
+        </div>
+
+        <!-- ===================== TASK 2 ===================== -->
+        <div class="task-card" id="task2">
+            <div class="task-header">
+                <div class="task-title">📄 Task 2: Article Reading</div>
+                <div class="task-description">Open the vocabulary list and article, then complete the worksheet.</div>
+            </div>
+
+            <a href="pictures_literacy_vocab.pdf" target="_blank" class="pdf-link-card">
+                <div class="pdf-icon">📋</div>
+                <div class="pdf-info">
+                    <h3>Vocabulary List</h3>
+                    <p>Open and study the key vocabulary before reading</p>
+                </div>
+                <span style="margin-left:auto; color:#667eea; font-weight:bold;">Open PDF →</span>
+            </a>
+
+            <a href="pictures_literacy_article.pdf" target="_blank" class="pdf-link-card">
+                <div class="pdf-icon">📰</div>
+                <div class="pdf-info">
+                    <h3>Reading Article</h3>
+                    <p>Read the full article carefully</p>
+                </div>
+                <span style="margin-left:auto; color:#667eea; font-weight:bold;">Open PDF →</span>
+            </a>
+
+            <div class="task-buttons">
+                <button class="btn btn-primary" onclick="nextTask('task2')">Done — Next Task →</button>
+            </div>
+        </div>
+
+        <!-- ===================== TASK 3 ===================== -->
+        <div class="task-card" id="task3">
+            <div class="task-header">
+                <div class="task-title">📖 Task 3: IELTS Reading — Why Good Ideas Fail</div>
+                <div class="task-description">Open the reading test in a new tab. Complete all 13 questions, then come back.</div>
+                <div style="margin-top:15px; background:#fff3cd; padding:12px 18px; border-radius:8px; border-left:4px solid #ffc107;">
+                    ⏱️ Recommended time: <strong>20 minutes</strong>
+                </div>
+            </div>
+
+            <a href="Z_CDI___Why_good_ideas_fail_.html" target="_blank" class="reading-link-card">
+                <div class="link-icon">📖</div>
+                <h3>Open Reading Test</h3>
+                <p>Why Good Ideas Fail — 13 Questions (T/F/NG + Note Completion)</p>
+            </a>
+
+            <div class="task-buttons">
+                <button class="btn btn-primary" onclick="nextTask('task3')">Done — Next Task →</button>
+            </div>
+        </div>
+
+        <!-- ===================== BREAK ===================== -->
+        <div class="task-card" id="break">
+            <div class="break-screen">
+                <div class="break-emoji">☕</div>
+                <div class="break-title">Time for a Break!</div>
+                <div class="break-text">Great work on the first three tasks! Take a few minutes to rest before continuing.</div>
+                <button class="btn btn-primary" onclick="nextTask('break')" style="font-size:1.3rem; padding:15px 40px;">Continue →</button>
+            </div>
+        </div>
+
+        <!-- ===================== TASK 4 ===================== -->
+        <div class="task-card" id="task4">
+            <div class="task-header">
+                <div class="task-title">🎧 Task 4: Listening — What Keeps You Motivated?</div>
+                <div class="task-description">Listen to two people talking about studying. Which ideas are they discussing?</div>
+            </div>
+
+            <audio controls class="audio-player">
+                <source src="Vocabulary for IELTS Advanced 10.mp3" type="audio/mpeg">
+                Your browser does not support the audio element.
+            </audio>
+
+            <div class="info-box">
+                <strong>Task:</strong> Listen to two speakers. Each speaker mentions ONE of the ideas below about what helps keep you motivated in your studies.
+            </div>
+
+            <div class="section-label">Options:</div>
+            <div style="background:#f8f9fa; padding:20px; border-radius:10px; margin:15px 0;">
+                <p style="margin:10px 0;"><strong>a</strong> — having a group of hardworking friends you can study with</p>
+                <p style="margin:10px 0;"><strong>b</strong> — being able to study when and where you choose</p>
+                <p style="margin:10px 0;"><strong>c</strong> — receiving a reward for your efforts</p>
+                <p style="margin:10px 0;"><strong>d</strong> — getting positive feedback from your teachers or tutors</p>
+                <p style="margin:10px 0;"><strong>e</strong> — taking a course that offers practical work rather than simply theoretical content</p>
+            </div>
+
+            <div class="section-label">Your Answers:</div>
+
+            <div class="mcq-question">
+                <div class="q-text">🎙️ Speaker 1 is talking about option:</div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="radio" name="t4s1" value="a"> A</label>
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="radio" name="t4s1" value="b"> B</label>
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="radio" name="t4s1" value="c"> C</label>
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="radio" name="t4s1" value="d"> D</label>
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="radio" name="t4s1" value="e"> E</label>
+                </div>
+                <span class="answer-feedback" id="fb4_1"></span>
+            </div>
+
+            <div class="mcq-question">
+                <div class="q-text">🎙️ Speaker 2 is talking about option:</div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="radio" name="t4s2" value="a"> A</label>
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="radio" name="t4s2" value="b"> B</label>
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="radio" name="t4s2" value="c"> C</label>
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="radio" name="t4s2" value="d"> D</label>
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="radio" name="t4s2" value="e"> E</label>
+                </div>
+                <span class="answer-feedback" id="fb4_2"></span>
+            </div>
+
+            <div class="task-buttons">
+                <button class="btn btn-success" onclick="checkTask4()">Done</button>
+            </div>
+            <div id="showAnswersDiv4" style="display:none; margin-top:20px; text-align:center;">
+                <button class="btn btn-primary" onclick="toggleAnswers4()" id="answersToggle4Btn">▼ Show Answers</button>
+            </div>
+            <div class="answer-section" id="answers4" style="display:none;">
+                <div class="answer-title">✅ Answer Key</div>
+                <p><strong>Speaker 1:</strong> C — receiving a reward for your efforts</p>
+                <p><strong>Speaker 2:</strong> A — having a group of hardworking friends you can study with</p>
+            </div>
+            <div class="task-buttons">
+                <button class="btn btn-primary" id="nextBtn4" onclick="nextTask('task4')" disabled style="opacity:0.5;cursor:not-allowed;">Next Task →</button>
+            </div>
+        </div>
+
+        <!-- ===================== TASK 5 ===================== -->
+        <div class="task-card" id="task5">
+            <div class="task-header">
+                <div class="task-title">🎥 Task 5: Video — Focus, ADHD & Attentional Blinks</div>
+                <div class="task-description">Watch the video and complete all three parts below.</div>
+            </div>
+
+            <div class="video-container">
+                <iframe src="https://www.youtube.com/embed/fH7N9YRxMYc" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+            <div style="text-align:center; margin-bottom:20px;">
+                <a href="https://www.youtube.com/watch?v=fH7N9YRxMYc" target="_blank" class="btn btn-primary" style="text-decoration:none; display:inline-block;">▶ Watch on YouTube</a>
+            </div>
+
+            <!-- Part 1: MCQ -->
+            <div class="section-label">Part 1 — Multiple Choice Questions</div>
+
+            <div class="mcq-question">
+                <div class="q-text">1. What does the speaker claim can improve focus in a long-lasting way?</div>
+                <div class="mcq-option"><input type="radio" name="t5q1" value="A" id="t5q1a"><label for="t5q1a">A. Drinking coffee</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q1" value="B" id="t5q1b"><label for="t5q1b">B. A 17-minute practice of interoception</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q1" value="C" id="t5q1c"><label for="t5q1c">C. Playing brain-training games</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q1" value="D" id="t5q1d"><label for="t5q1d">D. Sleeping more</label></div>
+                <span class="answer-feedback" id="fb5_1"></span>
+            </div>
+
+            <div class="mcq-question">
+                <div class="q-text">2. According to the speaker, people with ADHD may:</div>
+                <div class="mcq-option"><input type="radio" name="t5q2" value="A" id="t5q2a"><label for="t5q2a">A. be unable to focus on anything</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q2" value="B" id="t5q2b"><label for="t5q2b">B. focus too little on all tasks</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q2" value="C" id="t5q2c"><label for="t5q2c">C. experience more attentional blinks</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q2" value="D" id="t5q2d"><label for="t5q2d">D. have better working memory</label></div>
+                <span class="answer-feedback" id="fb5_2"></span>
+            </div>
+
+            <div class="mcq-question">
+                <div class="q-text">3. What is an "attentional blink"?</div>
+                <div class="mcq-option"><input type="radio" name="t5q3" value="A" id="t5q3a"><label for="t5q3a">A. A problem with eyesight</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q3" value="B" id="t5q3b"><label for="t5q3b">B. Missing information because attention is focused elsewhere</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q3" value="C" id="t5q3c"><label for="t5q3c">C. Falling asleep while studying</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q3" value="D" id="t5q3d"><label for="t5q3d">D. Forgetting visual information permanently</label></div>
+                <span class="answer-feedback" id="fb5_3"></span>
+            </div>
+
+            <div class="mcq-question">
+                <div class="q-text">4. The speaker suggests that distractibility may actually result from:</div>
+                <div class="mcq-option"><input type="radio" name="t5q4" value="A" id="t5q4a"><label for="t5q4a">A. complete lack of attention</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q4" value="B" id="t5q4b"><label for="t5q4b">B. poor intelligence</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q4" value="C" id="t5q4c"><label for="t5q4c">C. over-focusing on certain things</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q4" value="D" id="t5q4d"><label for="t5q4d">D. excessive multitasking</label></div>
+                <span class="answer-feedback" id="fb5_4"></span>
+            </div>
+
+            <div class="mcq-question">
+                <div class="q-text">5. What is "open monitoring" associated with?</div>
+                <div class="mcq-option"><input type="radio" name="t5q5" value="A" id="t5q5a"><label for="t5q5a">A. Physical exercise</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q5" value="B" id="t5q5b"><label for="t5q5b">B. Long-term meditation practices</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q5" value="C" id="t5q5c"><label for="t5q5c">C. Video games</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q5" value="D" id="t5q5d"><label for="t5q5d">D. Language learning</label></div>
+                <span class="answer-feedback" id="fb5_5"></span>
+            </div>
+
+            <div class="mcq-question">
+                <div class="q-text">6. What happens during panoramic vision?</div>
+                <div class="mcq-option"><input type="radio" name="t5q6" value="A" id="t5q6a"><label for="t5q6a">A. Your eyes close automatically</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q6" value="B" id="t5q6b"><label for="t5q6b">B. You narrow your focus on one object</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q6" value="C" id="t5q6c"><label for="t5q6c">C. You consciously widen your visual awareness</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q6" value="D" id="t5q6d"><label for="t5q6d">D. You stop processing visual information</label></div>
+                <span class="answer-feedback" id="fb5_6"></span>
+            </div>
+
+            <div class="mcq-question">
+                <div class="q-text">7. According to the speaker, panoramic vision:</div>
+                <div class="mcq-option"><input type="radio" name="t5q7" value="A" id="t5q7a"><label for="t5q7a">A. weakens concentration</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q7" value="B" id="t5q7b"><label for="t5q7b">B. processes information more slowly</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q7" value="C" id="t5q7c"><label for="t5q7c">C. is impossible to train</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q7" value="D" id="t5q7d"><label for="t5q7d">D. helps the brain detect more information quickly</label></div>
+                <span class="answer-feedback" id="fb5_7"></span>
+            </div>
+
+            <div class="mcq-question">
+                <div class="q-text">8. During the 17-minute practice, participants were asked to:</div>
+                <div class="mcq-option"><input type="radio" name="t5q8" value="A" id="t5q8a"><label for="t5q8a">A. memorize words</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q8" value="B" id="t5q8b"><label for="t5q8b">B. solve mathematical problems</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q8" value="C" id="t5q8c"><label for="t5q8c">C. focus on breathing and internal sensations</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q8" value="D" id="t5q8d"><label for="t5q8d">D. watch visual targets on a screen</label></div>
+                <span class="answer-feedback" id="fb5_8"></span>
+            </div>
+
+            <div class="mcq-question">
+                <div class="q-text">9. What effect did the practice have on attentional blinks?</div>
+                <div class="mcq-option"><input type="radio" name="t5q9" value="A" id="t5q9a"><label for="t5q9a">A. They completely disappeared forever</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q9" value="B" id="t5q9b"><label for="t5q9b">B. They significantly decreased</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q9" value="C" id="t5q9c"><label for="t5q9c">C. They became more frequent</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q9" value="D" id="t5q9d"><label for="t5q9d">D. There was no measurable effect</label></div>
+                <span class="answer-feedback" id="fb5_9"></span>
+            </div>
+
+            <div class="mcq-question">
+                <div class="q-text">10. What is the speaker's final attitude toward this practice?</div>
+                <div class="mcq-option"><input type="radio" name="t5q10" value="A" id="t5q10a"><label for="t5q10a">A. It is dangerous for children</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q10" value="B" id="t5q10b"><label for="t5q10b">B. It should replace education</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q10" value="C" id="t5q10c"><label for="t5q10c">C. It seems highly worthwhile for most people</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q10" value="D" id="t5q10d"><label for="t5q10d">D. It only works for experienced meditators</label></div>
+                <span class="answer-feedback" id="fb5_10"></span>
+            </div>
+
+            <!-- Part 2: Gap Fill -->
+            <div class="section-label">Part 2 — Gap Filling</div>
+            <div class="word-box">
+                <strong>Word Box:</strong> distractibility — panoramic — interoception — cognitive decline — circuitry — meditation — awareness
+            </div>
+
+            <div class="gap-sentence">11. The speaker explains that <input type="text" id="t5g11" placeholder="(11)" style="width:180px;"> may happen because people focus too intensely on certain things.</div>
+            <div class="gap-sentence">12. <input type="text" id="t5g12" placeholder="(12)" style="width:150px;"> vision allows a person to widen their field of view consciously.</div>
+            <div class="gap-sentence">13. The practice focuses on breathing and body sensations, which is called <input type="text" id="t5g13" placeholder="(13)" style="width:180px;">.</div>
+            <div class="gap-sentence">14. Researchers are studying whether this practice can reduce age-related <input type="text" id="t5g14" placeholder="(14)" style="width:200px;">.</div>
+            <div class="gap-sentence">15. The speaker believes the practice may help rewire attentional <input type="text" id="t5g15" placeholder="(15)" style="width:150px;"> in the brain.</div>
+
+            <!-- Part 3: Vocab Matching -->
+            <div class="section-label">Part 3 — Vocabulary Matching</div>
+            <table class="vocab-match-table">
+                <thead>
+                    <tr><th>Word</th><th>Select the correct meaning</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>1. attentional blink</strong></td>
+                        <td>
+                            <select id="vm1">
+                                <option value="">Choose...</option>
+                                <option value="E">E. missing information because attention is elsewhere</option>
+                                <option value="C">C. ability to notice internal body sensations</option>
+                                <option value="B">B. broad visual awareness</option>
+                                <option value="A">A. mental worsening linked to aging</option>
+                                <option value="D">D. mental pathways in the brain</option>
+                                <option value="H">H. to reduce or balance the effect of something</option>
+                                <option value="G">G. tendency to lose focus easily</option>
+                                <option value="I">I. conscious understanding or noticing</option>
+                                <option value="F">F. ability to concentrate</option>
+                                <option value="J">J. to widen or expand</option>
+                            </select>
+                            <span class="answer-feedback" id="fbvm1"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>2. interoception</strong></td>
+                        <td>
+                            <select id="vm2">
+                                <option value="">Choose...</option>
+                                <option value="E">E. missing information because attention is elsewhere</option>
+                                <option value="C">C. ability to notice internal body sensations</option>
+                                <option value="B">B. broad visual awareness</option>
+                                <option value="A">A. mental worsening linked to aging</option>
+                                <option value="D">D. mental pathways in the brain</option>
+                                <option value="H">H. to reduce or balance the effect of something</option>
+                                <option value="G">G. tendency to lose focus easily</option>
+                                <option value="I">I. conscious understanding or noticing</option>
+                                <option value="F">F. ability to concentrate</option>
+                                <option value="J">J. to widen or expand</option>
+                            </select>
+                            <span class="answer-feedback" id="fbvm2"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>3. panoramic vision</strong></td>
+                        <td>
+                            <select id="vm3">
+                                <option value="">Choose...</option>
+                                <option value="E">E. missing information because attention is elsewhere</option>
+                                <option value="C">C. ability to notice internal body sensations</option>
+                                <option value="B">B. broad visual awareness</option>
+                                <option value="A">A. mental worsening linked to aging</option>
+                                <option value="D">D. mental pathways in the brain</option>
+                                <option value="H">H. to reduce or balance the effect of something</option>
+                                <option value="G">G. tendency to lose focus easily</option>
+                                <option value="I">I. conscious understanding or noticing</option>
+                                <option value="F">F. ability to concentrate</option>
+                                <option value="J">J. to widen or expand</option>
+                            </select>
+                            <span class="answer-feedback" id="fbvm3"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>4. cognitive decline</strong></td>
+                        <td>
+                            <select id="vm4">
+                                <option value="">Choose...</option>
+                                <option value="E">E. missing information because attention is elsewhere</option>
+                                <option value="C">C. ability to notice internal body sensations</option>
+                                <option value="B">B. broad visual awareness</option>
+                                <option value="A">A. mental worsening linked to aging</option>
+                                <option value="D">D. mental pathways in the brain</option>
+                                <option value="H">H. to reduce or balance the effect of something</option>
+                                <option value="G">G. tendency to lose focus easily</option>
+                                <option value="I">I. conscious understanding or noticing</option>
+                                <option value="F">F. ability to concentrate</option>
+                                <option value="J">J. to widen or expand</option>
+                            </select>
+                            <span class="answer-feedback" id="fbvm4"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>5. circuitry</strong></td>
+                        <td>
+                            <select id="vm5">
+                                <option value="">Choose...</option>
+                                <option value="E">E. missing information because attention is elsewhere</option>
+                                <option value="C">C. ability to notice internal body sensations</option>
+                                <option value="B">B. broad visual awareness</option>
+                                <option value="A">A. mental worsening linked to aging</option>
+                                <option value="D">D. mental pathways in the brain</option>
+                                <option value="H">H. to reduce or balance the effect of something</option>
+                                <option value="G">G. tendency to lose focus easily</option>
+                                <option value="I">I. conscious understanding or noticing</option>
+                                <option value="F">F. ability to concentrate</option>
+                                <option value="J">J. to widen or expand</option>
+                            </select>
+                            <span class="answer-feedback" id="fbvm5"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>6. offset</strong></td>
+                        <td>
+                            <select id="vm6">
+                                <option value="">Choose...</option>
+                                <option value="E">E. missing information because attention is elsewhere</option>
+                                <option value="C">C. ability to notice internal body sensations</option>
+                                <option value="B">B. broad visual awareness</option>
+                                <option value="A">A. mental worsening linked to aging</option>
+                                <option value="D">D. mental pathways in the brain</option>
+                                <option value="H">H. to reduce or balance the effect of something</option>
+                                <option value="G">G. tendency to lose focus easily</option>
+                                <option value="I">I. conscious understanding or noticing</option>
+                                <option value="F">F. ability to concentrate</option>
+                                <option value="J">J. to widen or expand</option>
+                            </select>
+                            <span class="answer-feedback" id="fbvm6"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>7. distractibility</strong></td>
+                        <td>
+                            <select id="vm7">
+                                <option value="">Choose...</option>
+                                <option value="E">E. missing information because attention is elsewhere</option>
+                                <option value="C">C. ability to notice internal body sensations</option>
+                                <option value="B">B. broad visual awareness</option>
+                                <option value="A">A. mental worsening linked to aging</option>
+                                <option value="D">D. mental pathways in the brain</option>
+                                <option value="H">H. to reduce or balance the effect of something</option>
+                                <option value="G">G. tendency to lose focus easily</option>
+                                <option value="I">I. conscious understanding or noticing</option>
+                                <option value="F">F. ability to concentrate</option>
+                                <option value="J">J. to widen or expand</option>
+                            </select>
+                            <span class="answer-feedback" id="fbvm7"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>8. awareness</strong></td>
+                        <td>
+                            <select id="vm8">
+                                <option value="">Choose...</option>
+                                <option value="E">E. missing information because attention is elsewhere</option>
+                                <option value="C">C. ability to notice internal body sensations</option>
+                                <option value="B">B. broad visual awareness</option>
+                                <option value="A">A. mental worsening linked to aging</option>
+                                <option value="D">D. mental pathways in the brain</option>
+                                <option value="H">H. to reduce or balance the effect of something</option>
+                                <option value="G">G. tendency to lose focus easily</option>
+                                <option value="I">I. conscious understanding or noticing</option>
+                                <option value="F">F. ability to concentrate</option>
+                                <option value="J">J. to widen or expand</option>
+                            </select>
+                            <span class="answer-feedback" id="fbvm8"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>9. attention</strong></td>
+                        <td>
+                            <select id="vm9">
+                                <option value="">Choose...</option>
+                                <option value="E">E. missing information because attention is elsewhere</option>
+                                <option value="C">C. ability to notice internal body sensations</option>
+                                <option value="B">B. broad visual awareness</option>
+                                <option value="A">A. mental worsening linked to aging</option>
+                                <option value="D">D. mental pathways in the brain</option>
+                                <option value="H">H. to reduce or balance the effect of something</option>
+                                <option value="G">G. tendency to lose focus easily</option>
+                                <option value="I">I. conscious understanding or noticing</option>
+                                <option value="F">F. ability to concentrate</option>
+                                <option value="J">J. to widen or expand</option>
+                            </select>
+                            <span class="answer-feedback" id="fbvm9"></span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>10. dilate</strong></td>
+                        <td>
+                            <select id="vm10">
+                                <option value="">Choose...</option>
+                                <option value="E">E. missing information because attention is elsewhere</option>
+                                <option value="C">C. ability to notice internal body sensations</option>
+                                <option value="B">B. broad visual awareness</option>
+                                <option value="A">A. mental worsening linked to aging</option>
+                                <option value="D">D. mental pathways in the brain</option>
+                                <option value="H">H. to reduce or balance the effect of something</option>
+                                <option value="G">G. tendency to lose focus easily</option>
+                                <option value="I">I. conscious understanding or noticing</option>
+                                <option value="F">F. ability to concentrate</option>
+                                <option value="J">J. to widen or expand</option>
+                            </select>
+                            <span class="answer-feedback" id="fbvm10"></span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="task-buttons">
+                <button class="btn btn-success" onclick="checkTask5()">Done</button>
+            </div>
+            <div id="showAnswersDiv5" style="display:none; margin-top:20px; text-align:center;">
+                <button class="btn btn-primary" onclick="toggleAnswers5()" id="answersToggle5Btn">▼ Show Answers</button>
+            </div>
+            <div class="answer-section" id="answers5" style="display:none;">
+                <div class="answer-title">✅ Answer Key</div>
+                <p><strong>MCQ:</strong> 1-B, 2-C, 3-B, 4-C, 5-B, 6-C, 7-D, 8-C, 9-B, 10-C</p>
+                <p style="margin-top:10px;"><strong>Gap Fill:</strong> 11-distractibility, 12-panoramic, 13-interoception, 14-cognitive decline, 15-circuitry</p>
+                <p style="margin-top:10px;"><strong>Vocab:</strong> 1-E, 2-C, 3-B, 4-A, 5-D, 6-H, 7-G, 8-I, 9-F, 10-J</p>
+            </div>
+            <div class="task-buttons">
+                <button class="btn btn-primary" id="nextBtn5" onclick="nextTask('task5')" disabled style="opacity:0.5;cursor:not-allowed;">Next Task →</button>
+            </div>
+        </div>
+
+        <!-- ===================== TASK 6 ===================== -->
+        <div class="task-card" id="task6">
+            <div class="task-header">
+                <div class="task-title">🎙️ Task 6: Podcast — Improving Your Memory</div>
+                <div class="task-description">Listen and complete the gaps. Write ONE WORD ONLY in each gap.</div>
+            </div>
+
+            <audio controls class="audio-player">
+                <source src="improve_your_memory.mp3" type="audio/mpeg">
+                Your browser does not support the audio element.
+            </audio>
+
+            <div class="transcript-box">
+                <p><strong>Neil:</strong> Hello and welcome to 6 Minute English, I'm Neil. This is the programme where in just six minutes we discuss an interesting topic and teach some related English vocabulary.</p>
+                <p style="margin-top:15px;"><strong>Rob:</strong> Hello… err sorry Neil, how long did you say this programme is?</p>
+                <p style="margin-top:15px;"><strong>Neil:</strong> Six minutes – it's 6 Minute English, Rob.</p>
+                <p style="margin-top:15px;"><strong>Rob:</strong> Right. OK. Sorry, what's your name again?</p>
+                <p style="margin-top:15px;"><strong>Neil:</strong> Neil! My name is Neil. Rob, what has happened to your <input type="text" id="d6q1" placeholder="(1)" style="width:120px;"><span class="answer-feedback" id="fb6_1"></span>?!</p>
+                <p style="margin-top:15px;"><strong>Rob:</strong> Sorry, Neil – too many things on my mind, it's affecting my short-term memory, but what I can remember is that in this programme we're talking about improving our memory.</p>
+                <p style="margin-top:15px;"><strong>Neil:</strong> We are and I think you might find it quite useful! Storing information is an important <input type="text" id="d6q2" placeholder="(2)" style="width:120px;"><span class="answer-feedback" id="fb6_2"></span> of our brains and scientists are always looking at ways to improve it but also to stop it deteriorating.</p>
+                <p style="margin-top:15px;"><strong>Rob:</strong> Yes, and we all know that memories are important for remembering who people are, where things are kept and how things <input type="text" id="d6q3" placeholder="(3)" style="width:120px;"><span class="answer-feedback" id="fb6_3"></span>.</p>
+                <p style="margin-top:15px;"><strong>Neil:</strong> Soon we'll be discussing a new idea for improving your memory but not before I've set today's quiz question. According to the BBC Food website, which type of food supports good memory <input type="text" id="d6q4" placeholder="(4)" style="width:120px;"><span class="answer-feedback" id="fb6_4"></span>?</p>
+                <p style="margin-top:15px;"><strong>Rob:</strong> Well, as a kid I was always told that spinach was good for me.</p>
+                <p style="margin-top:15px;"><strong>Neil:</strong> Now, let's talk more about improving our memory. Memory is the ability to encode, store and recall information but a number of factors can affect people's memory processes including health, anxiety, mood, stress and <input type="text" id="d6q5" placeholder="(5)" style="width:120px;"><span class="answer-feedback" id="fb6_5"></span>.</p>
+                <p style="margin-top:15px;"><strong>Rob:</strong> But Neil, when you're revising for an exam, what helps you to remember <input type="text" id="d6q6" placeholder="(6)" style="width:120px;"><span class="answer-feedback" id="fb6_6"></span>?</p>
+                <p style="margin-top:15px;"><strong>Neil:</strong> I tend to write things down again and again and again.</p>
+                <p style="margin-top:15px;"><strong>Rob:</strong> According to the BBC's iWonder guide, there are three different styles - visual, auditory and <input type="text" id="d6q7" placeholder="(7)" style="width:140px;"><span class="answer-feedback" id="fb6_7"></span>, that's learning by 'doing' and practicing something over and over again.</p>
+                <p style="margin-top:15px;"><strong>Neil:</strong> But recently, a new study has come up with a method that could possibly be the best way to improve your memory and that's by <input type="text" id="d6q8" placeholder="(8)" style="width:120px;"><span class="answer-feedback" id="fb6_8"></span>.</p>
+                <p style="margin-top:15px;"><strong>Daryl O'Connor:</strong> The authors certainly argue that one of the things that happens by drawing these particular objects, that it leads to this increased contextual representation of the object in one's mind. It makes a lot of intuitive sense – the idea that if you have encoded something in a greater level of <input type="text" id="d6q9" placeholder="(9)" style="width:120px;"><span class="answer-feedback" id="fb6_9"></span>, you're more likely to remember it.</p>
+                <p style="margin-top:15px;"><strong>Neil:</strong> Drawing something leads to increased contextual representation of the object. When something is contextual, it is in the <input type="text" id="d6q10" placeholder="(10)" style="width:120px;"><span class="answer-feedback" id="fb6_10"></span> where it usually exists.</p>
+                <p style="margin-top:15px;"><strong>Rob:</strong> So as you draw something you are creating a picture in your mind about what it is, how you use it and where it is <input type="text" id="d6q11" placeholder="(11)" style="width:120px;"><span class="answer-feedback" id="fb6_11"></span>.</p>
+                <p style="margin-top:15px;"><strong>Neil:</strong> Encoding is changing information into a form that can be stored and later <input type="text" id="d6q12" placeholder="(12)" style="width:120px;"><span class="answer-feedback" id="fb6_12"></span>.</p>
+                <p style="margin-top:15px;"><strong>Rob:</strong> That's because as you draw, you're thinking about different <input type="text" id="d6q13" placeholder="(13)" style="width:120px;"><span class="answer-feedback" id="fb6_13"></span> of the object. He says it makes intuitive sense – intuitive means it is based on feelings rather than facts or <input type="text" id="d6q14" placeholder="(14)" style="width:120px;"><span class="answer-feedback" id="fb6_14"></span>.</p>
+                <p style="margin-top:15px;"><strong>Neil:</strong> Of course this is just one more way to improve your memory. I have also heard that doing crossword puzzles and Sudoku can help, especially when you're <input type="text" id="d6q15" placeholder="(15)" style="width:120px;"><span class="answer-feedback" id="fb6_15"></span>.</p>
+                <p style="margin-top:15px;"><strong>Rob:</strong> Yes, as we get older we can often have more difficulty retrieving information from our memory. Basically we need brain <input type="text" id="d6q16" placeholder="(16)" style="width:120px;"><span class="answer-feedback" id="fb6_16"></span>!</p>
+                <p style="margin-top:15px;"><strong>Neil:</strong> Brain training and eating the right food Rob! In fact they were all correct – they are all examples of food that can help support good <input type="text" id="d6q17" placeholder="(17)" style="width:120px;"><span class="answer-feedback" id="fb6_17"></span>. Apparently, foods rich in B vitamins are important as they provide protection for the brain as we <input type="text" id="d6q18" placeholder="(18)" style="width:120px;"><span class="answer-feedback" id="fb6_18"></span>.</p>
+                <p style="margin-top:15px;"><strong>Rob:</strong> So today we've been talking about our memory – memories is the noun for things we remember from the <input type="text" id="d6q19" placeholder="(19)" style="width:120px;"><span class="answer-feedback" id="fb6_19"></span>.</p>
+                <p style="margin-top:15px;"><strong>Neil:</strong> Then we discussed a learning style known as kinaesthetic, that is learning by doing and <input type="text" id="d6q20" placeholder="(20)" style="width:120px;"><span class="answer-feedback" id="fb6_20"></span> something over and over again.</p>
+                <p style="margin-top:15px;"><strong>Rob:</strong> We heard from Professor Daryl O'Connor, who talked about contextual representation - when something is contextual, you see it in the situation where it usually <input type="text" id="d6q21" placeholder="(21)" style="width:120px;"><span class="answer-feedback" id="fb6_21"></span>.</p>
+                <p style="margin-top:15px;"><strong>Neil:</strong> Next we talked about encoding. That is changing information into a form that can be stored and later <input type="text" id="d6q22" placeholder="(22)" style="width:120px;"><span class="answer-feedback" id="fb6_22"></span>.</p>
+                <p style="margin-top:15px;"><strong>Rob:</strong> And we mentioned intuitive sense – having an intuitive sense means doing something based on feelings rather than facts or <input type="text" id="d6q23" placeholder="(23)" style="width:120px;"><span class="answer-feedback" id="fb6_23"></span>.</p>
+                <p style="margin-top:15px;"><strong>Neil:</strong> And finally we mentioned Alzheimer's – a disease affecting the brain that makes it difficult to remember things and it gets worse as you get <input type="text" id="d6q24" placeholder="(24)" style="width:120px;"><span class="answer-feedback" id="fb6_24"></span>.</p>
+                <p style="margin-top:15px;"><strong>Rob:</strong> Well there are lots of new words to remember there – but that's all for this <input type="text" id="d6q25" placeholder="(25)" style="width:120px;"><span class="answer-feedback" id="fb6_25"></span>.</p>
+            </div>
+
+            <div class="task-buttons">
+                <button class="btn btn-success" onclick="checkTask6()">Done</button>
+            </div>
+            <div id="showAnswersDiv6" style="display:none; margin-top:20px; text-align:center;">
+                <button class="btn btn-primary" onclick="toggleAnswers6()" id="answersToggle6Btn">▼ Show Answers</button>
+            </div>
+            <div class="answer-section" id="answers6" style="display:none;">
+                <div class="answer-title">✅ Answer Key</div>
+                <div style="columns:2; gap:30px;">
+                    <p>1. memory</p><p>2. function</p><p>3. look</p><p>4. function</p><p>5. tiredness</p>
+                    <p>6. facts</p><p>7. kinaesthetic</p><p>8. drawing</p><p>9. detail</p><p>10. situation</p>
+                    <p>11. used</p><p>12. recalled</p><p>13. aspects</p><p>14. proof</p><p>15. older</p>
+                    <p>16. training</p><p>17. memory</p><p>18. age</p><p>19. past</p><p>20. practising</p>
+                    <p>21. exists</p><p>22. recalled</p><p>23. proof</p><p>24. older</p><p>25. programme</p>
+                </div>
+            </div>
+            <div class="task-buttons">
+                <button class="btn btn-primary" id="nextBtn6" onclick="nextTask('task6')" disabled style="opacity:0.5;cursor:not-allowed;">Next Task →</button>
+            </div>
+        </div>
+
+        <!-- ===================== TASK 7 ===================== -->
+        <div class="task-card" id="task7">
+            <div class="task-header">
+                <div class="task-title">🎧 Task 7: Listening Test — Music Alive Agency</div>
+                <div class="task-description">Open the listening test in a new tab and complete all questions, then come back.</div>
+            </div>
+
+            <a href="Z.CDI (Music Alive Agency).html" target="_blank" class="reading-link-card">
+                <div class="link-icon">🎧</div>
+                <h3>Open Listening Test</h3>
+                <p>Music Alive Agency — Full IELTS Listening Practice</p>
+            </a>
+
+            <div class="task-buttons">
+                <button class="btn btn-primary" onclick="nextTask('task7')">Done — Finish Day 3 →</button>
+            </div>
+        </div>
+
+        <!-- Completion -->
+        <div class="task-card" id="completion">
+            <div class="completion">
+                <div class="completion-emoji">🎉</div>
+                <div class="completion-title">Day 3 Complete!</div>
+                <div class="completion-text">Amazing work! You've completed all 7 tasks for Week 1, Day 3.</div>
+                <a href="/student-dashboard.html" class="btn btn-primary" style="margin-top:30px; text-decoration:none; display:inline-block;">Return to Dashboard</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // SUPABASE
+        // ============================================
+        const SUPABASE_URL = 'https://nbfceuhuauizyucugejr.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_0mFIGJkA_DKZfUiDAWFdrA_nXt0hF6H';
+        const { createClient } = supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let currentStudent = null;
+        let sessionStartTime = Date.now();
+        let totalTimeSpent = 0;
+        const WEEK = 1;
+        const DAY = 3;
+        const TOTAL_TASKS = 7;
+        let completedTasks = new Set();
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            await initializePage();
+        });
+
+        async function initializePage() {
+            try {
+                // Teacher bypass
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('teacher') === 'true') {
+                    document.getElementById('splashScreen').classList.add('hidden');
+                    document.getElementById('mainContainer').classList.add('active');
+                    return;
+                }
+
+                const userStr = localStorage.getItem('user');
+                if (!userStr) { window.location.href = '/login.html'; return; }
+
+                const user = JSON.parse(userStr);
+                const { data: studentData, error } = await supabaseClient
+                    .from('students').select('*').eq('username', user.username).single();
+
+                if (error || !studentData) { alert('Error loading student data'); return; }
+                currentStudent = studentData;
+
+                await loadProgress();
+                startTimeTracking();
+            } catch (error) {
+                console.error('Init error:', error);
+            }
+        }
+
+        async function loadProgress() {
+            try {
+                const { data: dayData } = await supabaseClient
+                    .from('day_summary').select('*')
+                    .eq('student_id', currentStudent.id).eq('week', WEEK).eq('day', DAY).single();
+
+                if (dayData && dayData.percentage === 100) {
+                    document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active'));
+                    document.getElementById('completion').classList.add('active');
+                    updateProgressBar(100);
+                    return;
+                }
+
+                const { data: tasks } = await supabaseClient
+                    .from('task_progress').select('*')
+                    .eq('student_id', currentStudent.id).eq('week', WEEK).eq('day', DAY);
+
+                if (tasks) {
+                    tasks.forEach(t => { if (t.status === 'completed') completedTasks.add(t.task_number); });
+                    updateProgressBar((completedTasks.size / TOTAL_TASKS) * 100);
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function updateProgressBar(pct) {
+            document.getElementById('progressBar').style.width = pct + '%';
+            document.getElementById('progressText').textContent = completedTasks.size + ' / ' + TOTAL_TASKS + ' Tasks';
+        }
+
+        async function markTaskComplete(taskNumber) {
+            if (!currentStudent || completedTasks.has(taskNumber)) return;
+            completedTasks.add(taskNumber);
+            const timeSpent = Math.floor((Date.now() - sessionStartTime) / 1000);
+            await supabaseClient.from('task_progress').upsert({
+                student_id: currentStudent.id, week: WEEK, day: DAY,
+                task_number: taskNumber, status: 'completed',
+                time_spent_seconds: timeSpent,
+                started_at: new Date(sessionStartTime).toISOString(),
+                completed_at: new Date().toISOString()
+            }, { onConflict: 'student_id,week,day,task_number' });
+
+            updateProgressBar((completedTasks.size / TOTAL_TASKS) * 100);
+            if (completedTasks.size === TOTAL_TASKS) await markDayComplete();
+        }
+
+        async function markDayComplete() {
+            await supabaseClient.from('day_summary').upsert({
+                student_id: currentStudent.id, week: WEEK, day: DAY,
+                completed_tasks: TOTAL_TASKS, total_tasks: TOTAL_TASKS, percentage: 100,
+                total_time_spent_minutes: Math.floor(totalTimeSpent / 60),
+                last_updated: new Date().toISOString()
+            }, { onConflict: 'student_id,week,day' });
+        }
+
+        function startTimeTracking() {
+            setInterval(() => { totalTimeSpent = Math.floor((Date.now() - sessionStartTime) / 1000); }, 30000);
+        }
+
+        // ============================================
+        // NAVIGATION
+        // ============================================
+        let currentTask = 0;
+        const taskOrder = ['task1', 'task2', 'task3', 'break', 'task4', 'task5', 'task6', 'task7'];
+
+        function startLearning() {
+            document.getElementById('splashScreen').classList.add('hidden');
+            setTimeout(() => document.getElementById('mainContainer').classList.add('active'), 500);
+        }
+
+        function toggleVocab() {
+            const content = document.getElementById('vocabContent');
+            const arrow = document.getElementById('vocabArrow');
+            content.classList.toggle('active');
+            arrow.textContent = content.classList.contains('active') ? '▲' : '▼';
+        }
+
+        async function nextTask(currentTaskId) {
+            if (currentTaskId !== 'break') {
+                const idx = taskOrder.indexOf(currentTaskId);
+                let taskNum = idx + 1;
+                if (idx > 3) taskNum = idx;
+                await markTaskComplete(taskNum);
+            }
+
+            document.getElementById(currentTaskId).classList.remove('active');
+            currentTask++;
+
+            if (currentTask < taskOrder.length) {
+                document.getElementById(taskOrder[currentTask]).classList.add('active');
+                let progressCount = currentTask;
+                if (currentTask >= 4) progressCount--;
+                const pct = (progressCount / 7) * 100;
+                document.getElementById('progressBar').style.width = pct + '%';
+                document.getElementById('progressText').textContent = progressCount + ' / 7 Tasks';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                document.getElementById('completion').classList.add('active');
+                document.getElementById('progressBar').style.width = '100%';
+                document.getElementById('progressText').textContent = '7 / 7 Tasks - Complete!';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        // ============================================
+        // TASK 1 CHECK
+        // ============================================
+        function checkTask1() {
+            const answers = { t1q1: 'B', t1q2: 'C', t1q3: 'A', t1q4: 'D', t1q5: 'A' };
+            let allAnswered = true;
+            for (let id in answers) {
+                const sel = document.getElementById(id);
+                const fb = document.getElementById('fb1_' + id.replace('t1q',''));
+                if (!sel.value) { allAnswered = false; continue; }
+                if (sel.value === answers[id]) {
+                    sel.classList.add('correct'); sel.classList.remove('incorrect');
+                    fb.textContent = '✅'; fb.className = 'answer-feedback correct';
+                } else {
+                    sel.classList.add('incorrect'); sel.classList.remove('correct');
+                    fb.textContent = '❌'; fb.className = 'answer-feedback incorrect';
+                }
+            }
+            document.getElementById('showAnswersDiv1').style.display = 'block';
+            const nextBtn = document.getElementById('nextBtn1');
+            nextBtn.disabled = false; nextBtn.style.opacity = '1'; nextBtn.style.cursor = 'pointer';
+        }
+
+        function toggleAnswers1() {
+            const div = document.getElementById('answers1');
+            const btn = document.getElementById('answersToggle1Btn');
+            div.style.display = div.style.display === 'none' ? 'block' : 'none';
+            btn.textContent = div.style.display === 'block' ? '▲ Hide Answers' : '▼ Show Answers';
+        }
+
+        // ============================================
+        // TASK 4 CHECK
+        // ============================================
+        function checkTask4() {
+            const s1 = document.querySelector('input[name="t4s1"]:checked');
+            const s2 = document.querySelector('input[name="t4s2"]:checked');
+            const fb1 = document.getElementById('fb4_1');
+            const fb2 = document.getElementById('fb4_2');
+
+            if (s1) {
+                fb1.textContent = s1.value === 'c' ? '✅' : '❌';
+                fb1.className = 'answer-feedback ' + (s1.value === 'c' ? 'correct' : 'incorrect');
+            }
+            if (s2) {
+                fb2.textContent = s2.value === 'a' ? '✅' : '❌';
+                fb2.className = 'answer-feedback ' + (s2.value === 'a' ? 'correct' : 'incorrect');
+            }
+
+            document.getElementById('showAnswersDiv4').style.display = 'block';
+            const nextBtn = document.getElementById('nextBtn4');
+            nextBtn.disabled = false; nextBtn.style.opacity = '1'; nextBtn.style.cursor = 'pointer';
+        }
+
+        function toggleAnswers4() {
+            const div = document.getElementById('answers4');
+            const btn = document.getElementById('answersToggle4Btn');
+            div.style.display = div.style.display === 'none' ? 'block' : 'none';
+            btn.textContent = div.style.display === 'block' ? '▲ Hide Answers' : '▼ Show Answers';
+        }
+
+        // ============================================
+        // TASK 5 CHECK
+        // ============================================
+        function checkTask5() {
+            // MCQ
+            const mcqAnswers = { t5q1:'B', t5q2:'C', t5q3:'B', t5q4:'C', t5q5:'B', t5q6:'C', t5q7:'D', t5q8:'C', t5q9:'B', t5q10:'C' };
+            for (let name in mcqAnswers) {
+                const checked = document.querySelector(`input[name="${name}"]:checked`);
+                const num = name.replace('t5q','');
+                const fb = document.getElementById('fb5_' + num);
+                if (checked) {
+                    fb.textContent = checked.value === mcqAnswers[name] ? '✅' : '❌';
+                    fb.className = 'answer-feedback ' + (checked.value === mcqAnswers[name] ? 'correct' : 'incorrect');
+                }
+            }
+
+            // Gap fill
+            const gapAnswers = { t5g11:'distractibility', t5g12:'panoramic', t5g13:'interoception', t5g14:'cognitive decline', t5g15:'circuitry' };
+            for (let id in gapAnswers) {
+                const input = document.getElementById(id);
+                const num = id.replace('t5g','');
+                const isCorrect = input.value.trim().toLowerCase() === gapAnswers[id].toLowerCase();
+                input.classList.toggle('correct', isCorrect);
+                input.classList.toggle('incorrect', !isCorrect && input.value.trim() !== '');
+            }
+
+            // Vocab matching
+            const vmAnswers = { vm1:'E', vm2:'C', vm3:'B', vm4:'A', vm5:'D', vm6:'H', vm7:'G', vm8:'I', vm9:'F', vm10:'J' };
+            for (let id in vmAnswers) {
+                const sel = document.getElementById(id);
+                const num = id.replace('vm','');
+                const fb = document.getElementById('fbvm' + num);
+                if (sel.value) {
+                    const correct = sel.value === vmAnswers[id];
+                    sel.classList.toggle('correct', correct);
+                    sel.classList.toggle('incorrect', !correct);
+                    fb.textContent = correct ? '✅' : '❌';
+                    fb.className = 'answer-feedback ' + (correct ? 'correct' : 'incorrect');
+                }
+            }
+
+            document.getElementById('showAnswersDiv5').style.display = 'block';
+            const nextBtn = document.getElementById('nextBtn5');
+            nextBtn.disabled = false; nextBtn.style.opacity = '1'; nextBtn.style.cursor = 'pointer';
+        }
+
+        function toggleAnswers5() {
+            const div = document.getElementById('answers5');
+            const btn = document.getElementById('answersToggle5Btn');
+            div.style.display = div.style.display === 'none' ? 'block' : 'none';
+            btn.textContent = div.style.display === 'block' ? '▲ Hide Answers' : '▼ Show Answers';
+        }
+
+        // ============================================
+        // TASK 6 CHECK
+        // ============================================
+        function checkTask6() {
+            const answers = {
+                d6q1:'memory', d6q2:'function', d6q3:'look', d6q4:'function', d6q5:'tiredness',
+                d6q6:'facts', d6q7:'kinaesthetic', d6q8:'drawing', d6q9:'detail', d6q10:'situation',
+                d6q11:'used', d6q12:'recalled', d6q13:'aspects', d6q14:'proof', d6q15:'older',
+                d6q16:'training', d6q17:'memory', d6q18:'age', d6q19:'past', d6q20:'practising',
+                d6q21:'exists', d6q22:'recalled', d6q23:'proof', d6q24:'older', d6q25:'programme'
+            };
+
+            for (let id in answers) {
+                const input = document.getElementById(id);
+                const num = id.replace('d6q','');
+                const fb = document.getElementById('fb6_' + num);
+                if (!input || !fb) continue;
+                const isCorrect = input.value.trim().toLowerCase() === answers[id].toLowerCase();
+                input.classList.toggle('correct', isCorrect);
+                input.classList.toggle('incorrect', !isCorrect && input.value.trim() !== '');
+                if (input.value.trim()) {
+                    fb.textContent = isCorrect ? '✅' : '❌';
+                    fb.className = 'answer-feedback ' + (isCorrect ? 'correct' : 'incorrect');
+                }
+            }
+
+            document.getElementById('showAnswersDiv6').style.display = 'block';
+            const nextBtn = document.getElementById('nextBtn6');
+            nextBtn.disabled = false; nextBtn.style.opacity = '1'; nextBtn.style.cursor = 'pointer';
+        }
+
+        function toggleAnswers6() {
+            const div = document.getElementById('answers6');
+            const btn = document.getElementById('answersToggle6Btn');
+            div.style.display = div.style.display === 'none' ? 'block' : 'none';
+            btn.textContent = div.style.display === 'block' ? '▲ Hide Answers' : '▼ Show Answers';
+        }
+    </script>
+</body>
+</html>
