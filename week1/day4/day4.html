@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEEK 1 - DAY 4 (Education)</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+
+        .splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; transition: opacity 0.5s ease; }
+        .splash-screen.hidden { opacity: 0; pointer-events: none; }
+        .splash-title { font-size: 4rem; font-weight: bold; color: white; text-align: center; margin-bottom: 2rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        .splash-subtitle { font-size: 2.5rem; color: #f0f0f0; margin-bottom: 3rem; }
+        .splash-button { padding: 20px 60px; font-size: 1.8rem; background: white; color: #667eea; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; box-shadow: 0 8px 20px rgba(0,0,0,0.2); }
+
+        .container { max-width: 1000px; margin: 0 auto; padding: 20px; display: none; }
+        .container.active { display: block; }
+
+        .header { background: white; padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .header h1 { color: #667eea; font-size: 2rem; margin-bottom: 10px; }
+        .progress-bar { width: 100%; height: 30px; background: #e0e0e0; border-radius: 15px; overflow: hidden; margin-top: 15px; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); transition: width 0.5s ease; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
+
+        .vocab-section { background: white; padding: 25px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .vocab-toggle { width: 100%; padding: 15px 25px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 10px; font-size: 1.3rem; font-weight: bold; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .vocab-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+        .vocab-content.active { max-height: 3000px; padding-top: 20px; }
+        .vocab-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 15px; }
+        .vocab-item { padding: 12px; background: #f8f9fa; border-left: 4px solid #667eea; border-radius: 5px; }
+        .vocab-word { font-weight: bold; color: #667eea; font-size: 1.1rem; }
+        .vocab-definition { color: #555; margin-top: 5px; }
+
+        .task-card { background: white; padding: 30px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: none; }
+        .task-card.active { display: block; animation: slideIn 0.5s ease; }
+        .task-card.fullscreen { padding: 0; border-radius: 15px; overflow: hidden; }
+        .task-card.fullscreen .task-header-bar { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px 30px; }
+        .task-card.fullscreen .task-header-bar h2 { font-size: 1.6rem; font-weight: bold; }
+        .task-card.fullscreen .task-header-bar p { opacity: 0.9; margin-top: 5px; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+        .task-header { border-bottom: 3px solid #667eea; padding-bottom: 15px; margin-bottom: 25px; }
+        .task-title { color: #667eea; font-size: 1.8rem; font-weight: bold; }
+        .task-description { color: #666; margin-top: 10px; font-size: 1.1rem; }
+
+        .btn { padding: 12px 30px; font-size: 1.1rem; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.2s ease; }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102,126,234,0.4); }
+        .btn-success { background: #28a745; color: white; }
+        .btn-success:hover:not(:disabled) { background: #218838; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-secondary:hover:not(:disabled) { background: #545b62; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .task-buttons { margin-top: 30px; display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
+
+        .answer-section { background: #e8f5e9; padding: 20px; border-radius: 10px; margin-top: 20px; border-left: 5px solid #28a745; display: none; }
+        .answer-title { color: #28a745; font-size: 1.3rem; font-weight: bold; margin-bottom: 15px; }
+
+        input[type="text"] { padding: 8px 12px; border: 2px solid #ddd; border-radius: 5px; font-size: 1rem; transition: border-color 0.2s; }
+        input[type="text"]:focus { outline: none; border-color: #667eea; }
+        input[type="text"].correct { border-color: #28a745; background: #d4edda; }
+        input[type="text"].incorrect { border-color: #dc3545; background: #f8d7da; }
+
+        .answer-feedback { display: inline-block; margin-left: 8px; font-weight: bold; }
+        .answer-feedback.correct { color: #28a745; }
+        .answer-feedback.incorrect { color: #dc3545; }
+
+        /* TASK 1 FULL SCREEN SPLIT */
+        .reading-split { display: flex; height: calc(100vh - 180px); min-height: 600px; }
+        .passage-side { flex: 1; padding: 30px; overflow-y: auto; background: #f8f9fa; border-right: 2px solid #dee2e6; }
+        .passage-side h2 { color: #667eea; font-size: 1.4rem; margin-bottom: 5px; }
+        .passage-side .author { color: #999; font-size: 0.9rem; margin-bottom: 20px; font-style: italic; }
+        .passage-side p { line-height: 1.9; margin-bottom: 15px; text-align: justify; color: #333; font-size: 0.95rem; }
+        .questions-side { flex: 1; padding: 30px; overflow-y: auto; background: white; }
+        .q-section-title { font-size: 1rem; font-weight: bold; color: #764ba2; margin: 20px 0 12px; padding-bottom: 6px; border-bottom: 2px solid #764ba2; }
+
+        .tfng-item { background: #f0f4ff; padding: 14px; border-radius: 8px; margin: 10px 0; }
+        .tfng-item .q-text { font-weight: 500; color: #333; margin-bottom: 10px; line-height: 1.5; font-size: 0.95rem; }
+        .tfng-radios { display: flex; gap: 15px; flex-wrap: wrap; }
+        .tfng-radios label { display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.9rem; }
+        .tfng-item.correct { background: #d4edda; border-left: 4px solid #28a745; }
+        .tfng-item.incorrect { background: #f8d7da; border-left: 4px solid #dc3545; }
+
+        .notes-item { margin: 12px 0; font-size: 0.95rem; line-height: 2.2; }
+        .notes-item input { width: 170px; margin: 0 5px; }
+        .short-item { margin: 14px 0; font-size: 0.95rem; }
+        .short-item .sq { font-weight: bold; color: #333; margin-bottom: 6px; line-height: 1.5; }
+        .short-item input { width: 220px; }
+
+        /* PDF cards */
+        .pdf-link-card { display: flex; align-items: center; gap: 20px; padding: 20px; background: #f8f9fa; border-radius: 10px; margin: 15px 0; border: 2px solid #e0e0e0; text-decoration: none; transition: all 0.2s; }
+        .pdf-link-card:hover { border-color: #667eea; background: #f0f4ff; transform: translateY(-2px); }
+        .pdf-icon { font-size: 2.5rem; }
+        .pdf-info h3 { color: #333; margin-bottom: 5px; }
+        .pdf-info p { color: #666; font-size: 0.9rem; }
+
+        .link-card { display: block; text-decoration: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 15px; text-align: center; transition: transform 0.2s, box-shadow 0.2s; margin: 20px 0; }
+        .link-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(102,126,234,0.4); }
+        .link-card .link-icon { font-size: 3rem; margin-bottom: 10px; }
+        .link-card h3 { font-size: 1.5rem; margin-bottom: 5px; }
+        .link-card p { opacity: 0.9; }
+
+        .audio-player { width: 100%; margin: 20px 0; }
+
+        /* Form task */
+        .form-box { background: #f8f9fa; border: 2px solid #dee2e6; border-radius: 12px; padding: 25px; margin: 20px 0; }
+        .form-box h3 { color: #667eea; font-size: 1.3rem; margin-bottom: 5px; }
+        .form-box .form-subtitle { color: #999; font-size: 0.85rem; margin-bottom: 20px; }
+        .form-row { display: flex; align-items: center; gap: 15px; padding: 12px 0; border-bottom: 1px solid #dee2e6; flex-wrap: wrap; }
+        .form-row:last-child { border-bottom: none; }
+        .form-label { font-weight: bold; color: #555; min-width: 170px; font-size: 0.95rem; }
+        .form-value { color: #333; font-size: 0.95rem; }
+        .form-example { background: #fff3cd; padding: 3px 10px; border-radius: 5px; font-size: 0.85rem; color: #856404; }
+
+        /* MCQ */
+        .mcq-question { background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0; }
+        .mcq-question .q-text { font-weight: bold; color: #333; margin-bottom: 12px; line-height: 1.5; }
+        .mcq-option { display: flex; align-items: center; gap: 10px; margin: 8px 0; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
+        .mcq-option:hover { background: #e8f4fd; }
+        .mcq-option input[type="radio"] { cursor: pointer; width: 16px; height: 16px; }
+        .mcq-option label { cursor: pointer; font-size: 1rem; }
+
+        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 10px; margin: 20px 0; }
+        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+        .gap-sentence { line-height: 2.5; margin: 12px 0; font-size: 1.05rem; }
+        .gap-sentence input { width: 160px; margin: 0 6px; }
+        .word-box { background: #fff3cd; padding: 15px 20px; border-radius: 8px; border-left: 5px solid #ffc107; margin: 15px 0; font-size: 1rem; line-height: 1.8; }
+
+        .vocab-match-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        .vocab-match-table th { background: #667eea; color: white; padding: 12px 15px; text-align: left; }
+        .vocab-match-table td { padding: 12px 15px; border-bottom: 1px solid #dee2e6; }
+        .vocab-match-table tbody tr:hover { background: #f8f9fa; }
+        .vocab-match-table select { padding: 6px 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 0.9rem; cursor: pointer; width: 100%; }
+        .vocab-match-table select.correct { border-color: #28a745; background: #d4edda; }
+        .vocab-match-table select.incorrect { border-color: #dc3545; background: #f8d7da; }
+
+        .transcript-box { background: #f8f9fa; padding: 25px; border-radius: 10px; margin: 20px 0; line-height: 2.5; font-size: 1.05rem; }
+        .transcript-box input { width: 115px; margin: 0 4px; }
+
+        .break-screen { text-align: center; padding: 60px 30px; }
+        .break-emoji { font-size: 5rem; margin-bottom: 20px; }
+        .break-title { font-size: 2.5rem; color: #667eea; margin-bottom: 15px; }
+        .break-text { font-size: 1.3rem; color: #666; margin-bottom: 30px; }
+
+        .completion { padding: 30px; }
+        .completion-header { text-align: center; margin-bottom: 30px; }
+        .completion-emoji { font-size: 5rem; margin-bottom: 20px; }
+        .completion-title { font-size: 2.5rem; color: #28a745; margin-bottom: 10px; }
+        .completion-text { font-size: 1.2rem; color: #666; }
+        .review-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin: 30px 0; }
+        .review-card { background: #f8f9fa; border-radius: 10px; padding: 20px; text-align: center; cursor: pointer; border: 2px solid #28a745; transition: all 0.2s; }
+        .review-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); background: #e8f5e9; }
+        .review-card .task-num { font-size: 1.8rem; font-weight: bold; color: #667eea; }
+        .review-card .task-lbl { font-size: 0.85rem; color: #555; margin-top: 5px; }
+        .review-card .done-badge { font-size: 1.3rem; margin-top: 8px; }
+
+        .back-btn { position: fixed; top: 20px; left: 20px; padding: 12px 25px; background: white; color: #667eea; border: 2px solid #667eea; border-radius: 8px; cursor: pointer; font-weight: bold; text-decoration: none; display: inline-block; transition: all 0.2s; z-index: 1000; }
+        .back-btn:hover { background: #667eea; color: white; }
+        .section-label { font-size: 1.1rem; font-weight: bold; color: #764ba2; margin: 25px 0 10px; padding-bottom: 5px; border-bottom: 2px solid #764ba2; }
+        .info-box { background: #fff3cd; padding: 15px 20px; border-radius: 8px; border-left: 5px solid #ffc107; margin: 15px 0; color: #856404; }
+        .validation-hint { text-align: center; margin-top: 10px; color: #dc3545; font-size: 0.9rem; display: none; }
+    </style>
+</head>
+<body>
+    <a href="/student-dashboard.html" class="back-btn">← Dashboard</a>
+
+    <div class="splash-screen" id="splashScreen">
+        <div class="splash-title">WEEK 1</div>
+        <div class="splash-subtitle">(Education) DAY Four</div>
+        <button class="splash-button" onclick="startLearning()">OK</button>
+    </div>
+
+    <div class="container" id="mainContainer">
+        <div class="header">
+            <h1>📚 WEEK 1 - DAY 4: Education</h1>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressBar" style="width: 0%;"><span id="progressText">0 / 7 Tasks</span></div>
+            </div>
+        </div>
+
+        <!-- Vocabulary -->
+        <div class="vocab-section">
+            <button class="vocab-toggle" onclick="toggleVocab()">
+                <span>📖 Daily Vocabulary (50 Words)</span>
+                <span id="vocabArrow">▼</span>
+            </button>
+            <div class="vocab-content" id="vocabContent">
+                <div class="vocab-grid">
+                    <div class="vocab-item"><div class="vocab-word">1. maverick (n/adj)</div><div class="vocab-definition">an independent-minded person who does not follow the crowd</div></div>
+                    <div class="vocab-item"><div class="vocab-word">2. innovation (n)</div><div class="vocab-definition">a new idea, method, or invention</div></div>
+                    <div class="vocab-item"><div class="vocab-word">3. virtuoso (n)</div><div class="vocab-definition">a person with outstanding skill in a particular art</div></div>
+                    <div class="vocab-item"><div class="vocab-word">4. symbiosis (n)</div><div class="vocab-definition">a mutually beneficial relationship between two things</div></div>
+                    <div class="vocab-item"><div class="vocab-word">5. craftsmanship (n)</div><div class="vocab-definition">skill in making things by hand</div></div>
+                    <div class="vocab-item"><div class="vocab-word">6. suffuse (v)</div><div class="vocab-definition">to spread through or over something completely</div></div>
+                    <div class="vocab-item"><div class="vocab-word">7. augment (v)</div><div class="vocab-definition">to make something greater by adding to it</div></div>
+                    <div class="vocab-item"><div class="vocab-word">8. alumni (n)</div><div class="vocab-definition">former students of a particular school or university</div></div>
+                    <div class="vocab-item"><div class="vocab-word">9. meritocracy (n)</div><div class="vocab-definition">a system where advancement is based on ability and talent</div></div>
+                    <div class="vocab-item"><div class="vocab-word">10. entrepreneurship (n)</div><div class="vocab-definition">the activity of setting up and running businesses</div></div>
+                    <div class="vocab-item"><div class="vocab-word">11. scalability (n)</div><div class="vocab-definition">the ability to grow or be adapted to larger scale</div></div>
+                    <div class="vocab-item"><div class="vocab-word">12. framework (n)</div><div class="vocab-definition">a basic structure underlying a system or concept</div></div>
+                    <div class="vocab-item"><div class="vocab-word">13. privileged (adj)</div><div class="vocab-definition">having special rights or advantages not available to everyone</div></div>
+                    <div class="vocab-item"><div class="vocab-word">14. honorary (adj)</div><div class="vocab-definition">given as an honour without the usual requirements</div></div>
+                    <div class="vocab-item"><div class="vocab-word">15. ambition (n)</div><div class="vocab-definition">a strong desire to achieve something</div></div>
+                    <div class="vocab-item"><div class="vocab-word">16. impact (n)</div><div class="vocab-definition">a strong effect or influence on something</div></div>
+                    <div class="vocab-item"><div class="vocab-word">17. iterative (adj)</div><div class="vocab-definition">involving repetition of a process to achieve a result</div></div>
+                    <div class="vocab-item"><div class="vocab-word">18. adaptability (n)</div><div class="vocab-definition">the ability to adjust to new conditions</div></div>
+                    <div class="vocab-item"><div class="vocab-word">19. geothermal (adj)</div><div class="vocab-definition">relating to heat from the earth's interior</div></div>
+                    <div class="vocab-item"><div class="vocab-word">20. genome (n)</div><div class="vocab-definition">the complete set of genes in an organism</div></div>
+                    <div class="vocab-item"><div class="vocab-word">21. counselling (n)</div><div class="vocab-definition">professional guidance to help with personal problems</div></div>
+                    <div class="vocab-item"><div class="vocab-word">22. homesick (adj)</div><div class="vocab-definition">feeling sad because you are away from home</div></div>
+                    <div class="vocab-item"><div class="vocab-word">23. budgeting (n)</div><div class="vocab-definition">planning how to spend money wisely</div></div>
+                    <div class="vocab-item"><div class="vocab-word">24. stress (n)</div><div class="vocab-definition">pressure or worry caused by a difficult situation</div></div>
+                    <div class="vocab-item"><div class="vocab-word">25. comfort zone (n)</div><div class="vocab-definition">a situation where you feel at ease and in control</div></div>
+                    <div class="vocab-item"><div class="vocab-word">26. context (n)</div><div class="vocab-definition">the circumstances surrounding an event or statement</div></div>
+                    <div class="vocab-item"><div class="vocab-word">27. disciplines (n)</div><div class="vocab-definition">branches of knowledge or fields of study</div></div>
+                    <div class="vocab-item"><div class="vocab-word">28. integrate (v)</div><div class="vocab-definition">to combine parts into a whole</div></div>
+                    <div class="vocab-item"><div class="vocab-word">29. clinician (n)</div><div class="vocab-definition">a doctor or other health professional</div></div>
+                    <div class="vocab-item"><div class="vocab-word">30. synthesise (v)</div><div class="vocab-definition">to combine elements to form a new whole</div></div>
+                    <div class="vocab-item"><div class="vocab-word">31. sensor (n)</div><div class="vocab-definition">a device that detects and responds to physical input</div></div>
+                    <div class="vocab-item"><div class="vocab-word">32. intellect (n)</div><div class="vocab-definition">the ability to think and understand complex ideas</div></div>
+                    <div class="vocab-item"><div class="vocab-word">33. balancing act (n)</div><div class="vocab-definition">trying to manage several things at the same time</div></div>
+                    <div class="vocab-item"><div class="vocab-word">34. mental health (n)</div><div class="vocab-definition">a person's psychological and emotional wellbeing</div></div>
+                    <div class="vocab-item"><div class="vocab-word">35. rose-tinted (adj)</div><div class="vocab-definition">seeing things in an overly optimistic or positive way</div></div>
+                    <div class="vocab-item"><div class="vocab-word">36. prestigious (adj)</div><div class="vocab-definition">respected and admired for excellence</div></div>
+                    <div class="vocab-item"><div class="vocab-word">37. undergraduate (n)</div><div class="vocab-definition">a university student who has not yet taken a degree</div></div>
+                    <div class="vocab-item"><div class="vocab-word">38. faculty (n)</div><div class="vocab-definition">the teaching staff of a university or college</div></div>
+                    <div class="vocab-item"><div class="vocab-word">39. start-up (n)</div><div class="vocab-definition">a newly established business</div></div>
+                    <div class="vocab-item"><div class="vocab-word">40. contact lens (n)</div><div class="vocab-definition">a thin lens placed directly on the eye to correct vision</div></div>
+                    <div class="vocab-item"><div class="vocab-word">41. robotics (n)</div><div class="vocab-definition">the branch of technology dealing with robots</div></div>
+                    <div class="vocab-item"><div class="vocab-word">42. motto (n)</div><div class="vocab-definition">a short phrase expressing a guiding principle</div></div>
+                    <div class="vocab-item"><div class="vocab-word">43. electromagnet (n)</div><div class="vocab-definition">a magnet powered by an electric current</div></div>
+                    <div class="vocab-item"><div class="vocab-word">44. foundational (adj)</div><div class="vocab-definition">forming the base or foundation of something</div></div>
+                    <div class="vocab-item"><div class="vocab-word">45. corridor (n)</div><div class="vocab-definition">a long passage in a building</div></div>
+                    <div class="vocab-item"><div class="vocab-word">46. workforce (n)</div><div class="vocab-definition">the people engaged in or available for work</div></div>
+                    <div class="vocab-item"><div class="vocab-word">47. survey (n)</div><div class="vocab-definition">an investigation of the views or experiences of a group</div></div>
+                    <div class="vocab-item"><div class="vocab-word">48. channel (v)</div><div class="vocab-definition">to direct resources or efforts toward a purpose</div></div>
+                    <div class="vocab-item"><div class="vocab-word">49. diverse (adj)</div><div class="vocab-definition">showing a great deal of variety</div></div>
+                    <div class="vocab-item"><div class="vocab-word">50. balancing act (n)</div><div class="vocab-definition">trying to manage two or more things at the same time</div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== TASK 1 FULLSCREEN ===== -->
+        <div class="task-card fullscreen active" id="task1">
+            <div class="task-header-bar">
+                <h2>📖 Task 1: IELTS Reading — The MIT Factor</h2>
+                <p>Read the passage carefully and answer Questions 1–13. Passage on the left, questions on the right.</p>
+            </div>
+            <div class="reading-split">
+                <div class="passage-side">
+                    <h2>The MIT Factor: Celebrating 150 Years of Maverick Genius</h2>
+                    <div class="author">by Ed Pilkington</div>
+                    <p>The musician Yo-Yo Ma's cello may not be the obvious starting point for a journey into one of the world's great universities. But, as you quickly realise when you step inside the Massachusetts Institute of Technology, there's precious little going on that you would normally see on a university campus. The cello, resting in a corner of MIT's celebrated media laboratory – a hub of creativity – looks like any other electric classical instrument. But it is much more. Machover, the composer, teacher and inventor responsible for its creation, calls it a 'hyperinstrument', a sort of thinking machine that allows Ma and his cello to interact with one another and make music together.</p>
+                    <p>'The aim is to build an instrument worthy of a great musician like Yo-Yo Ma that can understand what he is trying to do and respond to it,' Machover says. The cello has numerous sensors across its body and by measuring the pressure, speed and angle of the virtuoso's performance it can interpret his mood and engage with it, producing extraordinary new sounds. The virtuoso cellist frequently performs on the instrument as he tours around the world.</p>
+                    <p>Machover's passion for pushing at the boundaries of the existing world to extend and unleash human potential is not a bad description of MIT as a whole. This unusual community brings highly gifted, highly motivated individuals together from a vast range of disciplines, united by a common desire: to leap into the dark and reach for the unknown.</p>
+                    <p>The result of that single unifying ambition is visible all around. For the past 150 years, MIT has been leading the world into the future. The discoveries of its teachers and students have become the common everyday objects that we now all take for granted. The telephone, electromagnets, radars, high-speed photography, office photocopiers, cancer treatments, pocket calculators, computers, the Internet, the decoding of the human genome, lasers, space travel … the list of innovations that involved essential contributions from MIT and its faculty goes on and on.</p>
+                    <p>From the moment MIT was founded by William Barton Rogers in 1861, it was clear what it was not. While Harvard stuck to the English model of a classical education, with its emphasis on Latin and Greek, MIT looked to the German system of learning based on research and hands-on experimentation. Knowledge was at a premium, but it had to be useful.</p>
+                    <p>This down-to-earth quality is enshrined in the school motto, Mens et manus – Mind and hand – as well as its logo, which shows a gowned scholar standing beside an ironmonger bearing a hammer and anvil. That symbiosis of intellect and craftsmanship still suffuses the institute's classrooms, where students are not so much taught as engaged and inspired.</p>
+                    <p>Take Christopher Merrill, 21, a third-year undergraduate in computer science. He is spending most of his time on a competition set in his robotics class. The contest is to see which student can most effectively program a robot to build a house out of blocks in under ten minutes. Merrill says he could have gone for the easiest route – designing a simple robot that would build the house quickly. But he wanted to try to master an area of robotics that remains unconquered – adaptability, the ability of the robot to rethink its plans as the environment around it changes, as would a human. 'I like to take on things that have never been done before rather than to work in an iterative way just making small steps forward,' he explains.</p>
+                    <p>Merrill is already planning the start-up he wants to set up when he graduates in a year's time. He has an idea for an original version of a contact lens that would augment reality by allowing consumers to see additional visual information. He is fearful that he might be just too late in taking his concept to market, as he has heard that a Silicon Valley firm is already developing something similar. A survey of living MIT alumni found that they have formed 25,800 companies, employing more than three million people, including about a quarter of the workforce of Silicon Valley.</p>
+                    <p>What MIT delights in is taking brilliant minds from around the world in vastly diverse disciplines and putting them together. You can see that in its sparkling new David Koch Institute for Integrative Cancer Research, which brings scientists, engineers and clinicians under one roof. Or in its Energy Initiative, which acts as a bridge for MIT's combined work across all its five schools, channelling huge resources into the search for a solution to global warming. It has recently developed the use of viruses to synthesise batteries that could prove crucial in the advancement of electric cars.</p>
+                    <p>In the words of Tim Berners-Lee, the Briton who invented the World Wide Web, 'It's not just another university. Even though I spend my time with my head buried in the details of web technology, the nice thing is that when I do walk the corridors, I bump into people who are working in other fields with their students that are fascinating, and that keeps me intellectually alive.'</p>
+                </div>
+
+                <div class="questions-side">
+                    <div class="q-section-title">Questions 1–5: TRUE / FALSE / NOT GIVEN</div>
+                    <div class="tfng-item" id="tq1">
+                        <div class="q-text">1. The activities going on at the MIT campus are like those at any other university.</div>
+                        <div class="tfng-radios">
+                            <label><input type="radio" name="tq1" value="TRUE" onchange="validateTask1()"> TRUE</label>
+                            <label><input type="radio" name="tq1" value="FALSE" onchange="validateTask1()"> FALSE</label>
+                            <label><input type="radio" name="tq1" value="NOT GIVEN" onchange="validateTask1()"> NOT GIVEN</label>
+                        </div>
+                        <span class="answer-feedback" id="fbt1"></span>
+                    </div>
+                    <div class="tfng-item" id="tq2">
+                        <div class="q-text">2. Harvard and MIT shared a similar approach to education when they were founded.</div>
+                        <div class="tfng-radios">
+                            <label><input type="radio" name="tq2" value="TRUE" onchange="validateTask1()"> TRUE</label>
+                            <label><input type="radio" name="tq2" value="FALSE" onchange="validateTask1()"> FALSE</label>
+                            <label><input type="radio" name="tq2" value="NOT GIVEN" onchange="validateTask1()"> NOT GIVEN</label>
+                        </div>
+                        <span class="answer-feedback" id="fbt2"></span>
+                    </div>
+                    <div class="tfng-item" id="tq3">
+                        <div class="q-text">3. The school motto was suggested by a former MIT student.</div>
+                        <div class="tfng-radios">
+                            <label><input type="radio" name="tq3" value="TRUE" onchange="validateTask1()"> TRUE</label>
+                            <label><input type="radio" name="tq3" value="FALSE" onchange="validateTask1()"> FALSE</label>
+                            <label><input type="radio" name="tq3" value="NOT GIVEN" onchange="validateTask1()"> NOT GIVEN</label>
+                        </div>
+                        <span class="answer-feedback" id="fbt3"></span>
+                    </div>
+                    <div class="tfng-item" id="tq4">
+                        <div class="q-text">4. MIT's logo reflects the belief that intellect and craftsmanship go together.</div>
+                        <div class="tfng-radios">
+                            <label><input type="radio" name="tq4" value="TRUE" onchange="validateTask1()"> TRUE</label>
+                            <label><input type="radio" name="tq4" value="FALSE" onchange="validateTask1()"> FALSE</label>
+                            <label><input type="radio" name="tq4" value="NOT GIVEN" onchange="validateTask1()"> NOT GIVEN</label>
+                        </div>
+                        <span class="answer-feedback" id="fbt4"></span>
+                    </div>
+                    <div class="tfng-item" id="tq5">
+                        <div class="q-text">5. Silicon Valley companies pay higher salaries to graduates from MIT.</div>
+                        <div class="tfng-radios">
+                            <label><input type="radio" name="tq5" value="TRUE" onchange="validateTask1()"> TRUE</label>
+                            <label><input type="radio" name="tq5" value="FALSE" onchange="validateTask1()"> FALSE</label>
+                            <label><input type="radio" name="tq5" value="NOT GIVEN" onchange="validateTask1()"> NOT GIVEN</label>
+                        </div>
+                        <span class="answer-feedback" id="fbt5"></span>
+                    </div>
+
+                    <div class="q-section-title">Questions 6–9: Notes (NO MORE THAN TWO WORDS)</div>
+                    <p style="font-size:0.85rem;color:#666;margin-bottom:10px;">Christopher Merrill – student at MIT</p>
+                    <div class="notes-item">6. Degree subject: <input type="text" id="nq6" placeholder="(6)" oninput="validateTask1()"><span class="answer-feedback" id="fbn6"></span></div>
+                    <div class="notes-item">7. Competition: to <input type="text" id="nq7" placeholder="(7)" oninput="validateTask1()"> the automated construction of a house <span class="answer-feedback" id="fbn7"></span></div>
+                    <div class="notes-item">8. Special focus on: the <input type="text" id="nq8" placeholder="(8)" oninput="validateTask1()"> of robots <span class="answer-feedback" id="fbn8"></span></div>
+                    <div class="notes-item">9. Future plans: to develop new type of <input type="text" id="nq9" placeholder="(9)" oninput="validateTask1()"><span class="answer-feedback" id="fbn9"></span></div>
+
+                    <div class="q-section-title">Questions 10–13: Short Answers (NO MORE THAN TWO WORDS)</div>
+                    <div class="short-item">
+                        <div class="sq">10. What proportion of workers at Silicon Valley are employed in companies set up by MIT graduates?</div>
+                        <input type="text" id="sq10" placeholder="(10)" oninput="validateTask1()"><span class="answer-feedback" id="fbs10"></span>
+                    </div>
+                    <div class="short-item">
+                        <div class="sq">11. What problem does MIT's Energy Initiative aim to solve?</div>
+                        <input type="text" id="sq11" placeholder="(11)" oninput="validateTask1()"><span class="answer-feedback" id="fbs11"></span>
+                    </div>
+                    <div class="short-item">
+                        <div class="sq">12. Which 'green' innovation might MIT's work with viruses help improve?</div>
+                        <input type="text" id="sq12" placeholder="(12)" oninput="validateTask1()"><span class="answer-feedback" id="fbs12"></span>
+                    </div>
+                    <div class="short-item">
+                        <div class="sq">13. In which part of the university does Tim Berners-Lee enjoy stimulating conversations?</div>
+                        <input type="text" id="sq13" placeholder="(13)" oninput="validateTask1()"><span class="answer-feedback" id="fbs13"></span>
+                    </div>
+
+                    <p class="validation-hint" id="hint1">⚠️ Please answer all 13 questions before checking.</p>
+                    <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+                        <button class="btn btn-success" id="checkBtn1" onclick="checkTask1()" disabled>Done</button>
+                    </div>
+                    <div id="showAnswersDiv1" style="display:none;margin-top:15px;text-align:center;">
+                        <button class="btn btn-primary" onclick="toggleAnswers('answers1','at1btn')" id="at1btn">▼ Show Answers</button>
+                    </div>
+                    <div class="answer-section" id="answers1" style="display:none;margin-top:10px;">
+                        <div class="answer-title">✅ Answer Key</div>
+                        <p><strong>1.</strong> FALSE &nbsp;<strong>2.</strong> FALSE &nbsp;<strong>3.</strong> NOT GIVEN &nbsp;<strong>4.</strong> TRUE &nbsp;<strong>5.</strong> NOT GIVEN</p>
+                        <p style="margin-top:8px;"><strong>6.</strong> computer science &nbsp;<strong>7.</strong> program &nbsp;<strong>8.</strong> adaptability &nbsp;<strong>9.</strong> contact lens</p>
+                        <p style="margin-top:8px;"><strong>10.</strong> a quarter &nbsp;<strong>11.</strong> global warming &nbsp;<strong>12.</strong> electric cars &nbsp;<strong>13.</strong> the corridors</p>
+                    </div>
+                    <div style="margin-top:15px;text-align:center;">
+                        <button class="btn btn-primary" id="nextBtn1" onclick="nextTask('task1')" disabled>Next Task →</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== TASK 2 ===== -->
+        <div class="task-card" id="task2">
+            <div class="task-header"><div class="task-title">📄 Task 2: Article Reading</div><div class="task-description">Open the vocabulary list and article, then study them carefully.</div></div>
+            <a href="visual_symbols_vocab.pdf" target="_blank" class="pdf-link-card">
+                <div class="pdf-icon">📋</div><div class="pdf-info"><h3>Vocabulary List</h3><p>Study key vocabulary before reading</p></div>
+                <span style="margin-left:auto;color:#667eea;font-weight:bold;">Open PDF →</span>
+            </a>
+            <a href="visual_symbols_article.pdf" target="_blank" class="pdf-link-card">
+                <div class="pdf-icon">📰</div><div class="pdf-info"><h3>Reading Article</h3><p>Read the full article carefully</p></div>
+                <span style="margin-left:auto;color:#667eea;font-weight:bold;">Open PDF →</span>
+            </a>
+            <div class="task-buttons">
+                <button class="btn btn-secondary" onclick="prevTask('task2')">← Previous Task</button>
+                <button class="btn btn-primary" onclick="nextTask('task2')">Done — Next Task →</button>
+            </div>
+        </div>
+
+        <!-- ===== TASK 3 ===== -->
+        <div class="task-card" id="task3">
+            <div class="task-header"><div class="task-title">📖 Task 3: IELTS Reading — Multiple Intelligences</div><div class="task-description">Open the reading test, complete all questions, then come back.</div>
+                <div style="margin-top:15px;background:#fff3cd;padding:12px 18px;border-radius:8px;border-left:4px solid #ffc107;">⏱️ Recommended time: <strong>20 minutes</strong></div>
+            </div>
+            <a href="Z.CDI.(Multiple_Intelligences_IELTS).html" target="_blank" class="link-card">
+                <div class="link-icon">📖</div><h3>Open Reading Test</h3><p>Multiple Intelligences — Full IELTS Reading Practice</p>
+            </a>
+            <div class="task-buttons">
+                <button class="btn btn-secondary" onclick="prevTask('task3')">← Previous Task</button>
+                <button class="btn btn-primary" onclick="nextTask('task3')">Done — Next Task →</button>
+            </div>
+        </div>
+
+        <!-- ===== BREAK ===== -->
+        <div class="task-card" id="break">
+            <div class="break-screen">
+                <div class="break-emoji">☕</div>
+                <div class="break-title">Time for a Break!</div>
+                <div class="break-text">Excellent work on the first three tasks! Take a rest before continuing.</div>
+                <div style="display:flex;gap:15px;justify-content:center;flex-wrap:wrap;">
+                    <button class="btn btn-secondary" onclick="prevTask('break')">← Previous Task</button>
+                    <button class="btn btn-primary" onclick="nextTask('break')" style="font-size:1.2rem;padding:15px 40px;">Continue →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== TASK 4 ===== -->
+        <div class="task-card" id="task4">
+            <div class="task-header"><div class="task-title">🎧 Task 4: Listening — Graduate Fair Registration</div><div class="task-description">Listen and complete the form. Write NO MORE THAN THREE WORDS AND/OR A NUMBER for each answer.</div></div>
+            <audio controls class="audio-player"><source src="UNIT 1 Track 1.mp3" type="audio/mpeg">Your browser does not support the audio element.</audio>
+            <div class="form-box">
+                <h3>🎓 Graduate Fair Registration</h3>
+                <div class="form-subtitle">TGS Global — Graduate Details</div>
+                <div class="form-row"><div class="form-label">Area of work:</div><div class="form-value"><span class="form-example">Example: Marketing</span></div></div>
+                <div class="form-row"><div class="form-label">Name:</div><div class="form-value">Dominika <input type="text" id="fq1" placeholder="(1)" oninput="validateTask4()" style="width:180px;"><span class="answer-feedback" id="fbf1"></span></div></div>
+                <div class="form-row"><div class="form-label">Nationality:</div><div class="form-value"><input type="text" id="fq2" placeholder="(2)" oninput="validateTask4()" style="width:150px;"><span class="answer-feedback" id="fbf2"></span></div></div>
+                <div class="form-row"><div class="form-label">Email address:</div><div class="form-value"><input type="text" id="fq3" placeholder="(3)" oninput="validateTask4()" style="width:170px;">@qmail.com <span class="answer-feedback" id="fbf3"></span></div></div>
+                <div class="form-row"><div class="form-label">University:</div><div class="form-value">London</div></div>
+                <div class="form-row"><div class="form-label">Type of course:</div><div class="form-value"><input type="text" id="fq4" placeholder="(4)" oninput="validateTask4()" style="width:130px;"> BA <span class="answer-feedback" id="fbf4"></span></div></div>
+                <div class="form-row"><div class="form-label">Date available:</div><div class="form-value"><input type="text" id="fq5" placeholder="(5)" oninput="validateTask4()" style="width:130px;"><span class="answer-feedback" id="fbf5"></span></div></div>
+                <div style="margin:20px 0 10px;font-weight:bold;color:#667eea;font-size:1rem;border-top:2px solid #dee2e6;padding-top:15px;">Personal Information</div>
+                <div class="form-row"><div class="form-label">Other activities:</div><div class="form-value">organised a <input type="text" id="fq6" placeholder="(6)" oninput="validateTask4()" style="width:140px;"> for charity <span class="answer-feedback" id="fbf6"></span></div></div>
+                <div class="form-row"><div class="form-label">Interests:</div><div class="form-value"><input type="text" id="fq7a" placeholder="(7a)" oninput="validateTask4()" style="width:120px;"> and <input type="text" id="fq7b" placeholder="(7b)" oninput="validateTask4()" style="width:120px;"><span class="answer-feedback" id="fbf7"></span></div></div>
+                <div class="form-row"><div class="form-label">Previous job(s):</div><div class="form-value"><input type="text" id="fq8" placeholder="(8)" oninput="validateTask4()" style="width:190px;"><span class="answer-feedback" id="fbf8"></span></div></div>
+                <div class="form-row"><div class="form-label">Career plans:</div><div class="form-value">wants to be a <input type="text" id="fq9" placeholder="(9)" oninput="validateTask4()" style="width:175px;"><span class="answer-feedback" id="fbf9"></span></div></div>
+                <div class="form-row"><div class="form-label">Heard about fair through:</div><div class="form-value"><input type="text" id="fq10" placeholder="(10)" oninput="validateTask4()" style="width:120px;"><span class="answer-feedback" id="fbf10"></span></div></div>
+            </div>
+            <p class="validation-hint" id="hint4">⚠️ Please fill in all fields before checking.</p>
+            <div class="task-buttons">
+                <button class="btn btn-secondary" onclick="prevTask('task4')">← Previous Task</button>
+                <button class="btn btn-success" id="checkBtn4" onclick="checkTask4()" disabled>Done</button>
+            </div>
+            <div id="showAnswersDiv4" style="display:none;margin-top:20px;text-align:center;">
+                <button class="btn btn-primary" onclick="toggleAnswers('answers4','at4btn')" id="at4btn">▼ Show Answers</button>
+            </div>
+            <div class="answer-section" id="answers4" style="display:none;">
+                <div class="answer-title">✅ Answer Key</div>
+                <p><strong>1.</strong> Alexandrovna &nbsp;&nbsp; <strong>2.</strong> Russian &nbsp;&nbsp; <strong>3.</strong> (listen for email prefix) &nbsp;&nbsp; <strong>4.</strong> full-time</p>
+                <p style="margin-top:6px;"><strong>5.</strong> 21 July (or July 21 / 21/7) &nbsp;&nbsp; <strong>6.</strong> competition &nbsp;&nbsp; <strong>7.</strong> cooking/cookery AND swimming</p>
+                <p style="margin-top:6px;"><strong>8.</strong> children's tutor &nbsp;&nbsp; <strong>9.</strong> project manager &nbsp;&nbsp; <strong>10.</strong> friend</p>
+            </div>
+            <div class="task-buttons">
+                <button class="btn btn-primary" id="nextBtn4" onclick="nextTask('task4')" disabled>Next Task →</button>
+            </div>
+        </div>
+
+        <!-- ===== TASK 5 ===== -->
+        <div class="task-card" id="task5">
+            <div class="task-header"><div class="task-title">🎥 Task 5: Video — MIT, Entrepreneurship & Online Education</div><div class="task-description">Watch the video and complete all three parts below.</div></div>
+            <div class="video-container"><iframe src="https://www.youtube.com/embed/KKIqYSDUZ_s" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+            <div style="text-align:center;margin-bottom:20px;"><a href="https://www.youtube.com/watch?v=KKIqYSDUZ_s" target="_blank" class="btn btn-primary" style="text-decoration:none;display:inline-block;">▶ Watch on YouTube</a></div>
+
+            <div class="section-label">Part 1 — Multiple Choice Questions (answer ALL 10)</div>
+            <div class="mcq-question"><div class="q-text">1. Why was MIT originally founded in the 1860s?</div>
+                <div class="mcq-option"><input type="radio" name="t5q1" value="A" onchange="validateTask5()"><label>A. To train clergy members</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q1" value="B" onchange="validateTask5()"><label>B. To compete with Oxford and Cambridge</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q1" value="C" onchange="validateTask5()"><label>C. To support the Industrial Revolution with technical education</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q1" value="D" onchange="validateTask5()"><label>D. To focus only on philosophy and literature</label></div>
+                <span class="answer-feedback" id="fb5_1"></span>
+            </div>
+            <div class="mcq-question"><div class="q-text">2. What was the traditional education model before MIT?</div>
+                <div class="mcq-option"><input type="radio" name="t5q2" value="A" onchange="validateTask5()"><label>A. Technical institutes</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q2" value="B" onchange="validateTask5()"><label>B. The Oxford-Cambridge model</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q2" value="C" onchange="validateTask5()"><label>C. Online learning systems</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q2" value="D" onchange="validateTask5()"><label>D. Business-focused universities</label></div>
+                <span class="answer-feedback" id="fb5_2"></span>
+            </div>
+            <div class="mcq-question"><div class="q-text">3. What does the MIT motto "Mens et Manus" mean?</div>
+                <div class="mcq-option"><input type="radio" name="t5q3" value="A" onchange="validateTask5()"><label>A. Science and innovation</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q3" value="B" onchange="validateTask5()"><label>B. Knowledge and leadership</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q3" value="C" onchange="validateTask5()"><label>C. Mind and hand</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q3" value="D" onchange="validateTask5()"><label>D. Research and technology</label></div>
+                <span class="answer-feedback" id="fb5_3"></span>
+            </div>
+            <div class="mcq-question"><div class="q-text">4. What kind of students was MIT originally designed to educate?</div>
+                <div class="mcq-option"><input type="radio" name="t5q4" value="A" onchange="validateTask5()"><label>A. Only wealthy Americans</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q4" value="B" onchange="validateTask5()"><label>B. Children of politicians</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q4" value="C" onchange="validateTask5()"><label>C. Immigrants and immigrants' children</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q4" value="D" onchange="validateTask5()"><label>D. International diplomats</label></div>
+                <span class="answer-feedback" id="fb5_4"></span>
+            </div>
+            <div class="mcq-question"><div class="q-text">5. According to the speaker, what makes MIT a meritocracy?</div>
+                <div class="mcq-option"><input type="radio" name="t5q5" value="A" onchange="validateTask5()"><label>A. Students receive honorary degrees</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q5" value="B" onchange="validateTask5()"><label>B. Family connections guarantee admission</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q5" value="C" onchange="validateTask5()"><label>C. Students earn their place through ability and effort</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q5" value="D" onchange="validateTask5()"><label>D. Only top athletes are accepted</label></div>
+                <span class="answer-feedback" id="fb5_5"></span>
+            </div>
+            <div class="mcq-question"><div class="q-text">6. Why does MIT not classify graduates "with honors"?</div>
+                <div class="mcq-option"><input type="radio" name="t5q6" value="A" onchange="validateTask5()"><label>A. The university dislikes competition</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q6" value="B" onchange="validateTask5()"><label>B. Everyone who graduates has already proven themselves</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q6" value="C" onchange="validateTask5()"><label>C. MIT does not give grades</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q6" value="D" onchange="validateTask5()"><label>D. Students choose whether to receive honors</label></div>
+                <span class="answer-feedback" id="fb5_6"></span>
+            </div>
+            <div class="mcq-question"><div class="q-text">7. Why was the speaker initially resistant to teaching entrepreneurship online?</div>
+                <div class="mcq-option"><input type="radio" name="t5q7" value="A" onchange="validateTask5()"><label>A. He disliked technology</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q7" value="B" onchange="validateTask5()"><label>B. Online classes were too expensive</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q7" value="C" onchange="validateTask5()"><label>C. He believed entrepreneurship was too context-specific</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q7" value="D" onchange="validateTask5()"><label>D. He thought students would cheat</label></div>
+                <span class="answer-feedback" id="fb5_7"></span>
+            </div>
+            <div class="mcq-question"><div class="q-text">8. What changed the speaker's mind about online teaching?</div>
+                <div class="mcq-option"><input type="radio" name="t5q8" value="A" onchange="validateTask5()"><label>A. Government funding</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q8" value="B" onchange="validateTask5()"><label>B. Writing his book about disciplined entrepreneurship</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q8" value="C" onchange="validateTask5()"><label>C. Pressure from MIT administrators</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q8" value="D" onchange="validateTask5()"><label>D. Student complaints</label></div>
+                <span class="answer-feedback" id="fb5_8"></span>
+            </div>
+            <div class="mcq-question"><div class="q-text">9. What advantage of online education does the speaker emphasize most?</div>
+                <div class="mcq-option"><input type="radio" name="t5q9" value="A" onchange="validateTask5()"><label>A. It is easier than classroom learning</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q9" value="B" onchange="validateTask5()"><label>B. It removes the need for teachers</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q9" value="C" onchange="validateTask5()"><label>C. It allows education to reach many more people</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q9" value="D" onchange="validateTask5()"><label>D. It guarantees business success</label></div>
+                <span class="answer-feedback" id="fb5_9"></span>
+            </div>
+            <div class="mcq-question"><div class="q-text">10. How can learners get the most value from online courses?</div>
+                <div class="mcq-option"><input type="radio" name="t5q10" value="A" onchange="validateTask5()"><label>A. Memorizing lecture notes</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q10" value="B" onchange="validateTask5()"><label>B. Applying what they learn in real life</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q10" value="C" onchange="validateTask5()"><label>C. Finishing courses as quickly as possible</label></div>
+                <div class="mcq-option"><input type="radio" name="t5q10" value="D" onchange="validateTask5()"><label>D. Watching videos multiple times only</label></div>
+                <span class="answer-feedback" id="fb5_10"></span>
+            </div>
+
+            <div class="section-label">Part 2 — Gap Filling (fill ALL 5 gaps)</div>
+            <div class="word-box"><strong>Word Box:</strong> framework — scalability — ambition — impact — meritocracy — entrepreneurship — privileged</div>
+            <div class="gap-sentence">11. The speaker eventually realized there was a useful <input type="text" id="t5g11" placeholder="(11)" oninput="validateTask5()"> for teaching entrepreneurship.</div>
+            <div class="gap-sentence">12. One major benefit of online education is its <input type="text" id="t5g12" placeholder="(12)" oninput="validateTask5()">, meaning it can reach huge numbers of learners.</div>
+            <div class="gap-sentence">13. In the past, education was mostly available only to the <input type="text" id="t5g13" placeholder="(13)" oninput="validateTask5()"> few.</div>
+            <div class="gap-sentence">14. The speaker encourages people with <input type="text" id="t5g14" placeholder="(14)" oninput="validateTask5()"> to take advantage of online courses.</div>
+            <div class="gap-sentence">15. Applying knowledge in the real world helps students create an <input type="text" id="t5g15" placeholder="(15)" oninput="validateTask5()"> on society.</div>
+
+            <div class="section-label">Part 3 — Vocabulary Matching (match ALL 10)</div>
+            <table class="vocab-match-table">
+                <thead><tr><th>Word</th><th>Select the correct meaning</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>1. meritocracy</strong></td><td><select id="vm1" onchange="validateTask5()"><option value="">Choose...</option><option value="A">A. ability to grow or expand efficiently</option><option value="B">B. a system where success is based on ability</option><option value="C">C. determination to achieve something</option><option value="D">D. practical influence or effect</option><option value="E">E. creating and managing businesses</option><option value="F">F. a basic structure or system</option><option value="G">G. given as a special honor without earning it</option><option value="H">H. having special advantages unavailable to others</option><option value="I">I. former students of a school or university</option><option value="J">J. the situation surrounding something</option></select><span class="answer-feedback" id="fbvm1"></span></td></tr>
+                    <tr><td><strong>2. entrepreneurship</strong></td><td><select id="vm2" onchange="validateTask5()"><option value="">Choose...</option><option value="A">A. ability to grow or expand efficiently</option><option value="B">B. a system where success is based on ability</option><option value="C">C. determination to achieve something</option><option value="D">D. practical influence or effect</option><option value="E">E. creating and managing businesses</option><option value="F">F. a basic structure or system</option><option value="G">G. given as a special honor without earning it</option><option value="H">H. having special advantages unavailable to others</option><option value="I">I. former students of a school or university</option><option value="J">J. the situation surrounding something</option></select><span class="answer-feedback" id="fbvm2"></span></td></tr>
+                    <tr><td><strong>3. framework</strong></td><td><select id="vm3" onchange="validateTask5()"><option value="">Choose...</option><option value="A">A. ability to grow or expand efficiently</option><option value="B">B. a system where success is based on ability</option><option value="C">C. determination to achieve something</option><option value="D">D. practical influence or effect</option><option value="E">E. creating and managing businesses</option><option value="F">F. a basic structure or system</option><option value="G">G. given as a special honor without earning it</option><option value="H">H. having special advantages unavailable to others</option><option value="I">I. former students of a school or university</option><option value="J">J. the situation surrounding something</option></select><span class="answer-feedback" id="fbvm3"></span></td></tr>
+                    <tr><td><strong>4. scalability</strong></td><td><select id="vm4" onchange="validateTask5()"><option value="">Choose...</option><option value="A">A. ability to grow or expand efficiently</option><option value="B">B. a system where success is based on ability</option><option value="C">C. determination to achieve something</option><option value="D">D. practical influence or effect</option><option value="E">E. creating and managing businesses</option><option value="F">F. a basic structure or system</option><option value="G">G. given as a special honor without earning it</option><option value="H">H. having special advantages unavailable to others</option><option value="I">I. former students of a school or university</option><option value="J">J. the situation surrounding something</option></select><span class="answer-feedback" id="fbvm4"></span></td></tr>
+                    <tr><td><strong>5. privileged</strong></td><td><select id="vm5" onchange="validateTask5()"><option value="">Choose...</option><option value="A">A. ability to grow or expand efficiently</option><option value="B">B. a system where success is based on ability</option><option value="C">C. determination to achieve something</option><option value="D">D. practical influence or effect</option><option value="E">E. creating and managing businesses</option><option value="F">F. a basic structure or system</option><option value="G">G. given as a special honor without earning it</option><option value="H">H. having special advantages unavailable to others</option><option value="I">I. former students of a school or university</option><option value="J">J. the situation surrounding something</option></select><span class="answer-feedback" id="fbvm5"></span></td></tr>
+                    <tr><td><strong>6. honorary</strong></td><td><select id="vm6" onchange="validateTask5()"><option value="">Choose...</option><option value="A">A. ability to grow or expand efficiently</option><option value="B">B. a system where success is based on ability</option><option value="C">C. determination to achieve something</option><option value="D">D. practical influence or effect</option><option value="E">E. creating and managing businesses</option><option value="F">F. a basic structure or system</option><option value="G">G. given as a special honor without earning it</option><option value="H">H. having special advantages unavailable to others</option><option value="I">I. former students of a school or university</option><option value="J">J. the situation surrounding something</option></select><span class="answer-feedback" id="fbvm6"></span></td></tr>
+                    <tr><td><strong>7. ambition</strong></td><td><select id="vm7" onchange="validateTask5()"><option value="">Choose...</option><option value="A">A. ability to grow or expand efficiently</option><option value="B">B. a system where success is based on ability</option><option value="C">C. determination to achieve something</option><option value="D">D. practical influence or effect</option><option value="E">E. creating and managing businesses</option><option value="F">F. a basic structure or system</option><option value="G">G. given as a special honor without earning it</option><option value="H">H. having special advantages unavailable to others</option><option value="I">I. former students of a school or university</option><option value="J">J. the situation surrounding something</option></select><span class="answer-feedback" id="fbvm7"></span></td></tr>
+                    <tr><td><strong>8. impact</strong></td><td><select id="vm8" onchange="validateTask5()"><option value="">Choose...</option><option value="A">A. ability to grow or expand efficiently</option><option value="B">B. a system where success is based on ability</option><option value="C">C. determination to achieve something</option><option value="D">D. practical influence or effect</option><option value="E">E. creating and managing businesses</option><option value="F">F. a basic structure or system</option><option value="G">G. given as a special honor without earning it</option><option value="H">H. having special advantages unavailable to others</option><option value="I">I. former students of a school or university</option><option value="J">J. the situation surrounding something</option></select><span class="answer-feedback" id="fbvm8"></span></td></tr>
+                    <tr><td><strong>9. alumni</strong></td><td><select id="vm9" onchange="validateTask5()"><option value="">Choose...</option><option value="A">A. ability to grow or expand efficiently</option><option value="B">B. a system where success is based on ability</option><option value="C">C. determination to achieve something</option><option value="D">D. practical influence or effect</option><option value="E">E. creating and managing businesses</option><option value="F">F. a basic structure or system</option><option value="G">G. given as a special honor without earning it</option><option value="H">H. having special advantages unavailable to others</option><option value="I">I. former students of a school or university</option><option value="J">J. the situation surrounding something</option></select><span class="answer-feedback" id="fbvm9"></span></td></tr>
+                    <tr><td><strong>10. context</strong></td><td><select id="vm10" onchange="validateTask5()"><option value="">Choose...</option><option value="A">A. ability to grow or expand efficiently</option><option value="B">B. a system where success is based on ability</option><option value="C">C. determination to achieve something</option><option value="D">D. practical influence or effect</option><option value="E">E. creating and managing businesses</option><option value="F">F. a basic structure or system</option><option value="G">G. given as a special honor without earning it</option><option value="H">H. having special advantages unavailable to others</option><option value="I">I. former students of a school or university</option><option value="J">J. the situation surrounding something</option></select><span class="answer-feedback" id="fbvm10"></span></td></tr>
+                </tbody>
+            </table>
+
+            <p class="validation-hint" id="hint5">⚠️ Please answer all questions in all three parts before checking.</p>
+            <div class="task-buttons">
+                <button class="btn btn-secondary" onclick="prevTask('task5')">← Previous Task</button>
+                <button class="btn btn-success" id="checkBtn5" onclick="checkTask5()" disabled>Done</button>
+            </div>
+            <div id="showAnswersDiv5" style="display:none;margin-top:20px;text-align:center;">
+                <button class="btn btn-primary" onclick="toggleAnswers('answers5','at5btn')" id="at5btn">▼ Show Answers</button>
+            </div>
+            <div class="answer-section" id="answers5" style="display:none;">
+                <div class="answer-title">✅ Answer Key</div>
+                <p><strong>MCQ:</strong> 1-C, 2-B, 3-C, 4-C, 5-C, 6-B, 7-C, 8-B, 9-C, 10-B</p>
+                <p style="margin-top:8px;"><strong>Gap Fill:</strong> 11-framework, 12-scalability, 13-privileged, 14-ambition, 15-impact</p>
+                <p style="margin-top:8px;"><strong>Vocab:</strong> 1-B, 2-E, 3-F, 4-A, 5-H, 6-G, 7-C, 8-D, 9-I, 10-J</p>
+            </div>
+            <div class="task-buttons">
+                <button class="btn btn-primary" id="nextBtn5" onclick="nextTask('task5')" disabled>Next Task →</button>
+            </div>
+        </div>
+
+        <!-- ===== TASK 6 ===== -->
+        <div class="task-card" id="task6">
+            <div class="task-header"><div class="task-title">🎙️ Task 6: Podcast — Student Mental Health</div><div class="task-description">Listen and complete ALL 29 gaps. Write ONE WORD ONLY in each gap.</div></div>
+            <audio controls class="audio-player"><source src="is student life all good.mp3" type="audio/mpeg">Your browser does not support the audio element.</audio>
+            <div class="transcript-box">
+                <p><strong>Alice:</strong> Hello and welcome to 6 Minute English. I'm Alice… <strong>Neil:</strong> …and I'm Neil. Hello.</p>
+                <p style="margin-top:12px;"><strong>Neil:</strong> Yes. University – the best days of my life. I made fantastic friends, went to great <input type="text" id="d6q1" placeholder="(1)" oninput="validateTask6()"><span class="answer-feedback" id="fb6_1"></span>.</p>
+                <p style="margin-top:12px;"><strong>Alice:</strong> Well, the subject of today's show is student mental <input type="text" id="d6q2" placeholder="(2)" oninput="validateTask6()"><span class="answer-feedback" id="fb6_2"></span>. So, Neil, do you think you're looking back at your university days through rose-tinted spectacles?</p>
+                <p style="margin-top:12px;"><strong>Neil:</strong> I did feel out of my comfort <input type="text" id="d6q3" placeholder="(3)" oninput="validateTask6()"><span class="answer-feedback" id="fb6_3"></span> when I arrived.</p>
+                <p style="margin-top:12px;"><strong>Alice:</strong> Being out of your comfort zone means being in a situation that makes you feel <input type="text" id="d6q4" placeholder="(4)" oninput="validateTask6()"><span class="answer-feedback" id="fb6_4"></span>. Did you get any counselling? That means professional help with personal or psychological <input type="text" id="d6q5" placeholder="(5)" oninput="validateTask6()"><span class="answer-feedback" id="fb6_5"></span>.</p>
+                <p style="margin-top:12px;"><strong>Neil:</strong> I just felt a bit homesick that's all – I missed my friends and <input type="text" id="d6q6" placeholder="(6)" oninput="validateTask6()"><span class="answer-feedback" id="fb6_6"></span>.</p>
+                <p style="margin-top:12px;"><strong>Alice:</strong> In a survey of students at Imperial College London, how many students said they suffered from high levels of stress or a mental health <input type="text" id="d6q7" placeholder="(7)" oninput="validateTask6()"><span class="answer-feedback" id="fb6_7"></span> during their time at college?</p>
+                <p style="margin-top:12px;"><strong>Neil:</strong> University life can be more stressful than people <input type="text" id="d6q8" placeholder="(8)" oninput="validateTask6()"><span class="answer-feedback" id="fb6_8"></span>.</p>
+                <p style="margin-top:12px;"><strong>Alice:</strong> Stress means pressure or worry caused by a difficult <input type="text" id="d6q9" placeholder="(9)" oninput="validateTask6()"><span class="answer-feedback" id="fb6_9"></span>. There has been a rise in students using counselling <input type="text" id="d6q10" placeholder="(10)" oninput="validateTask6()"><span class="answer-feedback" id="fb6_10"></span>.</p>
+                <p style="margin-top:12px;"><strong>Kirsty:</strong> It is a real balancing <input type="text" id="d6q11" placeholder="(11)" oninput="validateTask6()"><span class="answer-feedback" id="fb6_11"></span>. I was trying to balance social success with academic success whilst learning how to look after myself at quite a young <input type="text" id="d6q12" placeholder="(12)" oninput="validateTask6()"><span class="answer-feedback" id="fb6_12"></span>. And people really struggle with <input type="text" id="d6q13" placeholder="(13)" oninput="validateTask6()"><span class="answer-feedback" id="fb6_13"></span>.</p>
+                <p style="margin-top:12px;"><strong>Alice:</strong> It's where you try to give your attention to two or more things at the same <input type="text" id="d6q14" placeholder="(14)" oninput="validateTask6()"><span class="answer-feedback" id="fb6_14"></span>. Kirsty is learning to look after <input type="text" id="d6q15" placeholder="(15)" oninput="validateTask6()"><span class="answer-feedback" id="fb6_15"></span>.</p>
+                <p style="margin-top:12px;"><strong>Alice:</strong> Kirsty's learning to take care of herself – for example doing her own shopping and <input type="text" id="d6q16" placeholder="(16)" oninput="validateTask6()"><span class="answer-feedback" id="fb6_16"></span>.</p>
+                <p style="margin-top:12px;"><strong>Dr Ruth Caleb:</strong> Things that would be helpful: to do the washing, to do the <input type="text" id="d6q17" placeholder="(17)" oninput="validateTask6()"><span class="answer-feedback" id="fb6_17"></span> and so on – being able to cook. And also spending time on your own <input type="text" id="d6q18" placeholder="(18)" oninput="validateTask6()"><span class="answer-feedback" id="fb6_18"></span>.</p>
+                <p style="margin-top:12px;"><strong>Neil:</strong> I couldn't boil an <input type="text" id="d6q19" placeholder="(19)" oninput="validateTask6()"><span class="answer-feedback" id="fb6_19"></span> when I arrived at uni.</p>
+                <p style="margin-top:12px;"><strong>Alice:</strong> Budgeting means planning how much money you have and how you will <input type="text" id="d6q20" placeholder="(20)" oninput="validateTask6()"><span class="answer-feedback" id="fb6_20"></span> it.</p>
+                <p style="margin-top:12px;"><strong>Alice:</strong> Feet up, watching TV with a <input type="text" id="d6q21" placeholder="(21)" oninput="validateTask6()"><span class="answer-feedback" id="fb6_21"></span>.</p>
+                <p style="margin-top:12px;"><strong>Alice:</strong> How many said they suffered from high levels of stress during their time at <input type="text" id="d6q22" placeholder="(22)" oninput="validateTask6()"><span class="answer-feedback" id="fb6_22"></span>?</p>
+                <p style="margin-top:12px;"><strong>Alice:</strong> You are <input type="text" id="d6q23" placeholder="(23)" oninput="validateTask6()"><span class="answer-feedback" id="fb6_23"></span> – well done, Neil! Almost 70% of those that suffer from stress do so at least once a <input type="text" id="d6q24" placeholder="(24)" oninput="validateTask6()"><span class="answer-feedback" id="fb6_24"></span>. Stressed means anxious and <input type="text" id="d6q25" placeholder="(25)" oninput="validateTask6()"><span class="answer-feedback" id="fb6_25"></span>.</p>
+                <p style="margin-top:12px;"><strong>Alice:</strong> Through rose-tinted <input type="text" id="d6q26" placeholder="(26)" oninput="validateTask6()"><span class="answer-feedback" id="fb6_26"></span> / out of your comfort <input type="text" id="d6q27" placeholder="(27)" oninput="validateTask6()"><span class="answer-feedback" id="fb6_27"></span> / balancing <input type="text" id="d6q28" placeholder="(28)" oninput="validateTask6()"><span class="answer-feedback" id="fb6_28"></span>.</p>
+                <p style="margin-top:12px;"><strong>Neil:</strong> That brings us to the end of today's 6 Minute <input type="text" id="d6q29" placeholder="(29)" oninput="validateTask6()"><span class="answer-feedback" id="fb6_29"></span>.</p>
+            </div>
+            <p class="validation-hint" id="hint6">⚠️ Please fill in all 29 gaps before checking.</p>
+            <div class="task-buttons">
+                <button class="btn btn-secondary" onclick="prevTask('task6')">← Previous Task</button>
+                <button class="btn btn-success" id="checkBtn6" onclick="checkTask6()" disabled>Done</button>
+            </div>
+            <div id="showAnswersDiv6" style="display:none;margin-top:20px;text-align:center;">
+                <button class="btn btn-primary" onclick="toggleAnswers('answers6','at6btn')" id="at6btn">▼ Show Answers</button>
+            </div>
+            <div class="answer-section" id="answers6" style="display:none;">
+                <div class="answer-title">✅ Answer Key</div>
+                <div style="columns:2;gap:30px;line-height:2.2;">
+                    <p>1. parties</p><p>2. health</p><p>3. zone</p><p>4. nervous</p><p>5. problems</p>
+                    <p>6. family</p><p>7. condition</p><p>8. realize</p><p>9. situation</p><p>10. services</p>
+                    <p>11. act</p><p>12. age</p><p>13. it</p><p>14. time</p><p>15. herself</p>
+                    <p>16. cooking</p><p>17. cleaning</p><p>18. comfortably</p><p>19. egg</p><p>20. spend</p>
+                    <p>21. takeaway</p><p>22. college</p><p>23. correct</p><p>24. week</p><p>25. worried</p>
+                    <p>26. spectacles</p><p>27. zone</p><p>28. act</p><p>29. English</p>
+                </div>
+            </div>
+            <div class="task-buttons">
+                <button class="btn btn-primary" id="nextBtn6" onclick="nextTask('task6')" disabled>Next Task →</button>
+            </div>
+        </div>
+
+        <!-- ===== TASK 7 ===== -->
+        <div class="task-card" id="task7">
+            <div class="task-header"><div class="task-title">🎧 Task 7: Listening Test — Rental Property Application</div><div class="task-description">Open the listening test in a new tab, complete all questions, then come back.</div></div>
+            <a href="Z.CDI (Rental Property Application form).html" target="_blank" class="link-card">
+                <div class="link-icon">🎧</div><h3>Open Listening Test</h3><p>Rental Property Application Form — Full IELTS Listening Practice</p>
+            </a>
+            <div class="task-buttons">
+                <button class="btn btn-secondary" onclick="prevTask('task7')">← Previous Task</button>
+                <button class="btn btn-primary" onclick="nextTask('task7')">Done — Finish Day 4 →</button>
+            </div>
+        </div>
+
+        <!-- ===== COMPLETION ===== -->
+        <div class="task-card" id="completion">
+            <div class="completion">
+                <div class="completion-header">
+                    <div class="completion-emoji">🎉</div>
+                    <div class="completion-title">Day 4 Complete!</div>
+                    <div class="completion-text">Fantastic work! You've completed all 7 tasks for Week 1, Day 4.</div>
+                </div>
+                <div class="section-label" style="margin-top:30px;">📋 Review Your Work</div>
+                <p style="color:#666;margin-bottom:20px;">Click any task below to go back and review it.</p>
+                <div class="review-grid">
+                    <div class="review-card" onclick="goToTask('task1',0)"><div class="task-num">Task 1</div><div class="task-lbl">MIT Reading</div><div class="done-badge">✅</div></div>
+                    <div class="review-card" onclick="goToTask('task2',1)"><div class="task-num">Task 2</div><div class="task-lbl">Article Reading</div><div class="done-badge">✅</div></div>
+                    <div class="review-card" onclick="goToTask('task3',2)"><div class="task-num">Task 3</div><div class="task-lbl">IELTS Reading</div><div class="done-badge">✅</div></div>
+                    <div class="review-card" onclick="goToTask('task4',4)"><div class="task-num">Task 4</div><div class="task-lbl">Form Completion</div><div class="done-badge">✅</div></div>
+                    <div class="review-card" onclick="goToTask('task5',5)"><div class="task-num">Task 5</div><div class="task-lbl">Video + Vocab</div><div class="done-badge">✅</div></div>
+                    <div class="review-card" onclick="goToTask('task6',6)"><div class="task-num">Task 6</div><div class="task-lbl">Podcast Dictation</div><div class="done-badge">✅</div></div>
+                    <div class="review-card" onclick="goToTask('task7',7)"><div class="task-num">Task 7</div><div class="task-lbl">Listening Test</div><div class="done-badge">✅</div></div>
+                </div>
+                <div class="task-buttons" style="margin-top:30px;">
+                    <a href="/student-dashboard.html" class="btn btn-primary" style="text-decoration:none;">← Back to Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://nbfceuhuauizyucugejr.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_0mFIGJkA_DKZfUiDAWFdrA_nXt0hF6H';
+        const { createClient } = supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let currentStudent = null, sessionStartTime = Date.now(), totalTimeSpent = 0;
+        const WEEK = 1, DAY = 4, TOTAL_TASKS = 7;
+        let completedTasks = new Set();
+
+        document.addEventListener('DOMContentLoaded', async function() { await initializePage(); });
+
+        async function initializePage() {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('teacher') === 'true') {
+                    document.getElementById('splashScreen').classList.add('hidden');
+                    document.getElementById('mainContainer').classList.add('active');
+                    return;
+                }
+                const userStr = localStorage.getItem('user');
+                if (!userStr) { window.location.href = '/login.html'; return; }
+                const user = JSON.parse(userStr);
+                const { data: studentData, error } = await supabaseClient.from('students').select('*').eq('username', user.username).single();
+                if (error || !studentData) { alert('Error loading student data'); return; }
+                currentStudent = studentData;
+                await loadProgress();
+                startTimeTracking();
+            } catch(e) { console.error(e); }
+        }
+
+        async function loadProgress() {
+            try {
+                const { data: dayData } = await supabaseClient.from('day_summary').select('*').eq('student_id', currentStudent.id).eq('week', WEEK).eq('day', DAY).single();
+                if (dayData && dayData.percentage === 100) { document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active')); document.getElementById('completion').classList.add('active'); updateProgressBar(100); return; }
+                const { data: tasks } = await supabaseClient.from('task_progress').select('*').eq('student_id', currentStudent.id).eq('week', WEEK).eq('day', DAY);
+                if (tasks) { tasks.forEach(t => { if (t.status === 'completed') completedTasks.add(t.task_number); }); updateProgressBar((completedTasks.size / TOTAL_TASKS) * 100); }
+            } catch(e) { console.error(e); }
+        }
+
+        function updateProgressBar(pct) {
+            document.getElementById('progressBar').style.width = pct + '%';
+            document.getElementById('progressText').textContent = completedTasks.size + ' / ' + TOTAL_TASKS + ' Tasks';
+        }
+
+        async function markTaskComplete(taskNumber) {
+            if (!currentStudent || completedTasks.has(taskNumber)) return;
+            completedTasks.add(taskNumber);
+            const timeSpent = Math.floor((Date.now() - sessionStartTime) / 1000);
+            await supabaseClient.from('task_progress').upsert({ student_id: currentStudent.id, week: WEEK, day: DAY, task_number: taskNumber, status: 'completed', time_spent_seconds: timeSpent, started_at: new Date(sessionStartTime).toISOString(), completed_at: new Date().toISOString() }, { onConflict: 'student_id,week,day,task_number' });
+            updateProgressBar((completedTasks.size / TOTAL_TASKS) * 100);
+            if (completedTasks.size === TOTAL_TASKS) await markDayComplete();
+        }
+
+        async function markDayComplete() {
+            await supabaseClient.from('day_summary').upsert({ student_id: currentStudent.id, week: WEEK, day: DAY, completed_tasks: TOTAL_TASKS, total_tasks: TOTAL_TASKS, percentage: 100, total_time_spent_minutes: Math.floor(totalTimeSpent / 60), last_updated: new Date().toISOString() }, { onConflict: 'student_id,week,day' });
+        }
+
+        function startTimeTracking() { setInterval(() => { totalTimeSpent = Math.floor((Date.now() - sessionStartTime) / 1000); }, 30000); }
+
+        let currentTask = 0;
+        const taskOrder = ['task1','task2','task3','break','task4','task5','task6','task7'];
+
+        function startLearning() { document.getElementById('splashScreen').classList.add('hidden'); setTimeout(() => document.getElementById('mainContainer').classList.add('active'), 500); }
+        function toggleVocab() { const c = document.getElementById('vocabContent'), a = document.getElementById('vocabArrow'); c.classList.toggle('active'); a.textContent = c.classList.contains('active') ? '▲' : '▼'; }
+
+        async function nextTask(currentTaskId) {
+            if (currentTaskId !== 'break') { const idx = taskOrder.indexOf(currentTaskId); await markTaskComplete(idx > 3 ? idx : idx + 1); }
+            document.getElementById(currentTaskId).classList.remove('active');
+            currentTask++;
+            if (currentTask < taskOrder.length) {
+                document.getElementById(taskOrder[currentTask]).classList.add('active');
+                let pc = currentTask; if (currentTask >= 4) pc--;
+                document.getElementById('progressBar').style.width = (pc / 7 * 100) + '%';
+                document.getElementById('progressText').textContent = pc + ' / 7 Tasks';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                document.getElementById('completion').classList.add('active');
+                document.getElementById('progressBar').style.width = '100%';
+                document.getElementById('progressText').textContent = '7 / 7 Tasks - Complete!';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function prevTask(currentTaskId) { document.getElementById(currentTaskId).classList.remove('active'); currentTask--; if (currentTask >= 0) { document.getElementById(taskOrder[currentTask]).classList.add('active'); window.scrollTo({ top: 0, behavior: 'smooth' }); } }
+        function goToTask(taskId, taskIndex) { document.getElementById('completion').classList.remove('active'); document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active')); document.getElementById(taskId).classList.add('active'); currentTask = taskIndex; window.scrollTo({ top: 0, behavior: 'smooth' }); }
+        function toggleAnswers(divId, btnId) { const d = document.getElementById(divId), b = document.getElementById(btnId); d.style.display = d.style.display === 'none' ? 'block' : 'none'; b.textContent = d.style.display === 'block' ? '▲ Hide Answers' : '▼ Show Answers'; }
+
+        // TASK 1
+        function validateTask1() {
+            const tf = ['tq1','tq2','tq3','tq4','tq5'].every(n => document.querySelector(`input[name="${n}"]:checked`));
+            const notes = ['nq6','nq7','nq8','nq9'].every(id => document.getElementById(id).value.trim() !== '');
+            const short = ['sq10','sq11','sq12','sq13'].every(id => document.getElementById(id).value.trim() !== '');
+            document.getElementById('checkBtn1').disabled = !(tf && notes && short);
+        }
+
+        function checkTask1() {
+            const tfA = { tq1:'FALSE', tq2:'FALSE', tq3:'NOT GIVEN', tq4:'TRUE', tq5:'NOT GIVEN' };
+            for (let n in tfA) { const c = document.querySelector(`input[name="${n}"]:checked`), num = n.replace('tq',''), item = document.getElementById(n), fb = document.getElementById('fbt'+num); if(c){const ok=c.value===tfA[n]; item.classList.toggle('correct',ok); item.classList.toggle('incorrect',!ok); fb.textContent=ok?'✅':'❌'; fb.className='answer-feedback '+(ok?'correct':'incorrect');} }
+            const notesA = { nq6:'computer', nq7:'program', nq8:'adaptability', nq9:'contact' };
+            for (let id in notesA) { const inp=document.getElementById(id), num=id.replace('nq',''), fb=document.getElementById('fbn'+num), ok=inp.value.trim().toLowerCase().includes(notesA[id]); inp.classList.toggle('correct',ok); inp.classList.toggle('incorrect',!ok); fb.textContent=ok?'✅':'❌'; fb.className='answer-feedback '+(ok?'correct':'incorrect'); }
+            const shortA = { sq10:'quarter', sq11:'warming', sq12:'electric', sq13:'corridors' };
+            for (let id in shortA) { const inp=document.getElementById(id), num=id.replace('sq',''), fb=document.getElementById('fbs'+num), ok=inp.value.trim().toLowerCase().includes(shortA[id]); inp.classList.toggle('correct',ok); inp.classList.toggle('incorrect',!ok); fb.textContent=ok?'✅':'❌'; fb.className='answer-feedback '+(ok?'correct':'incorrect'); }
+            document.getElementById('showAnswersDiv1').style.display = 'block';
+            document.getElementById('nextBtn1').disabled = false;
+        }
+
+        // TASK 4
+        function validateTask4() {
+            const fields = ['fq1','fq2','fq3','fq4','fq5','fq6','fq7a','fq7b','fq8','fq9','fq10'];
+            document.getElementById('checkBtn4').disabled = !fields.every(id => document.getElementById(id).value.trim() !== '');
+        }
+
+        function checkTask4() {
+            const a = { fq1:'alexandrovna', fq2:'russian', fq4:'full', fq5:'21', fq6:'competition', fq7a:['cooking','cookery'], fq7b:'swimming', fq8:"children", fq9:'project', fq10:'friend' };
+            for (let id in a) {
+                const inp = document.getElementById(id); if (!inp) continue;
+                const numStr = id.replace('fq','').replace('a','').replace('b','');
+                const fb = document.getElementById('fbf' + (id==='fq7a'||id==='fq7b' ? '7' : numStr));
+                const val = inp.value.trim().toLowerCase();
+                let ok = Array.isArray(a[id]) ? a[id].some(x => val.includes(x)) : val.includes(a[id]);
+                inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+                if (fb) { fb.textContent = ok?'✅':'❌'; fb.className='answer-feedback '+(ok?'correct':'incorrect'); }
+            }
+            const fq3 = document.getElementById('fq3'), fb3 = document.getElementById('fbf3');
+            const ok3 = fq3.value.trim().length > 0; fq3.classList.toggle('correct',ok3); fq3.classList.toggle('incorrect',!ok3);
+            if(fb3){fb3.textContent=ok3?'✅':'❌'; fb3.className='answer-feedback '+(ok3?'correct':'incorrect');}
+            document.getElementById('showAnswersDiv4').style.display = 'block';
+            document.getElementById('nextBtn4').disabled = false;
+        }
+
+        // TASK 5
+        function validateTask5() {
+            const mcq = ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10'].every(n => document.querySelector(`input[name="${n}"]:checked`));
+            const gap = ['t5g11','t5g12','t5g13','t5g14','t5g15'].every(id => document.getElementById(id).value.trim() !== '');
+            const vm = ['vm1','vm2','vm3','vm4','vm5','vm6','vm7','vm8','vm9','vm10'].every(id => document.getElementById(id).value !== '');
+            document.getElementById('checkBtn5').disabled = !(mcq && gap && vm);
+        }
+
+        function checkTask5() {
+            const mcqA = { t5q1:'C',t5q2:'B',t5q3:'C',t5q4:'C',t5q5:'C',t5q6:'B',t5q7:'C',t5q8:'B',t5q9:'C',t5q10:'B' };
+            for (let n in mcqA) { const c=document.querySelector(`input[name="${n}"]:checked`), num=n.replace('t5q',''), fb=document.getElementById('fb5_'+num); if(c){fb.textContent=c.value===mcqA[n]?'✅':'❌'; fb.className='answer-feedback '+(c.value===mcqA[n]?'correct':'incorrect');} }
+            const gapA = { t5g11:'framework',t5g12:'scalability',t5g13:'privileged',t5g14:'ambition',t5g15:'impact' };
+            for (let id in gapA) { const inp=document.getElementById(id), ok=inp.value.trim().toLowerCase()===gapA[id]; inp.classList.toggle('correct',ok); inp.classList.toggle('incorrect',!ok); }
+            const vmA = { vm1:'B',vm2:'E',vm3:'F',vm4:'A',vm5:'H',vm6:'G',vm7:'C',vm8:'D',vm9:'I',vm10:'J' };
+            for (let id in vmA) { const sel=document.getElementById(id), num=id.replace('vm',''), fb=document.getElementById('fbvm'+num), ok=sel.value===vmA[id]; sel.classList.toggle('correct',ok); sel.classList.toggle('incorrect',!ok); fb.textContent=ok?'✅':'❌'; fb.className='answer-feedback '+(ok?'correct':'incorrect'); }
+            document.getElementById('showAnswersDiv5').style.display = 'block';
+            document.getElementById('nextBtn5').disabled = false;
+        }
+
+        // TASK 6
+        function validateTask6() {
+            const all = Array.from({length:29},(_,i) => 'd6q'+(i+1)).every(id => { const el=document.getElementById(id); return el && el.value.trim()!==''; });
+            document.getElementById('checkBtn6').disabled = !all;
+        }
+
+        function checkTask6() {
+            const a = { d6q1:'parties',d6q2:'health',d6q3:'zone',d6q4:'nervous',d6q5:'problems',d6q6:'family',d6q7:'condition',d6q8:'realize',d6q9:'situation',d6q10:'services',d6q11:'act',d6q12:'age',d6q13:'it',d6q14:'time',d6q15:'herself',d6q16:'cooking',d6q17:'cleaning',d6q18:'comfortably',d6q19:'egg',d6q20:'spend',d6q21:'takeaway',d6q22:'college',d6q23:'correct',d6q24:'week',d6q25:'worried',d6q26:'spectacles',d6q27:'zone',d6q28:'act',d6q29:'English' };
+            for (let id in a) { const inp=document.getElementById(id), num=id.replace('d6q',''), fb=document.getElementById('fb6_'+num); if(!inp||!fb) continue; const ok=inp.value.trim().toLowerCase()===a[id].toLowerCase(); inp.classList.toggle('correct',ok); inp.classList.toggle('incorrect',!ok); fb.textContent=ok?'✅':'❌'; fb.className='answer-feedback '+(ok?'correct':'incorrect'); }
+            document.getElementById('showAnswersDiv6').style.display = 'block';
+            document.getElementById('nextBtn6').disabled = false;
+        }
+    </script>
+</body>
+</html>
