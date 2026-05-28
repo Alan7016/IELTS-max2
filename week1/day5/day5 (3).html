@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEEK 1 - DAY 5 (Education)</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f4ff;
+            color: #333;
+        }
+
+        /* ── SPLASH SCREEN ── */
+        #splash-screen {
+            position: fixed; inset: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            z-index: 9999; color: white; text-align: center; padding: 20px;
+        }
+        #splash-screen h1 { font-size: 3rem; margin-bottom: 10px; }
+        #splash-screen h2 { font-size: 2rem; margin-bottom: 10px; opacity: 0.9; }
+        #splash-screen p  { font-size: 1.2rem; margin-bottom: 40px; opacity: 0.8; }
+        .splash-btn {
+            background: white; color: #667eea;
+            border: none; padding: 18px 60px;
+            font-size: 1.4rem; font-weight: bold;
+            border-radius: 50px; cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        .splash-btn:hover { transform: translateY(-3px); box-shadow: 0 12px 35px rgba(0,0,0,0.3); }
+
+        /* ── MAIN LAYOUT ── */
+        .main-container { max-width: 900px; margin: 0 auto; padding: 20px; }
+
+        .day-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; padding: 25px 30px; border-radius: 15px;
+            margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .day-header h1 { font-size: 1.6rem; }
+        .day-header .topic { opacity: 0.85; font-size: 1rem; margin-top: 4px; }
+        .back-btn {
+            background: rgba(255,255,255,0.2); color: white;
+            border: 2px solid white; padding: 10px 20px;
+            border-radius: 8px; cursor: pointer; font-weight: bold;
+            text-decoration: none; font-size: 0.9rem; transition: all 0.3s;
+        }
+        .back-btn:hover { background: white; color: #667eea; }
+
+        /* ── VOCAB SECTION ── */
+        .vocab-section {
+            background: white; border-radius: 15px;
+            margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border-left: 5px solid #667eea; overflow: hidden;
+        }
+        .vocab-toggle {
+            width: 100%; background: none; border: none; cursor: pointer;
+            padding: 18px 25px; display: flex; align-items: center;
+            justify-content: space-between; text-align: left;
+        }
+        .vocab-toggle:hover { background: #f8f9ff; }
+        .vocab-toggle-left { display: flex; align-items: center; gap: 10px; }
+        .vocab-toggle h3 { color: #667eea; font-size: 1.1rem; margin: 0; }
+        .vocab-count { background: #667eea; color: white; font-size: 0.75rem; font-weight: bold; padding: 3px 10px; border-radius: 20px; }
+        .vocab-arrow { color: #667eea; font-size: 1rem; transition: transform 0.3s; }
+        .vocab-arrow.open { transform: rotate(180deg); }
+        .vocab-body { display: none; padding: 0 25px 20px; }
+        .vocab-body.open { display: block; }
+        .vocab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+        .vocab-item { background: #f8f9ff; padding: 10px 14px; border-radius: 8px; }
+        .vocab-word { font-weight: bold; color: #333; font-size: 0.95rem; }
+        .vocab-definition { color: #666; font-size: 0.82rem; margin-top: 2px; }
+
+        /* ── TASK CARDS ── */
+        .task-card {
+            background: white; border-radius: 15px; padding: 28px;
+            margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            display: none;
+        }
+        .task-card.active { display: block; }
+        .task-card.completed { border-left: 5px solid #28a745; }
+
+        .task-header {
+            display: flex; align-items: center; gap: 15px; margin-bottom: 20px;
+        }
+        .task-number {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white; width: 45px; height: 45px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 1.1rem; flex-shrink: 0;
+        }
+        .task-title { font-size: 1.3rem; font-weight: bold; color: #333; }
+        .task-subtitle { color: #888; font-size: 0.9rem; margin-top: 2px; }
+
+        /* ── PDF LINKS ── */
+        .pdf-links { display: flex; flex-direction: column; gap: 12px; margin: 15px 0; }
+        .pdf-link {
+            display: flex; align-items: center; gap: 12px;
+            background: #f8f9ff; padding: 15px 20px; border-radius: 10px;
+            text-decoration: none; color: #333; font-weight: 600;
+            border: 2px solid #e0e8ff; transition: all 0.3s;
+        }
+        .pdf-link:hover { background: #667eea; color: white; border-color: #667eea; transform: translateX(5px); }
+        .pdf-icon { font-size: 1.5rem; }
+
+        /* ── HTML LINKS ── */
+        .html-link-btn {
+            display: inline-flex; align-items: center; gap: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white; padding: 15px 30px; border-radius: 10px;
+            text-decoration: none; font-weight: bold; font-size: 1rem;
+            transition: all 0.3s; margin: 10px 0;
+        }
+        .html-link-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(102,126,234,0.4); }
+
+        /* ── VIDEO ── */
+        .video-container {
+            position: relative; padding-bottom: 56.25%; height: 0;
+            overflow: hidden; border-radius: 12px; margin: 15px 0;
+        }
+        .video-container iframe {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        }
+        .video-fallback {
+            background: #f8f9ff; padding: 15px; border-radius: 10px;
+            margin-bottom: 15px; text-align: center;
+        }
+        .video-fallback a { color: #667eea; font-weight: bold; }
+
+        /* ── MCQ ── */
+        .questions-section { margin-top: 20px; }
+        .question-block { margin-bottom: 20px; padding: 18px; background: #f8f9ff; border-radius: 10px; }
+        .question-text { font-weight: 600; margin-bottom: 12px; color: #333; line-height: 1.5; }
+        .options label {
+            display: flex; align-items: flex-start; gap: 10px;
+            padding: 8px 12px; border-radius: 8px; cursor: pointer;
+            transition: background 0.2s; margin-bottom: 5px;
+        }
+        .options label:hover { background: #e8ecff; }
+        .options input[type="radio"] { margin-top: 3px; flex-shrink: 0; }
+        .answer-feedback { margin-top: 8px; font-weight: bold; font-size: 0.9rem; }
+        .answer-feedback.correct { color: #28a745; }
+        .answer-feedback.incorrect { color: #dc3545; }
+
+        /* ── GAP FILL ── */
+        .gap-fill-section { margin-top: 20px; }
+        .gap-sentence { margin-bottom: 14px; line-height: 2; font-size: 1rem; }
+        .gap-input {
+            border: none; border-bottom: 2px solid #667eea;
+            padding: 4px 8px; font-size: 0.95rem; width: 160px;
+            background: transparent; outline: none; color: #333;
+        }
+        .word-box {
+            background: #f0f4ff; border: 2px solid #c5d0fa;
+            border-radius: 10px; padding: 12px 18px; margin-bottom: 15px;
+        }
+        .word-box strong { color: #667eea; }
+
+        /* ── VOCAB MATCHING ── */
+        .matching-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .matching-table th { background: #667eea; color: white; padding: 10px 14px; text-align: left; }
+        .matching-table td { padding: 10px 14px; border-bottom: 1px solid #eee; }
+        .matching-table tr:nth-child(even) td { background: #f8f9ff; }
+        .match-select {
+            border: 2px solid #c5d0fa; border-radius: 6px;
+            padding: 5px 8px; font-size: 0.9rem; background: white;
+        }
+
+        /* ── ARTICLE READING ── */
+        .article-body {
+            background: #fafbff; border: 1px solid #e0e8ff;
+            border-radius: 10px; padding: 25px; margin: 15px 0;
+            line-height: 1.8; font-size: 0.97rem; color: #333;
+        }
+        .article-body h3 { color: #667eea; margin-bottom: 15px; font-size: 1.2rem; }
+        .article-body p { margin-bottom: 14px; }
+
+        /* ── WRITING TASK ── */
+        .writing-prompt {
+            background: #f8f9ff; border: 2px solid #c5d0fa;
+            border-radius: 12px; padding: 20px; margin-bottom: 20px;
+        }
+        .writing-prompt h4 { color: #667eea; margin-bottom: 10px; font-size: 1rem; }
+        .writing-prompt p { color: #333; line-height: 1.7; font-size: 0.97rem; }
+        .writing-prompt img { max-width: 100%; border-radius: 8px; margin-top: 10px; }
+
+        .timer-bar {
+            display: flex; align-items: center; gap: 15px;
+            background: #667eea; color: white;
+            padding: 12px 20px; border-radius: 10px; margin-bottom: 15px;
+        }
+        .timer-display { font-size: 1.4rem; font-weight: bold; font-family: monospace; }
+        .wordcount-display { margin-left: auto; font-size: 0.95rem; }
+        .wordcount-display span { font-weight: bold; font-size: 1.1rem; }
+
+        .essay-textarea {
+            width: 100%; min-height: 300px; padding: 18px;
+            border: 2px solid #c5d0fa; border-radius: 10px;
+            font-size: 0.97rem; line-height: 1.8; font-family: inherit;
+            resize: vertical; outline: none; transition: border 0.3s;
+        }
+        .essay-textarea:focus { border-color: #667eea; }
+
+        .submit-essay-btn {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white; border: none; padding: 15px 40px;
+            border-radius: 10px; font-size: 1rem; font-weight: bold;
+            cursor: pointer; margin-top: 15px; transition: all 0.3s;
+            width: 100%;
+        }
+        .submit-essay-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(40,167,69,0.4); }
+        .submit-essay-btn:disabled { background: #ccc; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        .submission-success {
+            background: #d4edda; border: 2px solid #28a745;
+            border-radius: 10px; padding: 20px; text-align: center;
+            color: #155724; display: none; margin-top: 15px;
+        }
+        .submission-success h4 { font-size: 1.2rem; margin-bottom: 8px; }
+
+        /* ── BREAK SCREEN ── */
+        .break-screen {
+            text-align: center; padding: 40px 20px;
+        }
+        .break-screen .break-icon { font-size: 4rem; margin-bottom: 15px; }
+        .break-screen h3 { font-size: 1.8rem; color: #667eea; margin-bottom: 10px; }
+        .break-screen p { color: #666; font-size: 1rem; margin-bottom: 25px; }
+
+        /* ── BUTTONS ── */
+        .btn-row { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+        .check-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white; border: none; padding: 12px 28px;
+            border-radius: 8px; cursor: pointer; font-weight: bold;
+            font-size: 0.95rem; transition: all 0.3s;
+        }
+        .check-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(102,126,234,0.4); }
+        .check-btn:disabled { background: #ccc; cursor: not-allowed; transform: none !important; box-shadow: none; }
+        .next-btn {
+            background: #28a745; color: white; border: none;
+            padding: 12px 28px; border-radius: 8px; cursor: pointer;
+            font-weight: bold; font-size: 0.95rem; transition: all 0.3s;
+        }
+        .next-btn:disabled { background: #ccc; cursor: not-allowed; transform: none !important; }
+        .next-btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(40,167,69,0.4); }
+        .prev-btn {
+            background: #6c757d; color: white; border: none;
+            padding: 12px 28px; border-radius: 8px; cursor: pointer;
+            font-weight: bold; font-size: 0.95rem; transition: all 0.3s;
+        }
+        .prev-btn:hover { background: #5a6268; }
+
+        .show-answers-btn {
+            background: #ffc107; color: #333; border: none;
+            padding: 10px 22px; border-radius: 8px; cursor: pointer;
+            font-weight: bold; font-size: 0.88rem; transition: all 0.3s; display: none;
+        }
+        .show-answers-btn:hover { background: #e0a800; }
+        .answers-panel { display: none; background: #fffbea; border: 2px solid #ffc107; border-radius: 10px; padding: 15px; margin-top: 12px; }
+        .answers-panel p { margin-bottom: 6px; font-size: 0.9rem; }
+
+        /* ── PROGRESS ── */
+        .progress-bar-wrap {
+            background: #e0e8ff; border-radius: 20px; height: 10px;
+            margin-bottom: 20px; overflow: hidden;
+        }
+        .progress-bar-fill {
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            height: 100%; border-radius: 20px; transition: width 0.5s ease;
+        }
+        .progress-label { text-align: center; color: #667eea; font-size: 0.85rem; margin-bottom: 8px; font-weight: 600; }
+
+        /* ── COMPLETION ── */
+        .completion-screen {
+            text-align: center; padding: 60px 20px; display: none;
+        }
+        .completion-screen .icon { font-size: 5rem; margin-bottom: 20px; }
+        .completion-screen h2 { font-size: 2.2rem; color: #667eea; margin-bottom: 10px; }
+        .completion-screen p { color: #666; font-size: 1rem; margin-bottom: 30px; }
+        .dashboard-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white; padding: 16px 40px; border-radius: 50px;
+            text-decoration: none; font-weight: bold; font-size: 1.1rem;
+            display: inline-block; transition: all 0.3s;
+        }
+        .dashboard-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(102,126,234,0.4); }
+
+        /* ── ARTICLE CHUNKS ── */
+        .chunks-section { margin-top: 20px; }
+        .chunk-item {
+            background: #f8f9ff; border-left: 4px solid #667eea;
+            padding: 14px 18px; border-radius: 0 10px 10px 0;
+            margin-bottom: 12px;
+        }
+        .chunk-phrase { font-weight: bold; color: #667eea; font-size: 1rem; margin-bottom: 4px; }
+        .chunk-meaning { color: #555; font-size: 0.88rem; margin-bottom: 6px; }
+        .chunk-examples { color: #777; font-size: 0.85rem; }
+        .chunk-examples li { margin-bottom: 2px; }
+
+        .verbs-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+        .verbs-table th { background: #667eea; color: white; padding: 10px 14px; text-align: left; }
+        .verbs-table td { padding: 10px 14px; border-bottom: 1px solid #eee; }
+        .verbs-table tr:nth-child(even) td { background: #f8f9ff; }
+
+        .patterns-list { list-style: none; margin-top: 12px; }
+        .patterns-list li {
+            background: #f0f4ff; padding: 12px 16px; border-radius: 8px;
+            margin-bottom: 8px; border-left: 3px solid #764ba2;
+            font-style: italic; color: #333;
+        }
+    </style>
+</head>
+<body>
+
+<!-- SPLASH SCREEN -->
+<div id="splash-screen">
+    <h1>📚 WEEK 1</h1>
+    <h2>DAY 5</h2>
+    <p>Topic: Education</p>
+    <button class="splash-btn" onclick="startDay()">LET'S GO!</button>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main-container" id="main-content" style="display:none;">
+
+    <!-- Header -->
+    <div class="day-header">
+        <div>
+            <h1>📚 Week 1 — Day 5</h1>
+            <div class="topic">Topic: Education</div>
+        </div>
+        <a href="/student-dashboard.html" class="back-btn">← Dashboard</a>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress-label" id="progress-label">Task 0 of 8</div>
+    <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progress-bar" style="width:0%"></div>
+    </div>
+
+    <!-- VOCAB -->
+    <div class="vocab-section">
+        <button class="vocab-toggle" onclick="toggleVocab()">
+            <div class="vocab-toggle-left">
+                <h3>📖 Today's Vocabulary</h3>
+                <span class="vocab-count">50 words</span>
+            </div>
+            <span class="vocab-arrow" id="vocab-arrow">▼</span>
+        </button>
+        <div class="vocab-body" id="vocab-body">
+            <div class="vocab-grid" id="vocab-grid"></div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         TASK 1 — Article PDFs
+    ══════════════════════════════════════════ -->
+    <div class="task-card active" id="task1">
+        <div class="task-header">
+            <div class="task-number">1</div>
+            <div>
+                <div class="task-title">Reading Materials</div>
+                <div class="task-subtitle">Read the article and study the vocabulary</div>
+            </div>
+        </div>
+        <p style="color:#555; margin-bottom:15px;">Open both files below. Read the article carefully, paying attention to the highlighted vocabulary words.</p>
+        <div class="pdf-links">
+            <a class="pdf-link" href="intelligent_children_article.pdf" target="_blank">
+                <span class="pdf-icon">📄</span> Intelligent Children — Article
+            </a>
+            <a class="pdf-link" href="intelligent_children_vocab.pdf" target="_blank">
+                <span class="pdf-icon">📘</span> Intelligent Children — Vocabulary
+            </a>
+        </div>
+        <div class="btn-row">
+            <button class="next-btn" onclick="goToTask(2)">Next Task →</button>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         TASK 2 — Practice Reading
+    ══════════════════════════════════════════ -->
+    <div class="task-card" id="task2">
+        <div class="task-header">
+            <div class="task-number">2</div>
+            <div>
+                <div class="task-title">Practice Reading Test</div>
+                <div class="task-subtitle">Full IELTS-style reading passage</div>
+            </div>
+        </div>
+        <p style="color:#555; margin-bottom:15px;">Open the reading test below and complete all questions. Return here when you're done.</p>
+        <a class="html-link-btn" href="2nd task (Practice Reading).html" target="_blank">
+            📖 Open Practice Reading
+        </a>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(1)">← Previous Task</button>
+            <button class="next-btn" onclick="goToTask(3)">Next Task →</button>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         TASK 3 — Video + Questions
+    ══════════════════════════════════════════ -->
+    <div class="task-card" id="task3">
+        <div class="task-header">
+            <div class="task-number">3</div>
+            <div>
+                <div class="task-title">Video Watching Task</div>
+                <div class="task-subtitle">Watch and answer questions</div>
+            </div>
+        </div>
+
+        <div class="video-fallback">
+            <p>▶ <a href="https://www.youtube.com/watch?v=RlR-v0zI6Nw" target="_blank">Click here to open the video in a new tab</a> if it doesn't play below.</p>
+        </div>
+        <div class="video-container">
+            <iframe src="https://www.youtube.com/embed/RlR-v0zI6Nw" frameborder="0" allowfullscreen></iframe>
+        </div>
+
+        <div class="questions-section">
+            <h4 style="color:#667eea; margin-bottom:15px;">Part 1 — Multiple Choice Questions</h4>
+
+            <!-- Q1 -->
+            <div class="question-block">
+                <div class="question-text">1. According to the speaker, what is one of the hardest decisions after high school?</div>
+                <div class="options">
+                    <label><input type="radio" name="t3q1" value="A"> A. Choosing where to travel</label>
+                    <label><input type="radio" name="t3q1" value="B"> B. Deciding what to do next</label>
+                    <label><input type="radio" name="t3q1" value="C"> C. Finding new friends</label>
+                    <label><input type="radio" name="t3q1" value="D"> D. Moving to another country</label>
+                </div>
+                <div class="answer-feedback" id="fb_t3q1"></div>
+            </div>
+            <!-- Q2 -->
+            <div class="question-block">
+                <div class="question-text">2. Who does the speaker recommend college for?</div>
+                <div class="options">
+                    <label><input type="radio" name="t3q2" value="A"> A. People who dislike learning</label>
+                    <label><input type="radio" name="t3q2" value="B"> B. Students with a clear or general career direction</label>
+                    <label><input type="radio" name="t3q2" value="C"> C. Only wealthy students</label>
+                    <label><input type="radio" name="t3q2" value="D"> D. People who want immediate success</label>
+                </div>
+                <div class="answer-feedback" id="fb_t3q2"></div>
+            </div>
+            <!-- Q3 -->
+            <div class="question-block">
+                <div class="question-text">3. Why does the speaker encourage students to stay open-minded in college?</div>
+                <div class="options">
+                    <label><input type="radio" name="t3q3" value="A"> A. Professors change programs often</label>
+                    <label><input type="radio" name="t3q3" value="B"> B. College programs are usually easy</label>
+                    <label><input type="radio" name="t3q3" value="C"> C. Students may discover better opportunities later</label>
+                    <label><input type="radio" name="t3q3" value="D"> D. Degrees are becoming useless</label>
+                </div>
+                <div class="answer-feedback" id="fb_t3q3"></div>
+            </div>
+            <!-- Q4 -->
+            <div class="question-block">
+                <div class="question-text">4. What statistic from 2019 does the speaker mention?</div>
+                <div class="options">
+                    <label><input type="radio" name="t3q4" value="A"> A. Most students fail their first year</label>
+                    <label><input type="radio" name="t3q4" value="B"> B. 80% of students changed their major at least once</label>
+                    <label><input type="radio" name="t3q4" value="C"> C. Only 20% of students graduate</label>
+                    <label><input type="radio" name="t3q4" value="D"> D. Most students regret going to college</label>
+                </div>
+                <div class="answer-feedback" id="fb_t3q4"></div>
+            </div>
+            <!-- Q5 -->
+            <div class="question-block">
+                <div class="question-text">5. What side hustles was the speaker working on during university?</div>
+                <div class="options">
+                    <label><input type="radio" name="t3q5" value="A"> A. Real estate and coding</label>
+                    <label><input type="radio" name="t3q5" value="B"> B. Stock trading and tutoring</label>
+                    <label><input type="radio" name="t3q5" value="C"> C. Content creation and a marketing agency</label>
+                    <label><input type="radio" name="t3q5" value="D"> D. Photography and fitness coaching</label>
+                </div>
+                <div class="answer-feedback" id="fb_t3q5"></div>
+            </div>
+            <!-- Q6 -->
+            <div class="question-block">
+                <div class="question-text">6. What does the "planting seeds" analogy represent?</div>
+                <div class="options">
+                    <label><input type="radio" name="t3q6" value="A"> A. Saving money carefully</label>
+                    <label><input type="radio" name="t3q6" value="B"> B. Investing only in one opportunity</label>
+                    <label><input type="radio" name="t3q6" value="C"> C. Trying many things to increase chances of success</label>
+                    <label><input type="radio" name="t3q6" value="D"> D. Building a long-term business immediately</label>
+                </div>
+                <div class="answer-feedback" id="fb_t3q6"></div>
+            </div>
+            <!-- Q7 -->
+            <div class="question-block">
+                <div class="question-text">7. According to the speaker, what kind of job should people look for if they skip college?</div>
+                <div class="options">
+                    <label><input type="radio" name="t3q7" value="A"> A. Any job with quick money</label>
+                    <label><input type="radio" name="t3q7" value="B"> B. A scalable job with valuable experience and connections</label>
+                    <label><input type="radio" name="t3q7" value="C"> C. Only government jobs</label>
+                    <label><input type="radio" name="t3q7" value="D"> D. Part-time jobs with little responsibility</label>
+                </div>
+                <div class="answer-feedback" id="fb_t3q7"></div>
+            </div>
+            <!-- Q8 -->
+            <div class="question-block">
+                <div class="question-text">8. How does the speaker recommend standing out when applying for jobs?</div>
+                <div class="options">
+                    <label><input type="radio" name="t3q8" value="A"> A. Sending the same resume everywhere</label>
+                    <label><input type="radio" name="t3q8" value="B"> B. Calling companies repeatedly</label>
+                    <label><input type="radio" name="t3q8" value="C"> C. Showing specific value and solutions to employers</label>
+                    <label><input type="radio" name="t3q8" value="D"> D. Applying only through online forms</label>
+                </div>
+                <div class="answer-feedback" id="fb_t3q8"></div>
+            </div>
+            <!-- Q9 -->
+            <div class="question-block">
+                <div class="question-text">9. What is the speaker's "year of experimentation plan"?</div>
+                <div class="options">
+                    <label><input type="radio" name="t3q9" value="A"> A. Travelling around the world for a year</label>
+                    <label><input type="radio" name="t3q9" value="B"> B. Trying different side hustles every few months</label>
+                    <label><input type="radio" name="t3q9" value="C"> C. Studying different university programs</label>
+                    <label><input type="radio" name="t3q9" value="D"> D. Working one stable job for experience</label>
+                </div>
+                <div class="answer-feedback" id="fb_t3q9"></div>
+            </div>
+            <!-- Q10 -->
+            <div class="question-block">
+                <div class="question-text">10. What does the speaker say is worse than failure?</div>
+                <div class="options">
+                    <label><input type="radio" name="t3q10" value="A"> A. Financial problems</label>
+                    <label><input type="radio" name="t3q10" value="B"> B. Hard work</label>
+                    <label><input type="radio" name="t3q10" value="C"> C. Rejection</label>
+                    <label><input type="radio" name="t3q10" value="D"> D. Regret</label>
+                </div>
+                <div class="answer-feedback" id="fb_t3q10"></div>
+            </div>
+        </div>
+
+        <h4 style="color:#667eea; margin:20px 0 12px;">Part 2 — Gap Filling</h4>
+        <div class="word-box">
+            <strong>Word Box:</strong> fixated &nbsp;|&nbsp; momentum &nbsp;|&nbsp; entrepreneurial &nbsp;|&nbsp; scalable &nbsp;|&nbsp; opportunities &nbsp;|&nbsp; regret &nbsp;|&nbsp; evolve
+        </div>
+        <div class="gap-fill-section">
+            <div class="gap-sentence">11. Students should avoid becoming too <input class="gap-input" id="t3g11" placeholder="___"> on one life path.</div>
+            <div class="gap-sentence">12. The speaker says young people should stay open to new <input class="gap-input" id="t3g12" placeholder="___">.</div>
+            <div class="gap-sentence">13. A good job should be <input class="gap-input" id="t3g13" placeholder="___"> and provide useful experiences.</div>
+            <div class="gap-sentence">14. The speaker describes himself as having an <input class="gap-input" id="t3g14" placeholder="___"> mindset.</div>
+            <div class="gap-sentence">15. Being surrounded by ambitious people helps you learn and <input class="gap-input" id="t3g15" placeholder="___"> faster.</div>
+        </div>
+
+        <h4 style="color:#667eea; margin:20px 0 12px;">Part 3 — Vocabulary Matching</h4>
+        <table class="matching-table">
+            <thead><tr><th>#</th><th>Word</th><th>Match (A–J)</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td>pursue</td><td><select class="match-select" id="t3m1"><option value="">—</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option><option>J</option></select></td></tr>
+                <tr><td>2</td><td>open-minded</td><td><select class="match-select" id="t3m2"><option value="">—</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option><option>J</option></select></td></tr>
+                <tr><td>3</td><td>side hustle</td><td><select class="match-select" id="t3m3"><option value="">—</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option><option>J</option></select></td></tr>
+                <tr><td>4</td><td>scalable</td><td><select class="match-select" id="t3m4"><option value="">—</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option><option>J</option></select></td></tr>
+                <tr><td>5</td><td>momentum</td><td><select class="match-select" id="t3m5"><option value="">—</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option><option>J</option></select></td></tr>
+                <tr><td>6</td><td>entrepreneurial</td><td><select class="match-select" id="t3m6"><option value="">—</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option><option>J</option></select></td></tr>
+                <tr><td>7</td><td>endeavor</td><td><select class="match-select" id="t3m7"><option value="">—</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option><option>J</option></select></td></tr>
+                <tr><td>8</td><td>regret</td><td><select class="match-select" id="t3m8"><option value="">—</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option><option>J</option></select></td></tr>
+                <tr><td>9</td><td>exponentially</td><td><select class="match-select" id="t3m9"><option value="">—</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option><option>J</option></select></td></tr>
+                <tr><td>10</td><td>optimize</td><td><select class="match-select" id="t3m10"><option value="">—</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option><option>J</option></select></td></tr>
+            </tbody>
+        </table>
+        <p style="color:#666; font-size:0.85rem; margin-top:8px;">A=regret &nbsp; B=side hustle &nbsp; C=open-minded &nbsp; D=pursue &nbsp; E=scalable &nbsp; F=momentum &nbsp; G=entrepreneurial &nbsp; H=endeavor &nbsp; I=exponentially &nbsp; J=optimize</p>
+
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(2)">← Previous Task</button>
+            <button class="check-btn" id="check3" onclick="checkTask3()" disabled>Check Answers</button>
+            <button class="next-btn" id="next3" disabled onclick="goToTask(4)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns3" onclick="toggleAnswers('ans3')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans3">
+            <p><strong>MCQ:</strong> 1-B, 2-B, 3-C, 4-B, 5-C, 6-C, 7-B, 8-C, 9-B, 10-D</p>
+            <p><strong>Gap Fill:</strong> 11-fixated, 12-opportunities, 13-scalable, 14-entrepreneurial, 15-evolve</p>
+            <p><strong>Matching:</strong> 1-D, 2-C, 3-B, 4-E, 5-F, 6-G, 7-H, 8-A, 9-I, 10-J</p>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         TASK 4 — Practice Listening
+    ══════════════════════════════════════════ -->
+    <div class="task-card" id="task4">
+        <div class="task-header">
+            <div class="task-number">4</div>
+            <div>
+                <div class="task-title">Practice Listening Test</div>
+                <div class="task-subtitle">Full IELTS-style listening passage</div>
+            </div>
+        </div>
+        <p style="color:#555; margin-bottom:15px;">Open the listening test below and complete all questions. Return here when you're done.</p>
+        <a class="html-link-btn" href="4th task (Practice Listening).html" target="_blank">
+            🎧 Open Practice Listening
+        </a>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(3)">← Previous Task</button>
+            <button class="next-btn" onclick="goToTask(5)">Next Task →</button>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         TASK 5 — Article + MCQ
+    ══════════════════════════════════════════ -->
+    <div class="task-card" id="task5">
+        <div class="task-header">
+            <div class="task-number">5</div>
+            <div>
+                <div class="task-title">Reading & Comprehension</div>
+                <div class="task-subtitle">Read the article then answer the questions</div>
+            </div>
+        </div>
+
+        <div class="article-body">
+            <h3>Beyond the Classroom: Which Path Truly Leads to Success?</h3>
+            <p>For many teenagers, finishing school feels less like reaching the finish line and more like standing at a crossroads with no map. Society often pushes young people towards one "correct" decision — usually university — as though success were a straight road rather than a complicated journey. Yet in reality, some graduates thrive in lecture halls while others build remarkable careers by entering the workforce early. The real issue, therefore, is not simply whether university or employment is better, but which path equips individuals with the skills, experience, and mindset needed to survive in an increasingly competitive world.</p>
+            <p>One of the strongest arguments in favour of higher education is that a university degree still functions as a gateway to many prestigious professions. Careers in medicine, engineering, law, or academia are virtually impossible without formal qualifications. Universities also expose students to intellectual environments where they can broaden their horizons, sharpen their critical thinking skills, and develop professional networks. In many cases, graduates benefit from a "delayed advantage": although they spend years studying instead of earning money, they may eventually secure better-paid and more stable positions.</p>
+            <p>Moreover, university life often teaches far more than academic content alone. Living independently, managing deadlines, collaborating on projects, and communicating with people from different backgrounds can all contribute to personal growth. For ambitious individuals, higher education may serve as a launchpad rather than merely a classroom.</p>
+            <p>However, the traditional belief that a degree automatically guarantees prosperity is becoming increasingly outdated. In today's rapidly evolving job market, employers frequently value practical skills and real-world experience just as highly as academic credentials. Many young people graduate with enormous student debt only to discover that the labour market is saturated with degree holders competing for the same limited opportunities. As a result, some are forced into jobs completely unrelated to their field of study.</p>
+            <p>Entering the workforce immediately after school can therefore provide advantages that university students often lack. Young employees gain hands-on experience, develop workplace discipline, and begin building financial independence years earlier than their peers. In industries such as technology, design, digital marketing, or entrepreneurship, demonstrable ability frequently outweighs formal education. A talented programmer with a strong portfolio, for instance, may outperform a university graduate who possesses theoretical knowledge but little practical competence.</p>
+            <p>Another important consideration is the changing nature of success itself. Previous generations associated success with stable employment and long-term careers in a single profession. Nowadays, adaptability has become just as important as expertise. Automation, artificial intelligence, and global competition are transforming industries at an unprecedented pace, meaning that people must continuously reskill throughout their lives. Under such circumstances, the most successful individuals are often not those with the most impressive diplomas, but those capable of learning independently, taking initiative, and responding to change.</p>
+            <p>Perhaps the wisest approach lies somewhere between the two extremes. Rather than viewing university and employment as mutually exclusive options, young people could combine education with practical experience through internships, freelance work, apprenticeships, or online learning. Modern success rarely follows a conventional formula; it is increasingly built through flexibility, curiosity, and continuous self-improvement.</p>
+            <p>Ultimately, neither university nor immediate employment can guarantee a successful career on its own. A degree may open doors, but determination, adaptability, and practical competence are what allow people to walk through them. The path chosen after school matters far less than the willingness to grow, learn, and seize opportunities along the way.</p>
+        </div>
+
+        <h4 style="color:#667eea; margin:20px 0 12px;">Comprehension Questions — Choose the best answer</h4>
+
+        <div class="question-block">
+            <div class="question-text">1. What does the author suggest is the "real issue" facing young people after school?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q1" value="A"> A. Whether to travel before starting a career</label>
+                <label><input type="radio" name="t5q1" value="B"> B. Which path best develops the skills needed for a competitive world</label>
+                <label><input type="radio" name="t5q1" value="C"> C. How to avoid going into debt at university</label>
+                <label><input type="radio" name="t5q1" value="D"> D. Finding the most prestigious profession</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q1"></div>
+        </div>
+
+        <div class="question-block">
+            <div class="question-text">2. According to the article, which careers require formal qualifications?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q2" value="A"> A. Technology, design, and digital marketing</label>
+                <label><input type="radio" name="t5q2" value="B"> B. Entrepreneurship and freelance work</label>
+                <label><input type="radio" name="t5q2" value="C"> C. Medicine, engineering, law, and academia</label>
+                <label><input type="radio" name="t5q2" value="D"> D. Sales and customer service</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q2"></div>
+        </div>
+
+        <div class="question-block">
+            <div class="question-text">3. What is meant by the "delayed advantage" mentioned in paragraph 2?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q3" value="A"> A. University students take longer to find jobs</label>
+                <label><input type="radio" name="t5q3" value="B"> B. Graduates may eventually earn more despite years of study without income</label>
+                <label><input type="radio" name="t5q3" value="C"> C. Employers prefer hiring people who graduated late</label>
+                <label><input type="radio" name="t5q3" value="D"> D. Some students delay starting university</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q3"></div>
+        </div>
+
+        <div class="question-block">
+            <div class="question-text">4. What problem does the article identify with the current job market for graduates?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q4" value="A"> A. There are not enough universities</label>
+                <label><input type="radio" name="t5q4" value="B"> B. Employers no longer value academic qualifications</label>
+                <label><input type="radio" name="t5q4" value="C"> C. Too many degree holders compete for the same limited opportunities</label>
+                <label><input type="radio" name="t5q4" value="D"> D. Student debt prevents graduates from working abroad</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q4"></div>
+        </div>
+
+        <div class="question-block">
+            <div class="question-text">5. In which industries does the article suggest ability often outweighs formal education?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q5" value="A"> A. Medicine and law</label>
+                <label><input type="radio" name="t5q5" value="B"> B. Technology, design, digital marketing, and entrepreneurship</label>
+                <label><input type="radio" name="t5q5" value="C"> C. Engineering and academia</label>
+                <label><input type="radio" name="t5q5" value="D"> D. Government and public services</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q5"></div>
+        </div>
+
+        <div class="question-block">
+            <div class="question-text">6. What does the article say has become as important as expertise in today's world?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q6" value="A"> A. Having an impressive diploma</label>
+                <label><input type="radio" name="t5q6" value="B"> B. Working in a single profession for a long time</label>
+                <label><input type="radio" name="t5q6" value="C"> C. Adaptability</label>
+                <label><input type="radio" name="t5q6" value="D"> D. Starting a business early</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q6"></div>
+        </div>
+
+        <div class="question-block">
+            <div class="question-text">7. What is driving the need for people to continuously reskill throughout their lives?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q7" value="A"> A. Rising university tuition fees</label>
+                <label><input type="radio" name="t5q7" value="B"> B. Automation, AI, and global competition</label>
+                <label><input type="radio" name="t5q7" value="C"> C. Changing government education policies</label>
+                <label><input type="radio" name="t5q7" value="D"> D. The growth of online universities</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q7"></div>
+        </div>
+
+        <div class="question-block">
+            <div class="question-text">8. What "wisest approach" does the author suggest?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q8" value="A"> A. Always choosing university over work</label>
+                <label><input type="radio" name="t5q8" value="B"> B. Entering the workforce immediately after school</label>
+                <label><input type="radio" name="t5q8" value="C"> C. Combining education with practical experience</label>
+                <label><input type="radio" name="t5q8" value="D"> D. Avoiding student debt at all costs</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q8"></div>
+        </div>
+
+        <div class="question-block">
+            <div class="question-text">9. What does the author say "modern success" is increasingly built through?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q9" value="A"> A. High academic grades and top-tier degrees</label>
+                <label><input type="radio" name="t5q9" value="B"> B. Flexibility, curiosity, and continuous self-improvement</label>
+                <label><input type="radio" name="t5q9" value="C"> C. Having wealthy connections and networks</label>
+                <label><input type="radio" name="t5q9" value="D"> D. Starting a business in school</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q9"></div>
+        </div>
+
+        <div class="question-block">
+            <div class="question-text">10. What is the author's main conclusion in the final paragraph?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q10" value="A"> A. A degree is the only path to career success</label>
+                <label><input type="radio" name="t5q10" value="B"> B. Work experience is always better than university</label>
+                <label><input type="radio" name="t5q10" value="C"> C. The path matters less than the willingness to grow, learn, and seize opportunities</label>
+                <label><input type="radio" name="t5q10" value="D"> D. Students should make their decision based on salary expectations</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q10"></div>
+        </div>
+
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(4)">← Previous Task</button>
+            <button class="check-btn" id="check5" onclick="checkTask5()" disabled>Check Answers</button>
+            <button class="next-btn" id="next5" disabled onclick="goToTask(6)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns5" onclick="toggleAnswers('ans5')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans5">
+            <p><strong>Answers:</strong> 1-B, 2-C, 3-B, 4-C, 5-B, 6-C, 7-B, 8-C, 9-B, 10-C</p>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         TASK 6 — Writing Task 2
+    ══════════════════════════════════════════ -->
+    <div class="task-card" id="task6">
+        <div class="task-header">
+            <div class="task-number">6</div>
+            <div>
+                <div class="task-title">IELTS Writing — Task 2</div>
+                <div class="task-subtitle">Write a full essay and submit to your mentor</div>
+            </div>
+        </div>
+
+        <div class="writing-prompt">
+            <h4>📝 Writing Task 2 — Essay Question</h4>
+            <p>Some people believe that studying at university or college is the best route to a successful career, while others believe that it is better to get a job straight after school.</p>
+            <p style="margin-top:10px;"><strong>Discuss both views and give your own opinion.</strong></p>
+            <p style="margin-top:10px; color:#888; font-size:0.85rem;">Write at least 250 words. You should spend about 40 minutes on this task.</p>
+        </div>
+
+        <div class="timer-bar" id="timer6-bar">
+            <span>⏱ Time spent:</span>
+            <span class="timer-display" id="timer6">00:00</span>
+            <span class="wordcount-display">Words: <span id="wc6">0</span></span>
+        </div>
+
+        <textarea class="essay-textarea" id="essay6" placeholder="Write your essay here..."></textarea>
+
+        <button class="submit-essay-btn" id="submit6" onclick="submitEssay(6)">
+            📤 Submit to Mentor
+        </button>
+        <div class="submission-success" id="success6">
+            <h4>✅ Essay Submitted Successfully!</h4>
+            <p>Your mentor has received your essay with your time and word count.</p>
+        </div>
+
+        <div class="btn-row" style="margin-top:20px;">
+            <button class="prev-btn" onclick="goToTask(5)">← Previous Task</button>
+            <button class="next-btn" id="next6" disabled onclick="goToTask(7)">Next Task →</button>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         TASK 7 — Task 1 Article + Language
+    ══════════════════════════════════════════ -->
+    <div class="task-card" id="task7">
+        <div class="task-header">
+            <div class="task-number">7</div>
+            <div>
+                <div class="task-title">IELTS Task 1 — Language Study</div>
+                <div class="task-subtitle">Read the model article and study the vocabulary chunks</div>
+            </div>
+        </div>
+
+        <div class="article-body">
+            <h3>The Global Race for University Places</h3>
+            <p>Over the last few decades, universities in English-speaking countries have experienced a dramatic rise in international applications. As economies have become increasingly globalised, obtaining a foreign degree is no longer viewed simply as an academic achievement; instead, it is often regarded as a strategic investment in future career prospects. Consequently, competition for places at prestigious institutions has intensified, particularly among students from rapidly developing regions.</p>
+            <p>One noticeable trend is that demand for overseas education rarely grows evenly across all countries. In many cases, applications from certain regions surge sharply within a relatively short period, while others either rise more gradually or even decline. These fluctuations are usually connected to wider economic and social developments. For example, when a country experiences strong economic growth, more families are able to afford tuition fees abroad, leading to a substantial increase in student mobility. By contrast, economic downturns, political instability, or stricter visa regulations may discourage students from applying internationally.</p>
+            <p>Another important feature is the dominance of particular regions in the global education market. Students from Asian countries, especially those with highly competitive domestic education systems, often account for a significant proportion of international applicants. Many young people perceive foreign universities as gateways to better employment opportunities, higher salaries, and improved social status. Meanwhile, applications from less affluent regions may remain comparatively low despite gradual increases over time, largely because studying abroad requires considerable financial resources.</p>
+            <p>In addition, patterns of change are not always linear. Some countries demonstrate consistent upward trends throughout a period, whereas others experience temporary stagnation or even noticeable declines before recovering later. Such variations suggest that international education is strongly influenced by external conditions rather than purely academic motivation. Currency exchange rates, scholarship availability, and labour-market demand can all affect students' decisions.</p>
+            <p>Overall, the worldwide competition for university admission has become increasingly intense. Although trends differ considerably between regions, the general pattern indicates that international education is continuing to expand, with universities attracting growing numbers of applicants from diverse parts of the world.</p>
+        </div>
+
+        <div class="chunks-section">
+            <h4 style="color:#667eea; margin:20px 0 12px;">📌 Useful IELTS Task 1 Language Chunks</h4>
+            <div class="chunk-item">
+                <div class="chunk-phrase">"a dramatic rise in …"</div>
+                <div class="chunk-meaning">A very large increase.</div>
+                <ul class="chunk-examples"><li>a dramatic rise in consumer spending</li><li>a dramatic rise in the number of applicants</li></ul>
+            </div>
+            <div class="chunk-item">
+                <div class="chunk-phrase">"competition for places has intensified"</div>
+                <div class="chunk-meaning">Competition became stronger or more serious.</div>
+                <ul class="chunk-examples"><li>competition for jobs has intensified</li><li>competition within the market intensified significantly</li></ul>
+            </div>
+            <div class="chunk-item">
+                <div class="chunk-phrase">"surge sharply within a relatively short period"</div>
+                <div class="chunk-meaning">Increase very quickly in a short time.</div>
+                <ul class="chunk-examples"><li>sales surged sharply within a relatively short period</li><li>oil prices surged sharply during the crisis</li></ul>
+            </div>
+            <div class="chunk-item">
+                <div class="chunk-phrase">"account for a significant proportion of …"</div>
+                <div class="chunk-meaning">Represent a large percentage of something.</div>
+                <ul class="chunk-examples"><li>women account for a significant proportion of graduates</li><li>exports account for a significant proportion of income</li></ul>
+            </div>
+            <div class="chunk-item">
+                <div class="chunk-phrase">"consistent upward trends throughout the period"</div>
+                <div class="chunk-meaning">Steady increases over time.</div>
+                <ul class="chunk-examples"><li>the graph shows consistent upward trends throughout the period</li><li>sales experienced a consistent upward trend</li></ul>
+            </div>
+            <div class="chunk-item">
+                <div class="chunk-phrase">"noticeable declines before recovering later"</div>
+                <div class="chunk-meaning">Clear decreases followed by improvement.</div>
+                <ul class="chunk-examples"><li>prices saw noticeable declines before recovering later</li><li>employment figures recorded noticeable declines before rebounding</li></ul>
+            </div>
+            <div class="chunk-item">
+                <div class="chunk-phrase">"trends differ considerably between regions"</div>
+                <div class="chunk-meaning">Patterns are very different in different places.</div>
+                <ul class="chunk-examples"><li>spending habits differ considerably between age groups</li><li>educational trends differ considerably between countries</li></ul>
+            </div>
+        </div>
+
+        <h4 style="color:#667eea; margin:20px 0 12px;">📈 High-Level Verbs for Task 1</h4>
+        <table class="verbs-table">
+            <thead><tr><th>Basic Verb</th><th>Advanced Alternative</th></tr></thead>
+            <tbody>
+                <tr><td>go up</td><td>surge / climb / soar / rise</td></tr>
+                <tr><td>go down</td><td>decline / fall / drop / dip</td></tr>
+                <tr><td>stay stable</td><td>remain steady / stabilise</td></tr>
+                <tr><td>change</td><td>fluctuate</td></tr>
+                <tr><td>show</td><td>illustrate / demonstrate / indicate</td></tr>
+                <tr><td>be responsible for</td><td>account for</td></tr>
+            </tbody>
+        </table>
+
+        <h4 style="color:#667eea; margin:20px 0 12px;">✍️ Excellent Task 1 Sentence Patterns</h4>
+        <ul class="patterns-list">
+            <li>X experienced a significant increase over the period.</li>
+            <li>By contrast, Y showed a gradual decline.</li>
+            <li>The most noticeable feature is that…</li>
+            <li>Figures for X were considerably higher than those for Y.</li>
+            <li>While X rose steadily, Y fluctuated throughout the period.</li>
+            <li>X remained the dominant category despite minor fluctuations.</li>
+            <li>There was a clear upward/downward trend in…</li>
+            <li>The gap between X and Y widened considerably over time.</li>
+        </ul>
+
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(6)">← Previous Task</button>
+            <button class="next-btn" onclick="goToTask(8)">Next Task →</button>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         TASK 8 — Writing Task 1
+    ══════════════════════════════════════════ -->
+    <div class="task-card" id="task8">
+        <div class="task-header">
+            <div class="task-number">8</div>
+            <div>
+                <div class="task-title">IELTS Writing — Task 1</div>
+                <div class="task-subtitle">Describe the chart/graph and submit to your mentor</div>
+            </div>
+        </div>
+
+        <div class="writing-prompt">
+            <h4>📊 Writing Task 1 — Describe the image below</h4>
+            <p>Study the image carefully. Write a report describing the main features and make comparisons where relevant.</p>
+            <p style="margin-top:10px; color:#888; font-size:0.85rem;">Write at least 150 words. You should spend about 20 minutes on this task.</p>
+            <img src="task1_1.png" alt="IELTS Task 1 Chart" style="max-width:100%; border-radius:8px; margin-top:15px; border: 2px solid #e0e8ff;">
+        </div>
+
+        <div class="timer-bar" id="timer8-bar">
+            <span>⏱ Time spent:</span>
+            <span class="timer-display" id="timer8">00:00</span>
+            <span class="wordcount-display">Words: <span id="wc8">0</span></span>
+        </div>
+
+        <textarea class="essay-textarea" id="essay8" placeholder="Write your Task 1 report here..."></textarea>
+
+        <button class="submit-essay-btn" id="submit8" onclick="submitEssay(8)">
+            📤 Submit to Mentor
+        </button>
+        <div class="submission-success" id="success8">
+            <h4>✅ Report Submitted Successfully!</h4>
+            <p>Your mentor has received your Task 1 report with your time and word count.</p>
+        </div>
+
+        <div class="btn-row" style="margin-top:20px;">
+            <button class="prev-btn" onclick="goToTask(7)">← Previous Task</button>
+            <button class="next-btn" id="next8" disabled onclick="finishDay()">Finish Day 5 ✓</button>
+        </div>
+    </div>
+
+    <!-- COMPLETION SCREEN -->
+    <div class="completion-screen" id="completion-screen">
+        <div class="icon">🎉</div>
+        <h2>Day 5 Complete!</h2>
+        <p>Excellent work! You've completed all tasks for Week 1, Day 5.<br>Both writing tasks have been sent to your mentor.</p>
+        <a href="/student-dashboard.html" class="dashboard-btn">← Return to Dashboard</a>
+    </div>
+
+</div><!-- end main-container -->
+
+<script>
+// ══════════════════════════════════════════
+// SUPABASE CONFIG
+// ══════════════════════════════════════════
+const SUPABASE_URL = 'https://nbfceuhuauizyucugejr.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_0mFIGJkA_DKZfUiDAWFdrA_nXt0hF6H';
+const dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let currentTask = 1;
+const TOTAL_TASKS = 8;
+let studentId = null;
+let studentGroup = null;
+let taskStartTime = Date.now();
+
+// Writing timers
+let timer6Interval = null;
+let timer8Interval = null;
+let timer6Seconds = 0;
+let timer8Seconds = 0;
+let timer6Started = false;
+let timer8Started = false;
+
+// ══════════════════════════════════════════
+// VOCAB DATA
+// ══════════════════════════════════════════
+const vocab = [
+    {word:"1. Academic (adj)", def:"Related to education and scholarship"},
+    {word:"2. Curriculum (n)", def:"The subjects comprising a course of study"},
+    {word:"3. Pedagogy (n)", def:"The method and practice of teaching"},
+    {word:"4. Literacy (n)", def:"The ability to read and write"},
+    {word:"5. Assessment (n)", def:"The evaluation of student performance"},
+    {word:"6. Methodology (n)", def:"A system of methods used in a particular area"},
+    {word:"7. Tuition (n)", def:"Teaching or instruction, especially paid"},
+    {word:"8. Enrollment (n)", def:"The number of people registered in a school"},
+    {word:"9. Dissertation (n)", def:"A long essay on a particular subject"},
+    {word:"10. Scholarship (n)", def:"Academic study or achievement; grant for study"},
+    {word:"11. Faculty (n)", def:"Teaching staff of a university or college"},
+    {word:"12. Apprenticeship (n)", def:"Learning a trade from a skilled employer"},
+    {word:"13. Comprehension (n)", def:"The ability to understand something"},
+    {word:"14. Syllabus (n)", def:"An outline of the subjects in a course"},
+    {word:"15. Plagiarism (n)", def:"Using someone else's work as your own"},
+    {word:"16. Extracurricular (adj)", def:"Outside the regular academic curriculum"},
+    {word:"17. Mentor (n)", def:"An experienced advisor and guide"},
+    {word:"18. Matriculation (n)", def:"The process of enrolling in a university"},
+    {word:"19. Remedial (adj)", def:"Intended to improve poor skills"},
+    {word:"20. Vocational (adj)", def:"Relating to an occupation or employment"},
+    {word:"21. Seminar (n)", def:"A class focused on discussion and research"},
+    {word:"22. Accreditation (n)", def:"Official recognition of quality standards"},
+    {word:"23. Internship (n)", def:"A period of work experience"},
+    {word:"24. Portfolio (n)", def:"A collection of work showing skills"},
+    {word:"25. Credential (n)", def:"A qualification or achievement"},
+    {word:"26. Adaptability (n)", def:"Ability to adjust to new conditions"},
+    {word:"27. Entrepreneurial (adj)", def:"Relating to starting or running businesses"},
+    {word:"28. Competence (n)", def:"The ability to do something well"},
+    {word:"29. Stagnation (n)", def:"A period of little growth or activity"},
+    {word:"30. Fluctuation (n)", def:"Irregular rises and falls"},
+    {word:"31. Surplus (n)", def:"An amount left over; more than needed"},
+    {word:"32. Launchpad (n)", def:"A starting point for a bigger achievement"},
+    {word:"33. Saturation (n)", def:"A state where no more can be absorbed"},
+    {word:"34. Reskill (v)", def:"To learn new skills for a different job"},
+    {word:"35. Initiative (n)", def:"The ability to act independently"},
+    {word:"36. Automation (n)", def:"Use of machines to do human tasks"},
+    {word:"37. Prestigious (adj)", def:"Respected and admired"},
+    {word:"38. Prosperity (n)", def:"The state of being successful or wealthy"},
+    {word:"39. Demonstrable (adj)", def:"Clearly able to be shown or proved"},
+    {word:"40. Outperform (v)", def:"To do better than someone else"},
+    {word:"41. Internationalise (v)", def:"To make something international in scope"},
+    {word:"42. Mobility (n)", def:"The ability to move freely"},
+    {word:"43. Affluent (adj)", def:"Having a great deal of money; wealthy"},
+    {word:"44. Conventional (adj)", def:"Based on what is traditionally done"},
+    {word:"45. Endeavor (n)", def:"A serious attempt or effort"},
+    {word:"46. Exclusive (adj)", def:"Excluding others; limited to certain people"},
+    {word:"47. Exponentially (adv)", def:"At a very fast increasing rate"},
+    {word:"48. Optimize (v)", def:"To improve something as much as possible"},
+    {word:"49. Saturation (n)", def:"Market filled to capacity"},
+    {word:"50. Theoretical (adj)", def:"Based on theory rather than practice"},
+];
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+async function initStudent() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('teacher') === 'true') {
+        studentId = 'teacher-preview';
+        studentGroup = 'preview';
+        return;
+    }
+    try {
+        const { data: { session } } = await dbClient.auth.getSession();
+        if (session) {
+            studentId = session.user.id;
+            const { data } = await dbClient.from('students').select('student_group').eq('id', studentId).single();
+            if (data) studentGroup = data.student_group;
+        }
+    } catch(e) { console.log('Auth error:', e); }
+}
+
+function buildVocab() {
+    const grid = document.getElementById('vocab-grid');
+    grid.innerHTML = vocab.map(v => `
+        <div class="vocab-item">
+            <div class="vocab-word">${v.word}</div>
+            <div class="vocab-definition">${v.def}</div>
+        </div>
+    `).join('');
+}
+
+function startDay() {
+    document.getElementById('splash-screen').style.display = 'none';
+    document.getElementById('main-content').style.display = 'block';
+    initStudent();
+    buildVocab();
+    restoreProgress();
+}
+
+function toggleVocab() {
+    const body = document.getElementById('vocab-body');
+    const arrow = document.getElementById('vocab-arrow');
+    body.classList.toggle('open');
+    arrow.classList.toggle('open');
+}
+
+// ══════════════════════════════════════════
+// LIVE VALIDATION — enable Check Answers only when all fields filled
+// ══════════════════════════════════════════
+function validateTask3() {
+    // 10 MCQs
+    const mcqs = ['t3q1','t3q2','t3q3','t3q4','t3q5','t3q6','t3q7','t3q8','t3q9','t3q10'];
+    const allMcq = mcqs.every(name => document.querySelector(`input[name="${name}"]:checked`));
+    // 5 gap fills
+    const gaps = ['t3g11','t3g12','t3g13','t3g14','t3g15'];
+    const allGaps = gaps.every(id => document.getElementById(id).value.trim() !== '');
+    // 10 matching selects
+    const matches = ['t3m1','t3m2','t3m3','t3m4','t3m5','t3m6','t3m7','t3m8','t3m9','t3m10'];
+    const allMatches = matches.every(id => document.getElementById(id).value !== '');
+    document.getElementById('check3').disabled = !(allMcq && allGaps && allMatches);
+}
+
+function validateTask5() {
+    const mcqs = ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10'];
+    const allMcq = mcqs.every(name => document.querySelector(`input[name="${name}"]:checked`));
+    document.getElementById('check5').disabled = !allMcq;
+}
+
+// ══════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════
+function goToTask(num) {
+    document.getElementById('task' + currentTask).classList.remove('active');
+    currentTask = num;
+    document.getElementById('task' + num).classList.add('active');
+    document.getElementById('task' + num).scrollIntoView({behavior:'smooth', block:'start'});
+    updateProgress(num);
+    saveProgress(num);
+    taskStartTime = Date.now();
+
+    // Start writing timers when entering those tasks
+    if (num === 6 && !timer6Started) startTimer(6);
+    if (num === 8 && !timer8Started) startTimer(8);
+}
+
+function updateProgress(taskNum) {
+    const pct = Math.round(((taskNum - 1) / TOTAL_TASKS) * 100);
+    document.getElementById('progress-bar').style.width = pct + '%';
+    document.getElementById('progress-label').textContent = `Task ${taskNum} of ${TOTAL_TASKS}`;
+}
+
+function saveProgress(taskNum) {
+    localStorage.setItem('w1d5_task', taskNum);
+}
+
+function restoreProgress() {
+    const saved = localStorage.getItem('w1d5_task');
+    if (saved && parseInt(saved) > 1) {
+        const t = parseInt(saved);
+        document.getElementById('task1').classList.remove('active');
+        currentTask = t;
+        document.getElementById('task' + t).classList.add('active');
+        updateProgress(t);
+        if (t === 6 && !timer6Started) startTimer(6);
+        if (t === 8 && !timer8Started) startTimer(8);
+    }
+}
+
+// ══════════════════════════════════════════
+// TIMERS (count up)
+// ══════════════════════════════════════════
+function startTimer(taskNum) {
+    if (taskNum === 6) {
+        timer6Started = true;
+        timer6Interval = setInterval(() => {
+            timer6Seconds++;
+            document.getElementById('timer6').textContent = formatTime(timer6Seconds);
+        }, 1000);
+    } else {
+        timer8Started = true;
+        timer8Interval = setInterval(() => {
+            timer8Seconds++;
+            document.getElementById('timer8').textContent = formatTime(timer8Seconds);
+        }, 1000);
+    }
+}
+
+function formatTime(secs) {
+    const m = Math.floor(secs / 60).toString().padStart(2,'0');
+    const s = (secs % 60).toString().padStart(2,'0');
+    return `${m}:${s}`;
+}
+
+// ══════════════════════════════════════════
+// WORD COUNT
+// ══════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+    const e6 = document.getElementById('essay6');
+    const e8 = document.getElementById('essay8');
+    if (e6) e6.addEventListener('input', () => {
+        const wc = e6.value.trim().split(/\s+/).filter(w=>w).length;
+        document.getElementById('wc6').textContent = wc;
+    });
+    if (e8) e8.addEventListener('input', () => {
+        const wc = e8.value.trim().split(/\s+/).filter(w=>w).length;
+        document.getElementById('wc8').textContent = wc;
+    });
+
+    // Task 3 — listen to all MCQs, gaps, and selects
+    ['t3q1','t3q2','t3q3','t3q4','t3q5','t3q6','t3q7','t3q8','t3q9','t3q10'].forEach(name => {
+        document.querySelectorAll(`input[name="${name}"]`).forEach(el => el.addEventListener('change', validateTask3));
+    });
+    ['t3g11','t3g12','t3g13','t3g14','t3g15'].forEach(id => {
+        document.getElementById(id).addEventListener('input', validateTask3);
+    });
+    ['t3m1','t3m2','t3m3','t3m4','t3m5','t3m6','t3m7','t3m8','t3m9','t3m10'].forEach(id => {
+        document.getElementById(id).addEventListener('change', validateTask3);
+    });
+
+    // Task 5 — listen to all MCQs
+    ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10'].forEach(name => {
+        document.querySelectorAll(`input[name="${name}"]`).forEach(el => el.addEventListener('change', validateTask5));
+    });
+});
+
+// ══════════════════════════════════════════
+// SUBMIT ESSAY
+// ══════════════════════════════════════════
+async function submitEssay(taskNum) {
+    const textarea = document.getElementById('essay' + taskNum);
+    const essayText = textarea.value.trim();
+    if (essayText.length < 20) {
+        alert('Please write your essay before submitting.');
+        return;
+    }
+
+    const timeSpent = taskNum === 6 ? timer6Seconds : timer8Seconds;
+    const wordCount = essayText.split(/\s+/).filter(w=>w).length;
+    const taskLabel = taskNum === 6 ? 'Writing Task 2' : 'Writing Task 1';
+
+    const btn = document.getElementById('submit' + taskNum);
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+
+    try {
+        const { error } = await dbClient.from('essay_submissions').insert({
+            student_id: studentId,
+            student_group: studentGroup,
+            week: 1,
+            day: 5,
+            task_number: taskNum,
+            task_label: taskLabel,
+            essay_text: essayText,
+            word_count: wordCount,
+            time_spent_seconds: timeSpent,
+            submitted_at: new Date().toISOString()
+        });
+
+        if (error) throw error;
+
+        // Stop timer
+        if (taskNum === 6) clearInterval(timer6Interval);
+        else clearInterval(timer8Interval);
+
+        document.getElementById('success' + taskNum).style.display = 'block';
+        textarea.disabled = true;
+        btn.style.display = 'none';
+
+        // Unlock next task
+        const nextBtn = document.getElementById('next' + taskNum);
+        if (nextBtn) nextBtn.disabled = false;
+
+        // Save task progress
+        await saveTaskProgress(taskNum);
+
+    } catch(e) {
+        console.error('Submit error:', e);
+        btn.disabled = false;
+        btn.textContent = '📤 Submit to Mentor';
+        alert('Submission failed. Please check your connection and try again.');
+    }
+}
+
+// ══════════════════════════════════════════
+// SUPABASE TASK PROGRESS
+// ══════════════════════════════════════════
+async function saveTaskProgress(taskNum) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        await dbClient.from('task_progress').upsert({
+            student_id: studentId,
+            week: 1, day: 5,
+            task_number: taskNum,
+            status: 'completed',
+            time_completed: new Date().toISOString(),
+            time_spent_seconds: Math.round((Date.now() - taskStartTime) / 1000)
+        }, { onConflict: 'student_id,week,day,task_number' });
+    } catch(e) { console.error('Progress save error:', e); }
+}
+
+// ══════════════════════════════════════════
+// CHECK ANSWERS
+// ══════════════════════════════════════════
+const t3Answers = {t3q1:'B',t3q2:'B',t3q3:'C',t3q4:'B',t3q5:'C',t3q6:'C',t3q7:'B',t3q8:'C',t3q9:'B',t3q10:'D'};
+const t3GapAnswers = {t3g11:'fixated',t3g12:'opportunities',t3g13:'scalable',t3g14:'entrepreneurial',t3g15:'evolve'};
+const t3MatchAnswers = {t3m1:'D',t3m2:'C',t3m3:'B',t3m4:'E',t3m5:'F',t3m6:'G',t3m7:'H',t3m8:'A',t3m9:'I',t3m10:'J'};
+
+function checkTask3() {
+    let allCorrect = true;
+    // MCQ
+    Object.entries(t3Answers).forEach(([name, ans]) => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`);
+        const fb = document.getElementById('fb_' + name);
+        if (!sel) { fb.textContent = '⚠ Please select an answer'; fb.className='answer-feedback'; allCorrect=false; return; }
+        const ok = sel.value === ans;
+        if (!ok) allCorrect = false;
+        fb.textContent = ok ? '✅ Correct!' : `❌ Incorrect — correct answer: ${ans}`;
+        fb.className = 'answer-feedback ' + (ok ? 'correct' : 'incorrect');
+    });
+    // Gap fill
+    Object.entries(t3GapAnswers).forEach(([id, ans]) => {
+        const inp = document.getElementById(id);
+        const ok = inp.value.trim().toLowerCase() === ans.toLowerCase();
+        if (!ok) allCorrect = false;
+        inp.style.borderBottomColor = ok ? '#28a745' : '#dc3545';
+    });
+    // Matching
+    Object.entries(t3MatchAnswers).forEach(([id, ans]) => {
+        const sel = document.getElementById(id);
+        const ok = sel.value === ans;
+        if (!ok) allCorrect = false;
+        sel.style.borderColor = ok ? '#28a745' : '#dc3545';
+    });
+    document.getElementById('showAns3').style.display = 'inline-block';
+    document.getElementById('next3').disabled = false;
+    saveTaskProgress(3);
+}
+
+const t5Answers = {t5q1:'B',t5q2:'C',t5q3:'B',t5q4:'C',t5q5:'B',t5q6:'C',t5q7:'B',t5q8:'C',t5q9:'B',t5q10:'C'};
+
+function checkTask5() {
+    Object.entries(t5Answers).forEach(([name, ans]) => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`);
+        const fb = document.getElementById('fb_' + name);
+        if (!sel) { fb.textContent = '⚠ Please select an answer'; fb.className='answer-feedback'; return; }
+        const ok = sel.value === ans;
+        fb.textContent = ok ? '✅ Correct!' : `❌ Incorrect — correct answer: ${ans}`;
+        fb.className = 'answer-feedback ' + (ok ? 'correct' : 'incorrect');
+    });
+    document.getElementById('showAns5').style.display = 'inline-block';
+    document.getElementById('next5').disabled = false;
+    saveTaskProgress(5);
+}
+
+function toggleAnswers(id) {
+    const div = document.getElementById(id);
+    const btn = div.previousElementSibling;
+    div.style.display = div.style.display === 'block' ? 'none' : 'block';
+    btn.textContent = div.style.display === 'block' ? '▲ Hide Answers' : '▼ Show Answers';
+}
+
+// ══════════════════════════════════════════
+// FINISH DAY
+// ══════════════════════════════════════════
+async function finishDay() {
+    document.getElementById('task8').classList.remove('active');
+    document.getElementById('completion-screen').style.display = 'block';
+    document.getElementById('completion-screen').scrollIntoView({behavior:'smooth'});
+    localStorage.removeItem('w1d5_task');
+    // Mark all tasks complete
+    for (let i = 1; i <= 8; i++) await saveTaskProgress(i);
+}
+</script>
+</body>
+</html>
