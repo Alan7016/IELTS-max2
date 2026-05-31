@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Dashboard - IELTS Max 2</title>
+    <title>Student Dashboard - IELTS Platform</title>
     <link rel="icon" type="image/png" href="/favicon.png">
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
@@ -254,6 +254,86 @@
                     </div>
                 </a>
 
+                <!-- W2 Day 2 -->
+                <a href="/week2/day2/day2.html" class="day-link" id="w2d2-link">
+                    <div class="day-card w2-card" id="w2d2">
+                        <div class="day-header">
+                            <div class="day-number w2">Day 2</div>
+                            <div class="day-status-icon"><span id="w2d2-lock" style="display:none;">🔒</span><span id="w2d2-check" style="display:none;">✅</span></div>
+                        </div>
+                        <div class="day-title">Health & Lifestyle</div>
+                        <span class="status-badge not-started" id="w2d2-status">Not Started</span>
+                        <div class="progress-container">
+                            <div class="progress-label"><span id="w2d2-text">0/7 tasks</span><span id="w2d2-pct">0%</span></div>
+                            <div class="progress-bar"><div class="progress-fill teal" id="w2d2-bar" style="width:0%"></div></div>
+                        </div>
+                        <div class="day-stats">
+                            <div class="stat-item">⏱️ <span id="w2d2-time">0 min</span></div>
+                            <div class="stat-item">📝 7 exercises</div>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- W2 Day 3 -->
+                <a href="/week2/day3/day3.html" class="day-link" id="w2d3-link">
+                    <div class="day-card w2-card" id="w2d3">
+                        <div class="day-header">
+                            <div class="day-number w2">Day 3</div>
+                            <div class="day-status-icon"><span id="w2d3-lock" style="display:none;">🔒</span><span id="w2d3-check" style="display:none;">✅</span></div>
+                        </div>
+                        <div class="day-title">Medical & Wellbeing</div>
+                        <span class="status-badge not-started" id="w2d3-status">Not Started</span>
+                        <div class="progress-container">
+                            <div class="progress-label"><span id="w2d3-text">0/7 tasks</span><span id="w2d3-pct">0%</span></div>
+                            <div class="progress-bar"><div class="progress-fill teal" id="w2d3-bar" style="width:0%"></div></div>
+                        </div>
+                        <div class="day-stats">
+                            <div class="stat-item">⏱️ <span id="w2d3-time">0 min</span></div>
+                            <div class="stat-item">📝 7 exercises</div>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- W2 Day 4 -->
+                <a href="/week2/day4/day4.html" class="day-link" id="w2d4-link">
+                    <div class="day-card w2-card" id="w2d4">
+                        <div class="day-header">
+                            <div class="day-number w2">Day 4</div>
+                            <div class="day-status-icon"><span id="w2d4-lock" style="display:none;">🔒</span><span id="w2d4-check" style="display:none;">✅</span></div>
+                        </div>
+                        <div class="day-title">Health Challenges</div>
+                        <span class="status-badge not-started" id="w2d4-status">Not Started</span>
+                        <div class="progress-container">
+                            <div class="progress-label"><span id="w2d4-text">0/7 tasks</span><span id="w2d4-pct">0%</span></div>
+                            <div class="progress-bar"><div class="progress-fill teal" id="w2d4-bar" style="width:0%"></div></div>
+                        </div>
+                        <div class="day-stats">
+                            <div class="stat-item">⏱️ <span id="w2d4-time">0 min</span></div>
+                            <div class="stat-item">📝 7 exercises</div>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- W2 Day 5 -->
+                <a href="/week2/day5/day5.html" class="day-link" id="w2d5-link">
+                    <div class="day-card w2-card" id="w2d5">
+                        <div class="day-header">
+                            <div class="day-number w2">Day 5</div>
+                            <div class="day-status-icon"><span id="w2d5-lock" style="display:none;">🔒</span><span id="w2d5-check" style="display:none;">✅</span></div>
+                        </div>
+                        <div class="day-title">Health Review</div>
+                        <span class="status-badge not-started" id="w2d5-status">Not Started</span>
+                        <div class="progress-container">
+                            <div class="progress-label"><span id="w2d5-text">0/7 tasks</span><span id="w2d5-pct">0%</span></div>
+                            <div class="progress-bar"><div class="progress-fill teal" id="w2d5-bar" style="width:0%"></div></div>
+                        </div>
+                        <div class="day-stats">
+                            <div class="stat-item">⏱️ <span id="w2d5-time">0 min</span></div>
+                            <div class="stat-item">📝 7 exercises</div>
+                        </div>
+                    </div>
+                </a>
+
             </div>
         </div>
 
@@ -271,7 +351,7 @@
     // Day config: week -> day -> totalTasks
     const DAY_CONFIG = {
         1: { 1:6, 2:7, 3:7, 4:7, 5:8 },
-        2: { 1:7 }
+        2: { 1:7, 2:7, 3:7, 4:7, 5:7 }
     };
 
     document.addEventListener('DOMContentLoaded', async function() {
@@ -336,7 +416,8 @@
             const allDays = [
                 { week: 1, day: 1 }, { week: 1, day: 2 }, { week: 1, day: 3 },
                 { week: 1, day: 4 }, { week: 1, day: 5 },
-                { week: 2, day: 1 }
+                { week: 2, day: 1 }, { week: 2, day: 2 }, { week: 2, day: 3 },
+                { week: 2, day: 4 }, { week: 2, day: 5 }
             ];
 
             allDays.forEach(({ week, day }) => {
