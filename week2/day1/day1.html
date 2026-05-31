@@ -872,8 +872,26 @@ async function restoreProgress() {
             });
         }
 
-        // Restore last task from Supabase
+        // Check if day is fully completed
         if (studentId && studentId !== 'teacher-preview') {
+            const { data: taskData } = await dbClient.from('task_progress')
+                .select('task_number, status')
+                .eq('student_id', studentId)
+                .eq('week', WEEK).eq('day', DAY);
+
+            const completedCount = taskData ? taskData.filter(t => t.status === 'completed').length : 0;
+
+            if (completedCount >= TOTAL_TASKS) {
+                // Day fully done — show completion screen, make tasks read-only
+                document.getElementById('task1').classList.remove('active');
+                document.getElementById('completion-screen').style.display = 'block';
+                updateProgress(TOTAL_TASKS);
+                validateAll();
+                makeReadOnly();
+                return;
+            }
+
+            // Not fully done — restore last task position
             const { data: resume } = await dbClient.from('student_resume')
                 .select('last_task').eq('student_id', studentId)
                 .eq('week', WEEK).eq('day', DAY).single();
@@ -1115,6 +1133,20 @@ async function finishDay() {
     if (studentId && studentId !== 'teacher-preview') {
         await dbClient.from('student_resume').delete().eq('student_id', studentId);
     }
+    makeReadOnly();
+}
+
+function makeReadOnly() {
+    // Disable all inputs so student can only view answers
+    document.querySelectorAll('.gap-input').forEach(el => { el.disabled = true; el.style.opacity = '0.8'; });
+    document.querySelectorAll('input[type="radio"]').forEach(el => el.disabled = true);
+    document.querySelectorAll('select.match-select').forEach(el => { el.disabled = true; });
+    document.querySelectorAll('audio').forEach(el => el.controls = true);
+    // Hide check buttons, keep show answers buttons visible
+    document.querySelectorAll('.check-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.next-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.prev-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.show-answers-btn').forEach(el => el.style.display = 'inline-block');
 }
 
 function reviewTask(num) {
