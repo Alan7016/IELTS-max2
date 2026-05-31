@@ -3,747 +3,425 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Dashboard - IELTS Platform</title>
+    <title>Student Dashboard - IELTS Max 2</title>
     <link rel="icon" type="image/png" href="/favicon.png">
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);QA
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
         }
 
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
+        .container { max-width: 1400px; margin: 0 auto; }
 
-        .loading-screen {
-            text-align: center;
-            padding: 100px 20px;
-        }
+        .loading-screen { text-align: center; padding: 100px 20px; }
+        .loading-screen .spinner { font-size: 3rem; margin-bottom: 20px; animation: spin 2s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loading-screen h2 { color: white; font-size: 1.5rem; }
 
-        .loading-screen .spinner {
-            font-size: 3rem;
-            margin-bottom: 20px;
-            animation: spin 2s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .loading-screen h2 {
-            color: white;
-            font-size: 1.5rem;
-        }
-
-        .main-content {
-            display: none;
-        }
-
-        .main-content.visible {
-            display: block;
-        }
+        .main-content { display: none; }
+        .main-content.visible { display: block; }
 
         .header {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            margin-bottom: 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            background: white; padding: 30px; border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2); margin-bottom: 30px;
+            display: flex; justify-content: space-between; align-items: center;
         }
-
-        .welcome {
-            flex: 1;
-        }
-
-        .welcome h1 {
-            color: #667eea;
-            font-size: 2rem;
-            margin-bottom: 5px;
-        }
-
-        .welcome p {
-            color: #666;
-            font-size: 1rem;
-        }
-
-        .user-info {
-            text-align: right;
-        }
-
-        .user-info .name {
-            font-weight: bold;
-            color: #333;
-            font-size: 1.1rem;
-        }
-
-        .user-info .group {
-            color: #667eea;
-            font-size: 0.9rem;
-        }
-
-        .logout-btn {
-            background: #dc3545;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            margin-top: 10px;
-            font-size: 0.9rem;
-        }
-
-        .logout-btn:hover {
-            background: #c82333;
-        }
+        .welcome h1 { color: #667eea; font-size: 2rem; margin-bottom: 5px; }
+        .welcome p { color: #666; font-size: 1rem; }
+        .user-info { text-align: right; }
+        .user-info .name { font-weight: bold; color: #333; font-size: 1.1rem; }
+        .user-info .group { color: #667eea; font-size: 0.9rem; }
+        .logout-btn { background: #dc3545; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin-top: 10px; font-size: 0.9rem; }
+        .logout-btn:hover { background: #c82333; }
 
         .week-section {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
+            background: white; padding: 30px; border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-bottom: 30px;
         }
+        .week-title { font-size: 1.8rem; margin-bottom: 10px; }
+        .week-title.w1 { color: #667eea; }
+        .week-title.w2 { color: #20c997; }
+        .week-description { color: #666; margin-bottom: 30px; }
 
-        .week-title {
-            font-size: 1.8rem;
-            color: #667eea;
-            margin-bottom: 10px;
-        }
-
-        .week-description {
-            color: #666;
-            margin-bottom: 30px;
-        }
-
-        .days-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
-        }
+        .days-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
 
         .day-card {
-            background: #f8f9fa;
-            border-radius: 12px;
-            padding: 20px;
-            transition: all 0.3s;
-            border: 2px solid transparent;
-            position: relative;
+            background: #f8f9fa; border-radius: 12px; padding: 20px;
+            transition: all 0.3s; border: 2px solid transparent; position: relative;
         }
+        .day-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .day-card.locked { opacity: 0.6; cursor: not-allowed; }
+        .day-card.locked:hover { transform: none; }
 
-        .day-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        }
+        /* Week 2 card accent */
+        .day-card.w2-card { background: #f0fdf8; }
 
-        .day-card.locked {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
+        .day-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .day-number { font-size: 2rem; font-weight: bold; }
+        .day-number.w1 { color: #667eea; }
+        .day-number.w2 { color: #20c997; }
+        .day-status-icon { font-size: 1.5rem; }
+        .day-title { font-size: 1.1rem; font-weight: 600; color: #333; margin-bottom: 10px; }
 
-        .day-card.locked:hover {
-            transform: none;
-        }
+        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; margin-bottom: 10px; }
+        .status-badge.not-started { background: #f8d7da; color: #721c24; }
+        .status-badge.in-progress { background: #fff3cd; color: #856404; }
+        .status-badge.completed { background: #d4edda; color: #155724; }
+        .status-badge.locked { background: #e2e3e5; color: #383d41; }
 
-        .day-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
+        .progress-container { margin: 15px 0; }
+        .progress-label { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem; color: #666; }
+        .progress-bar { width: 100%; height: 20px; background: #e0e0e0; border-radius: 10px; overflow: hidden; }
+        .progress-fill { height: 100%; transition: width 0.3s ease; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.75rem; font-weight: bold; }
+        .progress-fill.red { background: linear-gradient(90deg, #dc3545, #c82333); }
+        .progress-fill.yellow { background: linear-gradient(90deg, #ffc107, #ffb300); }
+        .progress-fill.green { background: linear-gradient(90deg, #28a745, #20c997); }
+        .progress-fill.teal { background: linear-gradient(90deg, #20c997, #0ca678); }
 
-        .day-number {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #667eea;
-        }
-
-        .day-status-icon {
-            font-size: 1.5rem;
-        }
-
-        .day-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 10px;
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            margin-bottom: 10px;
-        }
-
-        .status-badge.not-started {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .status-badge.in-progress {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .status-badge.completed {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .status-badge.locked {
-            background: #e2e3e5;
-            color: #383d41;
-        }
-
-        .progress-container {
-            margin: 15px 0;
-        }
-
-        .progress-label {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 5px;
-            font-size: 0.9rem;
-            color: #666;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 20px;
-            background: #e0e0e0;
-            border-radius: 10px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .progress-fill {
-            height: 100%;
-            transition: width 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 0.75rem;
-            font-weight: bold;
-        }
-
-        .progress-fill.red {
-            background: linear-gradient(90deg, #dc3545 0%, #c82333 100%);
-        }
-
-        .progress-fill.yellow {
-            background: linear-gradient(90deg, #ffc107 0%, #ffb300 100%);
-        }
-
-        .progress-fill.green {
-            background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
-        }
-
-        .day-stats {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 10px;
-            padding-top: 10px;
-            border-top: 1px solid #ddd;
-            font-size: 0.85rem;
-            color: #666;
-        }
-
-        .stat-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .day-link {
-            text-decoration: none;
-            color: inherit;
-            display: block;
-        }
+        .day-stats { display: flex; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd; font-size: 0.85rem; color: #666; }
+        .stat-item { display: flex; align-items: center; gap: 5px; }
+        .day-link { text-decoration: none; color: inherit; display: block; }
 
         @media (max-width: 768px) {
-            .header {
-                flex-direction: column;
-                text-align: center;
-            }
-
-            .user-info {
-                text-align: center;
-                margin-top: 20px;
-            }
-
-            .days-grid {
-                grid-template-columns: 1fr;
-            }
+            .header { flex-direction: column; text-align: center; }
+            .user-info { text-align: center; margin-top: 20px; }
+            .days-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Loading Screen -->
-        <div class="loading-screen" id="loadingScreen">
-            <div class="spinner">⏳</div>
-            <h2>Loading your progress...</h2>
-        </div>
+<div class="container">
 
-        <!-- Main Content -->
-        <div class="main-content" id="mainContent">
-            <!-- Header -->
-            <div class="header">
-                <div class="welcome">
-                    <h1>👋 Hi, <span id="studentName">Loading...</span>!</h1>
-                    <p>Welcome to your IELTS learning journey</p>
-                </div>
-                <div class="user-info">
-                    <div class="name" id="studentFullName">-</div>
-                    <div class="group">📚 <span id="studentGroup">-</span></div>
-                    <button class="logout-btn" onclick="logout()">Logout</button>
-                </div>
-            </div>
-
-            <!-- Week 1: Education -->
-            <div class="week-section">
-                <div class="week-title">📖 Week 1: Education</div>
-                <div class="week-description">Foundation skills and academic vocabulary</div>
-
-                <div class="days-grid">
-                    <!-- Day 1 -->
-                    <a href="/week1/day1/day1.html" class="day-link" id="day1-link">
-                        <div class="day-card" id="day1">
-                            <div class="day-header">
-                                <div class="day-number">Day 1</div>
-                                <div class="day-status-icon">
-                                    <span id="lock1" style="display: none;">🔒</span>
-                                    <span id="check1" style="display: none;">✅</span>
-                                </div>
-                            </div>
-                            <div class="day-title">Education Basics</div>
-                            <span class="status-badge not-started" id="status1">Not Started</span>
-                            <div class="progress-container">
-                                <div class="progress-label">
-                                    <span id="progress-text1">0/6 tasks</span>
-                                    <span id="percentage1">0%</span>
-                                </div>
-                                <div class="progress-bar">
-                                    <div class="progress-fill red" id="progress1" style="width: 0%"></div>
-                                </div>
-                            </div>
-                            <div class="day-stats">
-                                <div class="stat-item">
-                                    <span>⏱️</span>
-                                    <span id="time1">0 min</span>
-                                </div>
-                                <div class="stat-item">
-                                    <span>📝</span>
-                                    <span>6 exercises</span>
-                                </div>
-                            </div>
-                        </div>
-                    </a>
-
-                    <!-- Day 2 -->
-                    <a href="/week1/day2/day2.html" class="day-link" id="day2-link">
-                        <div class="day-card" id="day2">
-                            <div class="day-header">
-                                <div class="day-number">Day 2</div>
-                                <div class="day-status-icon">
-                                    <span id="lock2" style="display: none;">🔒</span>
-                                    <span id="check2" style="display: none;">✅</span>
-                                </div>
-                            </div>
-                            <div class="day-title">Reading & Listening</div>
-                            <span class="status-badge not-started" id="status2">Not Started</span>
-                            <div class="progress-container">
-                                <div class="progress-label">
-                                    <span id="progress-text2">0/7 tasks</span>
-                                    <span id="percentage2">0%</span>
-                                </div>
-                                <div class="progress-bar">
-                                    <div class="progress-fill red" id="progress2" style="width: 0%"></div>
-                                </div>
-                            </div>
-                            <div class="day-stats">
-                                <div class="stat-item">
-                                    <span>⏱️</span>
-                                    <span id="time2">0 min</span>
-                                </div>
-                                <div class="stat-item">
-                                    <span>📝</span>
-                                    <span>7 exercises</span>
-                                </div>
-                            </div>
-                        </div>
-                    </a>
-
-                    <!-- Day 3 -->
-                   <a href="/week1/day3/day3.html" class="day-link" id="day3-link">
-                        <div class="day-card" id="day3">
-                            <div class="day-header">
-                                <div class="day-number">Day 3</div>
-                                <div class="day-status-icon">
-                                    <span id="lock3" style="display: none;">🔒</span>
-                                    <span id="check3" style="display: none;">✅</span>
-                                </div>
-                            </div>
-                            <div class="day-title">Writing Skills</div>
-                            <span class="status-badge not-started" id="status3">Not Started</span>
-                            <div class="progress-container">
-                                <div class="progress-label">
-                                    <span id="progress-text3">0/7 tasks</span>
-                                    <span id="percentage3">0%</span>
-                                </div>
-                                <div class="progress-bar">
-                                    <div class="progress-fill red" id="progress3" style="width: 0%"></div>
-                                </div>
-                            </div>
-                            <div class="day-stats">
-                                <div class="stat-item">
-                                    <span>⏱️</span>
-                                    <span id="time3">0 min</span>
-                                </div>
-                                <div class="stat-item">
-                                    <span>📝</span>
-                                    <span>7 exercises</span>
-                                </div>
-                            </div>
-                        </div>
-                    </a>
-
-                    <!-- Day 4 -->
-                    <a href="/week1/day4/day4.html" class="day-link" id="day4-link">
-                        <div class="day-card" id="day4">
-                            <div class="day-header">
-                                <div class="day-number">Day 4</div>
-                                <div class="day-status-icon">
-                                    <span id="lock4" style="display: none;">🔒</span>
-                                    <span id="check4" style="display: none;">✅</span>
-                                </div>
-                            </div>
-                            <div class="day-title">Speaking Practice</div>
-                            <span class="status-badge not-started" id="status4">Not Started</span>
-                            <div class="progress-container">
-                                <div class="progress-label">
-                                    <span id="progress-text4">0/7 tasks</span>
-                                    <span id="percentage4">0%</span>
-                                </div>
-                                <div class="progress-bar">
-                                    <div class="progress-fill red" id="progress4" style="width: 0%"></div>
-                                </div>
-                            </div>
-                            <div class="day-stats">
-                                <div class="stat-item">
-                                    <span>⏱️</span>
-                                    <span id="time4">0 min</span>
-                                </div>
-                                <div class="stat-item">
-                                    <span>📝</span>
-                                    <span>7 exercises</span>
-                                </div>
-                            </div>
-                        </div>
-                    </a>
-
-                    <!-- Day 5 -->
-                    <a href="/week1/day5/day5.html" class="day-link" id="day5-link">
-                        <div class="day-card" id="day5">
-                            <div class="day-header">
-                                <div class="day-number">Day 5</div>
-                                <div class="day-status-icon">
-                                    <span id="lock5" style="display: none;">🔒</span>
-                                    <span id="check5" style="display: none;">✅</span>
-                                </div>
-                            </div>
-                            <div class="day-title">Education</div>
-                            <span class="status-badge not-started" id="status5">Not Started</span>
-                            <div class="progress-container">
-                                <div class="progress-label">
-                                    <span id="progress-text5">0/8 tasks</span>
-                                    <span id="percentage5">0%</span>
-                                </div>
-                                <div class="progress-bar">
-                                    <div class="progress-fill red" id="progress5" style="width: 0%"></div>
-                                </div>
-                            </div>
-                            <div class="day-stats">
-                                <div class="stat-item">
-                                    <span>⏱️</span>
-                                    <span id="time5">0 min</span>
-                                </div>
-                                <div class="stat-item">
-                                    <span>📝</span>
-                                    <span>7 exercises</span>
-                                </div>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-            </div>
-        </div>
+    <!-- Loading -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="spinner">⏳</div>
+        <h2>Loading your progress...</h2>
     </div>
 
-    <script>
-        // ============================================
-        // SUPABASE CONFIGURATION
-        // ============================================
-        const SUPABASE_URL = 'https://nbfceuhuauizyucugejr.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_0mFIGJkA_DKZfUiDAWFdrA_nXt0hF6H';
-        
-        const { createClient } = supabase;
-        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+    <!-- Main -->
+    <div class="main-content" id="mainContent">
 
-        let currentStudent = null;
+        <!-- Header -->
+        <div class="header">
+            <div class="welcome">
+                <h1>👋 Hi, <span id="studentName">Loading...</span>!</h1>
+                <p>Welcome to your IELTS learning journey</p>
+            </div>
+            <div class="user-info">
+                <div class="name" id="studentFullName">-</div>
+                <div class="group">📚 <span id="studentGroup">-</span></div>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </div>
 
-        // ============================================
-        // PAGE INITIALIZATION
-        // ============================================
-        document.addEventListener('DOMContentLoaded', async function() {
-            try {
-                // Check if user is logged in
-                const userStr = localStorage.getItem('user');
-                if (!userStr) {
-                    window.location.href = '/login.html';
-                    return;
-                }
+        <!-- ══ WEEK 1 ══ -->
+        <div class="week-section">
+            <div class="week-title w1">📖 Week 1: Education</div>
+            <div class="week-description">Foundation skills and academic vocabulary</div>
+            <div class="days-grid">
 
-                const user = JSON.parse(userStr);
-                if (user.type !== 'student') {
-                    window.location.href = '/login.html';
-                    return;
-                }
+                <!-- W1 Day 1 -->
+                <a href="/week1/day1/day1.html" class="day-link" id="w1d1-link">
+                    <div class="day-card" id="w1d1">
+                        <div class="day-header">
+                            <div class="day-number w1">Day 1</div>
+                            <div class="day-status-icon"><span id="w1d1-lock" style="display:none;">🔒</span><span id="w1d1-check" style="display:none;">✅</span></div>
+                        </div>
+                        <div class="day-title">Education Basics</div>
+                        <span class="status-badge not-started" id="w1d1-status">Not Started</span>
+                        <div class="progress-container">
+                            <div class="progress-label"><span id="w1d1-text">0/6 tasks</span><span id="w1d1-pct">0%</span></div>
+                            <div class="progress-bar"><div class="progress-fill red" id="w1d1-bar" style="width:0%"></div></div>
+                        </div>
+                        <div class="day-stats">
+                            <div class="stat-item">⏱️ <span id="w1d1-time">0 min</span></div>
+                            <div class="stat-item">📝 6 exercises</div>
+                        </div>
+                    </div>
+                </a>
 
-                // Get student from database
-                const { data: studentData, error } = await supabaseClient
-                    .from('students')
-                    .select('*')
-                    .eq('username', user.username)
-                    .single();
+                <!-- W1 Day 2 -->
+                <a href="/week1/day2/day2.html" class="day-link" id="w1d2-link">
+                    <div class="day-card" id="w1d2">
+                        <div class="day-header">
+                            <div class="day-number w1">Day 2</div>
+                            <div class="day-status-icon"><span id="w1d2-lock" style="display:none;">🔒</span><span id="w1d2-check" style="display:none;">✅</span></div>
+                        </div>
+                        <div class="day-title">Reading & Listening</div>
+                        <span class="status-badge not-started" id="w1d2-status">Not Started</span>
+                        <div class="progress-container">
+                            <div class="progress-label"><span id="w1d2-text">0/7 tasks</span><span id="w1d2-pct">0%</span></div>
+                            <div class="progress-bar"><div class="progress-fill red" id="w1d2-bar" style="width:0%"></div></div>
+                        </div>
+                        <div class="day-stats">
+                            <div class="stat-item">⏱️ <span id="w1d2-time">0 min</span></div>
+                            <div class="stat-item">📝 7 exercises</div>
+                        </div>
+                    </div>
+                </a>
 
-                if (error || !studentData) {
-                    console.error('Error loading student:', error);
-                    alert('Error loading student data');
-                    return;
-                }
+                <!-- W1 Day 3 -->
+                <a href="/week1/day3/day3.html" class="day-link" id="w1d3-link">
+                    <div class="day-card" id="w1d3">
+                        <div class="day-header">
+                            <div class="day-number w1">Day 3</div>
+                            <div class="day-status-icon"><span id="w1d3-lock" style="display:none;">🔒</span><span id="w1d3-check" style="display:none;">✅</span></div>
+                        </div>
+                        <div class="day-title">Writing Skills</div>
+                        <span class="status-badge not-started" id="w1d3-status">Not Started</span>
+                        <div class="progress-container">
+                            <div class="progress-label"><span id="w1d3-text">0/7 tasks</span><span id="w1d3-pct">0%</span></div>
+                            <div class="progress-bar"><div class="progress-fill red" id="w1d3-bar" style="width:0%"></div></div>
+                        </div>
+                        <div class="day-stats">
+                            <div class="stat-item">⏱️ <span id="w1d3-time">0 min</span></div>
+                            <div class="stat-item">📝 7 exercises</div>
+                        </div>
+                    </div>
+                </a>
 
-                currentStudent = studentData;
+                <!-- W1 Day 4 -->
+                <a href="/week1/day4/day4.html" class="day-link" id="w1d4-link">
+                    <div class="day-card" id="w1d4">
+                        <div class="day-header">
+                            <div class="day-number w1">Day 4</div>
+                            <div class="day-status-icon"><span id="w1d4-lock" style="display:none;">🔒</span><span id="w1d4-check" style="display:none;">✅</span></div>
+                        </div>
+                        <div class="day-title">Speaking Practice</div>
+                        <span class="status-badge not-started" id="w1d4-status">Not Started</span>
+                        <div class="progress-container">
+                            <div class="progress-label"><span id="w1d4-text">0/7 tasks</span><span id="w1d4-pct">0%</span></div>
+                            <div class="progress-bar"><div class="progress-fill red" id="w1d4-bar" style="width:0%"></div></div>
+                        </div>
+                        <div class="day-stats">
+                            <div class="stat-item">⏱️ <span id="w1d4-time">0 min</span></div>
+                            <div class="stat-item">📝 7 exercises</div>
+                        </div>
+                    </div>
+                </a>
 
-                // Display user info
-                document.getElementById('studentName').textContent = currentStudent.name.split(' ')[0];
-                document.getElementById('studentFullName').textContent = currentStudent.name;
-                document.getElementById('studentGroup').textContent = currentStudent.student_group;
+                <!-- W1 Day 5 -->
+                <a href="/week1/day5/day5.html" class="day-link" id="w1d5-link">
+                    <div class="day-card" id="w1d5">
+                        <div class="day-header">
+                            <div class="day-number w1">Day 5</div>
+                            <div class="day-status-icon"><span id="w1d5-lock" style="display:none;">🔒</span><span id="w1d5-check" style="display:none;">✅</span></div>
+                        </div>
+                        <div class="day-title">Education</div>
+                        <span class="status-badge not-started" id="w1d5-status">Not Started</span>
+                        <div class="progress-container">
+                            <div class="progress-label"><span id="w1d5-text">0/8 tasks</span><span id="w1d5-pct">0%</span></div>
+                            <div class="progress-bar"><div class="progress-fill red" id="w1d5-bar" style="width:0%"></div></div>
+                        </div>
+                        <div class="day-stats">
+                            <div class="stat-item">⏱️ <span id="w1d5-time">0 min</span></div>
+                            <div class="stat-item">📝 8 exercises</div>
+                        </div>
+                    </div>
+                </a>
 
-                // Load progress
-                await loadProgress();
+            </div>
+        </div>
 
-                // Hide loading, show content
-                document.getElementById('loadingScreen').style.display = 'none';
-                document.getElementById('mainContent').classList.add('visible');
+        <!-- ══ WEEK 2 ══ -->
+        <div class="week-section">
+            <div class="week-title w2">🏥 Week 2: Health</div>
+            <div class="week-description">Health vocabulary, listening and reading skills</div>
+            <div class="days-grid">
 
-            } catch (error) {
-                console.error('Error initializing dashboard:', error);
-                alert('Error loading dashboard. Please refresh the page.');
+                <!-- W2 Day 1 -->
+                <a href="/week2/day1/day1.html" class="day-link" id="w2d1-link">
+                    <div class="day-card w2-card" id="w2d1">
+                        <div class="day-header">
+                            <div class="day-number w2">Day 1</div>
+                            <div class="day-status-icon"><span id="w2d1-lock" style="display:none;">🔒</span><span id="w2d1-check" style="display:none;">✅</span></div>
+                        </div>
+                        <div class="day-title">Health Basics</div>
+                        <span class="status-badge not-started" id="w2d1-status">Not Started</span>
+                        <div class="progress-container">
+                            <div class="progress-label"><span id="w2d1-text">0/7 tasks</span><span id="w2d1-pct">0%</span></div>
+                            <div class="progress-bar"><div class="progress-fill teal" id="w2d1-bar" style="width:0%"></div></div>
+                        </div>
+                        <div class="day-stats">
+                            <div class="stat-item">⏱️ <span id="w2d1-time">0 min</span></div>
+                            <div class="stat-item">📝 7 exercises</div>
+                        </div>
+                    </div>
+                </a>
+
+            </div>
+        </div>
+
+    </div><!-- end mainContent -->
+</div><!-- end container -->
+
+<script>
+    const SUPABASE_URL = 'https://nbfceuhuauizyucugejr.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_0mFIGJkA_DKZfUiDAWFdrA_nXt0hF6H';
+    const { createClient } = supabase;
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let currentStudent = null;
+
+    // Day config: week -> day -> totalTasks
+    const DAY_CONFIG = {
+        1: { 1:6, 2:7, 3:7, 4:7, 5:8 },
+        2: { 1:7 }
+    };
+
+    document.addEventListener('DOMContentLoaded', async function() {
+        try {
+            const userStr = localStorage.getItem('user');
+            if (!userStr) { window.location.href = '/login.html'; return; }
+            const user = JSON.parse(userStr);
+            if (user.type !== 'student') { window.location.href = '/login.html'; return; }
+
+            const { data: studentData, error } = await supabaseClient
+                .from('students').select('*').eq('username', user.username).single();
+
+            if (error || !studentData) {
+                console.error('Error loading student:', error);
+                alert('Error loading student data');
+                return;
             }
-        });
 
-        // ============================================
-        // LOAD PROGRESS WITH DAY AVAILABILITY CHECK
-        // ============================================
-        async function loadProgress() {
-            try {
-                // First, check which days are unlocked
-                const { data: dayAvailability, error: availError } = await supabaseClient
-                    .from('day_availability')
-                    .select('*')
-                    .eq('week', 1)
-                    .order('day');
-                
-                if (availError) {
-                    console.error('Error loading day availability:', availError);
-                }
+            currentStudent = studentData;
+            document.getElementById('studentName').textContent = currentStudent.name.split(' ')[0];
+            document.getElementById('studentFullName').textContent = currentStudent.name;
+            document.getElementById('studentGroup').textContent = currentStudent.student_group;
 
-                // Create a map of unlocked days
-                const unlockedDays = new Set();
-                if (dayAvailability) {
-                    dayAvailability.forEach(day => {
-                        if (day.is_unlocked) {
-                            unlockedDays.add(day.day);
-                        }
-                    });
-                }
+            await loadProgress();
 
-                // Load student progress
-                const { data: progressData, error: progressError } = await supabaseClient
-                    .from('day_summary')
-                    .select('*')
-                    .eq('student_id', currentStudent.id)
-                    .eq('week', 1)
-                    .order('day');
+            document.getElementById('loadingScreen').style.display = 'none';
+            document.getElementById('mainContent').classList.add('visible');
 
-                if (progressError) {
-                    console.error('Error loading progress:', progressError);
-                }
+        } catch (error) {
+            console.error('Error initializing dashboard:', error);
+            alert('Error loading dashboard. Please refresh the page.');
+        }
+    });
 
-                // Create progress map
-                const progressMap = {};
-                if (progressData) {
-                    progressData.forEach(day => {
-                        progressMap[day.day] = day;
-                    });
-                }
+    async function loadProgress() {
+        try {
+            // Load availability for ALL weeks
+            const { data: dayAvailability } = await supabaseClient
+                .from('day_availability').select('*').order('week').order('day');
 
-                // Day configurations
-                const dayConfigs = {
-                    1: { totalTasks: 6 },
-                    2: { totalTasks: 7 },
-                    3: { totalTasks: 7 },
-                    4: { totalTasks: 7 },
-                    5: { totalTasks: 7 }
-                };
+            // Build unlocked set: "week-day"
+            const unlocked = new Set();
+            if (dayAvailability) {
+                dayAvailability.forEach(d => {
+                    if (d.is_unlocked) unlocked.add(`${d.week}-${d.day}`);
+                });
+            }
 
-                // Update UI for all 5 days
-                for (let day = 1; day <= 5; day++) {
-                    const dayCard = document.getElementById(`day${day}`);
-                    const dayLink = document.getElementById(`day${day}-link`);
-                    const statusBadge = document.getElementById(`status${day}`);
-                    const progressBar = document.getElementById(`progress${day}`);
-                    const progressText = document.getElementById(`progress-text${day}`);
-                    const lockIcon = document.getElementById(`lock${day}`);
-                    const checkIcon = document.getElementById(`check${day}`);
-                    const timeSpent = document.getElementById(`time${day}`);
-                    const percentageDisplay = document.getElementById(`percentage${day}`);
+            // Load ALL progress for this student
+            const { data: progressData } = await supabaseClient
+                .from('day_summary').select('*')
+                .eq('student_id', currentStudent.id)
+                .order('week').order('day');
 
-                    const isUnlocked = unlockedDays.has(day);
-                    const progress = progressMap[day];
-                    const totalTasks = dayConfigs[day].totalTasks;
+            // Build progress map: "week-day" -> data
+            const progressMap = {};
+            if (progressData) {
+                progressData.forEach(d => { progressMap[`${d.week}-${d.day}`] = d; });
+            }
 
-                    if (!isUnlocked) {
-                        // Day is LOCKED
-                        if (lockIcon) lockIcon.style.display = 'block';
-                        if (checkIcon) checkIcon.style.display = 'none';
-                        if (statusBadge) {
-                            statusBadge.textContent = 'Locked';
-                            statusBadge.className = 'status-badge locked';
-                        }
-                        if (dayCard) {
-                            dayCard.classList.add('locked');
-                        }
-                        if (dayLink) {
-                            dayLink.style.pointerEvents = 'none';
-                            dayLink.style.opacity = '0.6';
-                            dayLink.style.cursor = 'not-allowed';
-                            dayLink.onclick = (e) => {
-                                e.preventDefault();
-                                alert('🔒 This day is locked. Please wait for your teacher to unlock it.');
-                                return false;
-                            };
-                        }
-                        if (progressBar) progressBar.style.width = '0%';
-                        if (progressText) progressText.textContent = `0/${totalTasks} tasks`;
-                        if (timeSpent) timeSpent.textContent = '0 min';
-                        if (percentageDisplay) percentageDisplay.textContent = '0%';
-                    } else if (progress && progress.percentage === 100) {
-                        // Day is COMPLETED
-                        if (lockIcon) lockIcon.style.display = 'none';
-                        if (checkIcon) checkIcon.style.display = 'block';
-                        if (statusBadge) {
-                            statusBadge.textContent = 'Completed';
-                            statusBadge.className = 'status-badge completed';
-                        }
-                        if (dayCard) {
-                            dayCard.classList.remove('locked');
-                        }
-                        if (dayLink) {
-                            dayLink.style.pointerEvents = 'auto';
-                            dayLink.style.opacity = '1';
-                            dayLink.style.cursor = 'pointer';
-                            dayLink.onclick = null;
-                        }
-                        if (progressBar) {
-                            progressBar.style.width = '100%';
-                            progressBar.className = 'progress-fill green';
-                        }
-                        if (progressText) progressText.textContent = `${progress.completed_tasks}/${totalTasks} tasks`;
-                        if (timeSpent) timeSpent.textContent = `${progress.total_time_spent_minutes} min`;
-                        if (percentageDisplay) percentageDisplay.textContent = '100%';
-                    } else if (progress && progress.percentage > 0) {
-                        // Day is IN PROGRESS
-                        if (lockIcon) lockIcon.style.display = 'none';
-                        if (checkIcon) checkIcon.style.display = 'none';
-                        if (statusBadge) {
-                            statusBadge.textContent = 'In Progress';
-                            statusBadge.className = 'status-badge in-progress';
-                        }
-                        if (dayCard) {
-                            dayCard.classList.remove('locked');
-                        }
-                        if (dayLink) {
-                            dayLink.style.pointerEvents = 'auto';
-                            dayLink.style.opacity = '1';
-                            dayLink.style.cursor = 'pointer';
-                            dayLink.onclick = null;
-                        }
-                        if (progressBar) {
-                            progressBar.style.width = progress.percentage + '%';
-                            if (progress.percentage < 50) {
-                                progressBar.className = 'progress-fill red';
-                            } else if (progress.percentage < 100) {
-                                progressBar.className = 'progress-fill yellow';
-                            }
-                        }
-                        if (progressText) progressText.textContent = `${progress.completed_tasks}/${totalTasks} tasks`;
-                        if (timeSpent) timeSpent.textContent = `${progress.total_time_spent_minutes} min`;
-                        if (percentageDisplay) percentageDisplay.textContent = `${Math.round(progress.percentage)}%`;
-                    } else {
-                        // Day is UNLOCKED but NOT STARTED
-                        if (lockIcon) lockIcon.style.display = 'none';
-                        if (checkIcon) checkIcon.style.display = 'none';
-                        if (statusBadge) {
-                            statusBadge.textContent = 'Not Started';
-                            statusBadge.className = 'status-badge not-started';
-                        }
-                        if (dayCard) {
-                            dayCard.classList.remove('locked');
-                        }
-                        if (dayLink) {
-                            dayLink.style.pointerEvents = 'auto';
-                            dayLink.style.opacity = '1';
-                            dayLink.style.cursor = 'pointer';
-                            dayLink.onclick = null;
-                        }
-                        if (progressBar) progressBar.style.width = '0%';
-                        if (progressText) progressText.textContent = `0/${totalTasks} tasks`;
-                        if (timeSpent) timeSpent.textContent = '0 min';
-                        if (percentageDisplay) percentageDisplay.textContent = '0%';
+            // Update all days
+            const allDays = [
+                { week: 1, day: 1 }, { week: 1, day: 2 }, { week: 1, day: 3 },
+                { week: 1, day: 4 }, { week: 1, day: 5 },
+                { week: 2, day: 1 }
+            ];
+
+            allDays.forEach(({ week, day }) => {
+                const key = `w${week}d${day}`;
+                const mapKey = `${week}-${day}`;
+                const totalTasks = DAY_CONFIG[week][day];
+                const isUnlocked = unlocked.has(mapKey);
+                const progress = progressMap[mapKey];
+
+                const card    = document.getElementById(key);
+                const link    = document.getElementById(key + '-link');
+                const status  = document.getElementById(key + '-status');
+                const bar     = document.getElementById(key + '-bar');
+                const text    = document.getElementById(key + '-text');
+                const pct     = document.getElementById(key + '-pct');
+                const lock    = document.getElementById(key + '-lock');
+                const check   = document.getElementById(key + '-check');
+                const time    = document.getElementById(key + '-time');
+
+                if (!isUnlocked) {
+                    // LOCKED
+                    if (lock) lock.style.display = 'block';
+                    if (check) check.style.display = 'none';
+                    if (status) { status.textContent = 'Locked'; status.className = 'status-badge locked'; }
+                    if (card) card.classList.add('locked');
+                    if (link) {
+                        link.style.pointerEvents = 'none';
+                        link.style.opacity = '0.6';
+                        link.onclick = e => { e.preventDefault(); alert('🔒 This day is locked. Please wait for your teacher to unlock it.'); };
                     }
+                    if (bar) bar.style.width = '0%';
+                    if (text) text.textContent = `0/${totalTasks} tasks`;
+                    if (time) time.textContent = '0 min';
+                    if (pct) pct.textContent = '0%';
+
+                } else if (progress && progress.percentage === 100) {
+                    // COMPLETED
+                    if (lock) lock.style.display = 'none';
+                    if (check) check.style.display = 'block';
+                    if (status) { status.textContent = 'Completed'; status.className = 'status-badge completed'; }
+                    if (card) card.classList.remove('locked');
+                    if (link) { link.style.pointerEvents = 'auto'; link.style.opacity = '1'; link.onclick = null; }
+                    if (bar) { bar.style.width = '100%'; bar.className = week === 2 ? 'progress-fill teal' : 'progress-fill green'; }
+                    if (text) text.textContent = `${progress.completed_tasks}/${totalTasks} tasks`;
+                    if (time) time.textContent = `${progress.total_time_spent_minutes} min`;
+                    if (pct) pct.textContent = '100%';
+
+                } else if (progress && progress.percentage > 0) {
+                    // IN PROGRESS
+                    if (lock) lock.style.display = 'none';
+                    if (check) check.style.display = 'none';
+                    if (status) { status.textContent = 'In Progress'; status.className = 'status-badge in-progress'; }
+                    if (card) card.classList.remove('locked');
+                    if (link) { link.style.pointerEvents = 'auto'; link.style.opacity = '1'; link.onclick = null; }
+                    if (bar) {
+                        bar.style.width = progress.percentage + '%';
+                        bar.className = progress.percentage < 50 ? 'progress-fill red' : week === 2 ? 'progress-fill teal' : 'progress-fill yellow';
+                    }
+                    if (text) text.textContent = `${progress.completed_tasks}/${totalTasks} tasks`;
+                    if (time) time.textContent = `${progress.total_time_spent_minutes} min`;
+                    if (pct) pct.textContent = `${Math.round(progress.percentage)}%`;
+
+                } else {
+                    // NOT STARTED
+                    if (lock) lock.style.display = 'none';
+                    if (check) check.style.display = 'none';
+                    if (status) { status.textContent = 'Not Started'; status.className = 'status-badge not-started'; }
+                    if (card) card.classList.remove('locked');
+                    if (link) { link.style.pointerEvents = 'auto'; link.style.opacity = '1'; link.onclick = null; }
+                    if (bar) bar.style.width = '0%';
+                    if (text) text.textContent = `0/${totalTasks} tasks`;
+                    if (time) time.textContent = '0 min';
+                    if (pct) pct.textContent = '0%';
                 }
+            });
 
-            } catch (error) {
-                console.error('Error in loadProgress:', error);
-            }
+        } catch (error) {
+            console.error('Error in loadProgress:', error);
         }
+    }
 
-        // ============================================
-        // LOGOUT
-        // ============================================
-        function logout() {
-            localStorage.removeItem('user');
-            window.location.href = '/login.html';
-        }
-    </script>
+    function logout() {
+        localStorage.removeItem('user');
+        window.location.href = '/login.html';
+    }
+</script>
 </body>
 </html>
