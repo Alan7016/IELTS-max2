@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEEK 2 - DAY 1 (Health)</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f4ff; color: #333; }
+
+        /* ── SPLASH ── */
+        #splash-screen {
+            position: fixed; inset: 0;
+            background: linear-gradient(135deg, #20c997 0%, #0ca678 100%);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            z-index: 9999; color: white; text-align: center; padding: 20px;
+        }
+        #splash-screen h1 { font-size: 3rem; margin-bottom: 10px; }
+        #splash-screen h2 { font-size: 2rem; margin-bottom: 10px; opacity: 0.9; }
+        #splash-screen p  { font-size: 1.2rem; margin-bottom: 40px; opacity: 0.8; }
+        .splash-btn {
+            background: white; color: #20c997;
+            border: none; padding: 18px 60px;
+            font-size: 1.4rem; font-weight: bold;
+            border-radius: 50px; cursor: pointer;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2); transition: all 0.3s;
+        }
+        .splash-btn:hover { transform: translateY(-3px); box-shadow: 0 12px 35px rgba(0,0,0,0.3); }
+
+        /* ── LAYOUT ── */
+        .main-container { max-width: 900px; margin: 0 auto; padding: 20px; }
+
+        .day-header {
+            background: linear-gradient(135deg, #20c997 0%, #0ca678 100%);
+            color: white; padding: 25px 30px; border-radius: 15px;
+            margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .day-header h1 { font-size: 1.6rem; }
+        .day-header .topic { opacity: 0.85; font-size: 1rem; margin-top: 4px; }
+        .back-btn {
+            background: rgba(255,255,255,0.2); color: white;
+            border: 2px solid white; padding: 10px 20px;
+            border-radius: 8px; cursor: pointer; font-weight: bold;
+            text-decoration: none; font-size: 0.9rem; transition: all 0.3s;
+        }
+        .back-btn:hover { background: white; color: #20c997; }
+
+        /* ── VOCAB ── */
+        .vocab-section {
+            background: white; border-radius: 15px;
+            margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border-left: 5px solid #20c997; overflow: hidden;
+        }
+        .vocab-toggle {
+            width: 100%; background: none; border: none; cursor: pointer;
+            padding: 18px 25px; display: flex; align-items: center;
+            justify-content: space-between; text-align: left;
+        }
+        .vocab-toggle:hover { background: #f0fdf8; }
+        .vocab-toggle-left { display: flex; align-items: center; gap: 10px; }
+        .vocab-toggle h3 { color: #20c997; font-size: 1.1rem; margin: 0; }
+        .vocab-count { background: #20c997; color: white; font-size: 0.75rem; font-weight: bold; padding: 3px 10px; border-radius: 20px; }
+        .vocab-arrow { color: #20c997; font-size: 1rem; transition: transform 0.3s; }
+        .vocab-arrow.open { transform: rotate(180deg); }
+        .vocab-body { display: none; padding: 0 25px 20px; }
+        .vocab-body.open { display: block; }
+        .vocab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+        .vocab-item { background: #f0fdf8; padding: 10px 14px; border-radius: 8px; }
+        .vocab-word { font-weight: bold; color: #333; font-size: 0.95rem; }
+        .vocab-definition { color: #666; font-size: 0.82rem; margin-top: 2px; }
+
+        /* ── PROGRESS ── */
+        .progress-label { text-align: center; color: #20c997; font-size: 0.85rem; margin-bottom: 8px; font-weight: 600; }
+        .progress-bar-wrap { background: #e0e8ff; border-radius: 20px; height: 10px; margin-bottom: 20px; overflow: hidden; }
+        .progress-bar-fill { background: linear-gradient(90deg, #20c997, #0ca678); height: 100%; border-radius: 20px; transition: width 0.5s ease; }
+
+        /* ── TASK CARDS ── */
+        .task-card { background: white; border-radius: 15px; padding: 28px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); display: none; }
+        .task-card.active { display: block; }
+        .task-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .task-number { background: linear-gradient(135deg, #20c997, #0ca678); color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; flex-shrink: 0; }
+        .task-title { font-size: 1.3rem; font-weight: bold; color: #333; }
+        .task-subtitle { color: #888; font-size: 0.9rem; margin-top: 2px; }
+
+        /* ── PDF / HTML LINKS ── */
+        .pdf-links { display: flex; flex-direction: column; gap: 12px; margin: 15px 0; }
+        .pdf-link { display: flex; align-items: center; gap: 12px; background: #f0fdf8; padding: 15px 20px; border-radius: 10px; text-decoration: none; color: #333; font-weight: 600; border: 2px solid #b2f0d8; transition: all 0.3s; }
+        .pdf-link:hover { background: #20c997; color: white; border-color: #20c997; transform: translateX(5px); }
+        .pdf-icon { font-size: 1.5rem; }
+        .html-link-btn { display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #20c997, #0ca678); color: white; padding: 15px 30px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 1rem; transition: all 0.3s; margin: 10px 0; }
+        .html-link-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(32,201,151,0.4); }
+
+        /* ── VIDEO ── */
+        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; margin: 15px 0; }
+        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .video-fallback { background: #f0fdf8; padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align: center; }
+        .video-fallback a { color: #20c997; font-weight: bold; }
+
+        /* ── AUDIO ── */
+        .audio-player { background: #f0fdf8; border: 2px solid #b2f0d8; border-radius: 12px; padding: 20px; margin: 15px 0; }
+        .audio-player p { color: #555; margin-bottom: 10px; font-weight: 600; }
+        .audio-player audio { width: 100%; }
+
+        /* ── QUESTIONS ── */
+        .questions-section { margin-top: 20px; }
+        .question-block { margin-bottom: 20px; padding: 18px; background: #f8f9fa; border-radius: 10px; }
+        .question-text { font-weight: 600; margin-bottom: 12px; color: #333; line-height: 1.5; }
+        .options label { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: background 0.2s; margin-bottom: 5px; }
+        .options label:hover { background: #e0fdf4; }
+        .options input[type="radio"] { margin-top: 3px; flex-shrink: 0; }
+        .answer-feedback { margin-top: 8px; font-weight: bold; font-size: 0.9rem; }
+        .answer-feedback.correct { color: #28a745; }
+        .answer-feedback.incorrect { color: #dc3545; }
+
+        /* ── GAP FILL ── */
+        .gap-fill-section { margin-top: 20px; }
+        .gap-sentence { margin-bottom: 14px; line-height: 2; font-size: 1rem; }
+        .gap-input { border: none; border-bottom: 2px solid #20c997; padding: 4px 8px; font-size: 0.95rem; width: 180px; background: transparent; outline: none; color: #333; }
+        .gap-input.correct { border-bottom-color: #28a745; background: #d4edda33; }
+        .gap-input.incorrect { border-bottom-color: #dc3545; background: #f8d7da33; }
+        .word-box { background: #f0fdf8; border: 2px solid #b2f0d8; border-radius: 10px; padding: 12px 18px; margin-bottom: 15px; }
+        .word-box strong { color: #20c997; }
+
+        /* ── MATCHING ── */
+        .matching-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .matching-table th { background: #20c997; color: white; padding: 10px 14px; text-align: left; }
+        .matching-table td { padding: 10px 14px; border-bottom: 1px solid #eee; }
+        .matching-table tr:nth-child(even) td { background: #f0fdf8; }
+        .match-select { border: 2px solid #b2f0d8; border-radius: 6px; padding: 5px 8px; font-size: 0.9rem; background: white; }
+        .match-select.correct { border-color: #28a745; }
+        .match-select.incorrect { border-color: #dc3545; }
+
+        /* ── PASSAGE TEXT ── */
+        .passage-text { background: #fafffe; border: 1px solid #b2f0d8; border-radius: 10px; padding: 25px; margin: 15px 0; line-height: 1.8; font-size: 0.97rem; color: #333; }
+        .passage-text h3 { color: #20c997; margin-bottom: 15px; font-size: 1.2rem; }
+        .passage-text p { margin-bottom: 14px; }
+
+        /* ── BUTTONS ── */
+        .btn-row { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+        .check-btn { background: linear-gradient(135deg, #20c997, #0ca678); color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .check-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(32,201,151,0.4); }
+        .check-btn:disabled { background: #ccc; cursor: not-allowed; transform: none !important; box-shadow: none; }
+        .next-btn { background: #28a745; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .next-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .next-btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(40,167,69,0.4); }
+        .prev-btn { background: #6c757d; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .prev-btn:hover { background: #5a6268; }
+        .show-answers-btn { background: #ffc107; color: #333; border: none; padding: 10px 22px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.88rem; display: none; }
+        .show-answers-btn:hover { background: #e0a800; }
+        .answers-panel { display: none; background: #fffbea; border: 2px solid #ffc107; border-radius: 10px; padding: 15px; margin-top: 12px; }
+        .answers-panel p { margin-bottom: 6px; font-size: 0.9rem; }
+
+        /* ── COMPLETION ── */
+        .completion-screen { text-align: center; padding: 60px 20px; display: none; }
+        .completion-screen .icon { font-size: 5rem; margin-bottom: 20px; }
+        .completion-screen h2 { font-size: 2.2rem; color: #20c997; margin-bottom: 10px; }
+        .completion-screen p { color: #666; font-size: 1rem; margin-bottom: 30px; }
+        .dashboard-btn { background: linear-gradient(135deg, #20c997, #0ca678); color: white; padding: 16px 40px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 1.1rem; display: inline-block; transition: all 0.3s; }
+        .dashboard-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(32,201,151,0.4); }
+
+        /* ── SAVE INDICATOR ── */
+        .save-indicator { position: fixed; bottom: 20px; right: 20px; background: #20c997; color: white; padding: 10px 18px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; opacity: 0; transition: opacity 0.4s; z-index: 9000; pointer-events: none; }
+        .save-indicator.show { opacity: 1; }
+    </style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash-screen">
+    <h1>🏥 WEEK 2</h1>
+    <h2>DAY 1</h2>
+    <p>Topic: Health</p>
+    <button class="splash-btn" onclick="startDay()">LET'S GO!</button>
+</div>
+
+<!-- SAVE INDICATOR -->
+<div class="save-indicator" id="saveIndicator">✓ Progress saved</div>
+
+<!-- MAIN -->
+<div class="main-container" id="main-content" style="display:none;">
+
+    <div class="day-header">
+        <div>
+            <h1>🏥 Week 2 — Day 1</h1>
+            <div class="topic">Topic: Health</div>
+        </div>
+        <a href="/student-dashboard.html" class="back-btn">← Dashboard</a>
+    </div>
+
+    <div class="progress-label" id="progress-label">Task 0 of 7</div>
+    <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progress-bar" style="width:0%"></div>
+    </div>
+
+    <!-- VOCAB -->
+    <div class="vocab-section">
+        <button class="vocab-toggle" onclick="toggleVocab()">
+            <div class="vocab-toggle-left">
+                <h3>📖 Today's Vocabulary</h3>
+                <span class="vocab-count">50 words</span>
+            </div>
+            <span class="vocab-arrow" id="vocab-arrow">▼</span>
+        </button>
+        <div class="vocab-body" id="vocab-body">
+            <div class="vocab-grid" id="vocab-grid"></div>
+        </div>
+    </div>
+
+    <!-- ══ TASK 1 — Mini Reading Gap Fill ══ -->
+    <div class="task-card active" id="task1">
+        <div class="task-header">
+            <div class="task-number">1</div>
+            <div>
+                <div class="task-title">Mini Reading</div>
+                <div class="task-subtitle">Complete the gaps using words from the box</div>
+            </div>
+        </div>
+
+        <div class="word-box">
+            <strong>Word Box:</strong> factors &nbsp;|&nbsp; ingredients &nbsp;|&nbsp; maintain &nbsp;|&nbsp; nutrients &nbsp;|&nbsp; overeating &nbsp;|&nbsp; overweight &nbsp;|&nbsp; servings &nbsp;|&nbsp; variety
+        </div>
+
+        <div class="passage-text">
+            <h3>How to improve your diet</h3>
+            <p>• Make sure that you eat a <input class="gap-input" id="t1g1" placeholder="(1)"> of foods. It is important to eat from all five food groups.</p>
+            <p>• Eat plenty of fruit and vegetables. These contain vital <input class="gap-input" id="t1g2" placeholder="(2)"> and leading dietitians recommend eating at least two <input class="gap-input" id="t1g3" placeholder="(3)"> of fruit and three of vegetables every day.</p>
+            <p>• Try to <input class="gap-input" id="t1g4" placeholder="(4)"> a healthy weight. Being too thin can cause as many health problems as being <input class="gap-input" id="t1g5" placeholder="(5)">. Remember, the correct weight for you depends on many different <input class="gap-input" id="t1g6" placeholder="(6)">, including your age, height and sex.</p>
+            <p>• Eat moderate portions and don't be tempted to order a larger size when eating out. Skipping meals can lead to <input class="gap-input" id="t1g7" placeholder="(7)"> as you will be much hungrier later, so be sure to eat regularly if you want to curb your appetite.</p>
+            <p>• You don't need to eliminate all of your favourite foods but do check the <input class="gap-input" id="t1g8" placeholder="(8)"> on food labels and make sure that you reduce your intake of foods that are high in fats, sugar and salt.</p>
+            <p>• If you have a food allergy, make sure you avoid any of the ingredients that can trigger an attack.</p>
+        </div>
+
+        <h4 style="color:#20c997; margin: 20px 0 12px;">Part 2 — Match words from the text with their meanings</h4>
+        <div class="gap-fill-section">
+            <div class="gap-sentence">1. very important &nbsp;<input class="gap-input" id="t1m1" placeholder="___"></div>
+            <div class="gap-sentence">2. food scientists &nbsp;<input class="gap-input" id="t1m2" placeholder="___"></div>
+            <div class="gap-sentence">3. neither small nor large &nbsp;<input class="gap-input" id="t1m3" placeholder="___"></div>
+            <div class="gap-sentence">4. servings &nbsp;<input class="gap-input" id="t1m4" placeholder="___"></div>
+            <div class="gap-sentence">5. missing out on &nbsp;<input class="gap-input" id="t1m5" placeholder="___"></div>
+            <div class="gap-sentence">6. limit &nbsp;<input class="gap-input" id="t1m6" placeholder="___"></div>
+            <div class="gap-sentence">7. desire to eat &nbsp;<input class="gap-input" id="t1m7" placeholder="___"></div>
+            <div class="gap-sentence">8. totally remove &nbsp;<input class="gap-input" id="t1m8" placeholder="___"></div>
+            <div class="gap-sentence">9. a condition that causes illness if you eat certain foods &nbsp;<input class="gap-input" id="t1m9" placeholder="___"></div>
+            <div class="gap-sentence">10. activate &nbsp;<input class="gap-input" id="t1m10" placeholder="___"></div>
+        </div>
+
+        <div class="btn-row">
+            <button class="check-btn" id="check1" onclick="checkTask1()" disabled>Check Answers</button>
+            <button class="next-btn" id="next1" disabled onclick="goToTask(2)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns1" onclick="toggleAnswers('ans1')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans1">
+            <p><strong>Part 1:</strong> 1-variety, 2-nutrients, 3-servings, 4-maintain, 5-overweight, 6-factors, 7-overeating, 8-ingredients</p>
+            <p><strong>Part 2:</strong> 1-vital, 2-dietitians, 3-moderate, 4-portions, 5-skipping, 6-curb, 7-appetite, 8-eliminate, 9-allergy, 10-trigger</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 2 — PDF Article ══ -->
+    <div class="task-card" id="task2">
+        <div class="task-header">
+            <div class="task-number">2</div>
+            <div>
+                <div class="task-title">Article Reading</div>
+                <div class="task-subtitle">Read the article and study the vocabulary</div>
+            </div>
+        </div>
+        <p style="color:#555; margin-bottom:15px;">Open the files below and read carefully.</p>
+        <div class="pdf-links">
+            <a class="pdf-link" href="health_diet_exercise_article.pdf" target="_blank"><span class="pdf-icon">📄</span> Health, Diet & Exercise — Article</a>
+            <a class="pdf-link" href="health_diet_exercise_vocab.pdf" target="_blank"><span class="pdf-icon">📘</span> Health, Diet & Exercise — Vocabulary</a>
+            <a class="pdf-link" href="health_diet_exercise_answers.pdf" target="_blank"><span class="pdf-icon">📋</span> Health, Diet & Exercise — Answers</a>
+        </div>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(1)">← Previous</button>
+            <button class="next-btn" onclick="goToTask(3)">Next Task →</button>
+        </div>
+    </div>
+
+    <!-- ══ TASK 3 — Practice Reading ══ -->
+    <div class="task-card" id="task3">
+        <div class="task-header">
+            <div class="task-number">3</div>
+            <div>
+                <div class="task-title">Practice Reading</div>
+                <div class="task-subtitle">IELTS-style reading — Passage 1</div>
+            </div>
+        </div>
+        <p style="color:#555; margin-bottom:15px;">Open the reading test and complete all questions. Return here when done.</p>
+        <a class="html-link-btn" href="Practice Reading (2).html" target="_blank">📖 Open Practice Reading</a>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(2)">← Previous</button>
+            <button class="next-btn" onclick="goToTask(4)">Next Task →</button>
+        </div>
+    </div>
+
+    <!-- ══ TASK 4 — Listening Mini Task ══ -->
+    <div class="task-card" id="task4">
+        <div class="task-header">
+            <div class="task-number">4</div>
+            <div>
+                <div class="task-title">Listening Mini Task</div>
+                <div class="task-subtitle">Listen and complete the summaries</div>
+            </div>
+        </div>
+
+        <h4 style="color:#20c997; margin-bottom:12px;">Part 1 — Complete the summary (NO MORE THAN TWO WORDS)</h4>
+        <div class="audio-player">
+            <p>🎧 Track 01 — Health Talk Part 1</p>
+            <audio controls src="Track 01.mp3"></audio>
+        </div>
+
+        <div class="gap-fill-section">
+            <div class="gap-sentence">The heart is a <input class="gap-input" id="t4g1" placeholder="(1)">.</div>
+            <div class="gap-sentence">A diet high in <input class="gap-input" id="t4g2" placeholder="(2)"> can slow down the <input class="gap-input" id="t4g3" placeholder="(3)"> and lead to heart problems.</div>
+            <div class="gap-sentence">A heart attack is caused when an artery that <input class="gap-input" id="t4g4" placeholder="(4)"> to the heart becomes <input class="gap-input" id="t4g5" placeholder="(5)">.</div>
+            <div class="gap-sentence">Patients must be given <input class="gap-input" id="t4g6" placeholder="(6)"> immediately.</div>
+            <div class="gap-sentence">A stroke is caused when there is a blockage in an artery that leads to the <input class="gap-input" id="t4g7" placeholder="(7)">.</div>
+            <div class="gap-sentence">A stroke can have a major effect on your body and as yet there is no <input class="gap-input" id="t4g8" placeholder="(8)">.</div>
+            <div class="gap-sentence">A healthy diet will keep your arteries <input class="gap-input" id="t4g9" placeholder="(9)"> and can lower the <input class="gap-input" id="t4g10" placeholder="(10)"> of a stroke or heart attack.</div>
+        </div>
+
+        <h4 style="color:#20c997; margin: 20px 0 12px;">Part 2 — Listen and answer</h4>
+        <div class="audio-player">
+            <p>🎧 Track 02 — Health Talk Part 2</p>
+            <audio controls src="Track 02.mp3"></audio>
+        </div>
+
+        <div class="gap-fill-section">
+            <div class="gap-sentence" style="margin-bottom:20px;">1. Write down THREE types of aerobic exercise mentioned:<br>
+                <input class="gap-input" id="t4ex1" placeholder="Exercise 1" style="width:150px; margin-top:8px; margin-right:8px;">
+                <input class="gap-input" id="t4ex2" placeholder="Exercise 2" style="width:150px; margin-right:8px;">
+                <input class="gap-input" id="t4ex3" placeholder="Exercise 3" style="width:150px;">
+            </div>
+            <div class="gap-sentence">A. in a fixed pattern → <input class="gap-input" id="t4w1" placeholder="___" style="width:160px;"></div>
+            <div class="gap-sentence">B. quickly → <input class="gap-input" id="t4w2" placeholder="___" style="width:160px;"></div>
+            <div class="gap-sentence">C. little by little → <input class="gap-input" id="t4w3" placeholder="___" style="width:160px;"></div>
+            <div class="gap-sentence">D. a strong suggestion → <input class="gap-input" id="t4w4" placeholder="___" style="width:160px;"></div>
+            <div class="gap-sentence">E. speed → <input class="gap-input" id="t4w5" placeholder="___" style="width:160px;"></div>
+            <div class="gap-sentence">F. doing something to excess → <input class="gap-input" id="t4w6" placeholder="___" style="width:160px;"></div>
+            <div class="gap-sentence">G. get better → <input class="gap-input" id="t4w7" placeholder="___" style="width:160px;"></div>
+            <div class="gap-sentence">H. every second one → <input class="gap-input" id="t4w8" placeholder="___" style="width:160px;"></div>
+        </div>
+
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(3)">← Previous</button>
+            <button class="check-btn" id="check4" onclick="checkTask4()" disabled>Check Answers</button>
+            <button class="next-btn" id="next4" disabled onclick="goToTask(5)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns4" onclick="toggleAnswers('ans4')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans4">
+            <p><strong>Part 1:</strong> 1-muscle, 2-fat, 3-blood flow, 4-carries blood, 5-blocked, 6-treatment, 7-brain, 8-cure, 9-clear, 10-risk</p>
+            <p><strong>Exercises (any 3):</strong> walking, jogging, running, swimming, cycling</p>
+            <p><strong>Words:</strong> A-regular, B-briskly, C-gradually, D-recommendation, E-pace, F-overdoing, G-recover, H-alternate</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 5 — Video + Questions ══ -->
+    <div class="task-card" id="task5">
+        <div class="task-header">
+            <div class="task-number">5</div>
+            <div>
+                <div class="task-title">Video Watching Task</div>
+                <div class="task-subtitle">Watch and answer questions</div>
+            </div>
+        </div>
+
+        <div class="video-fallback">
+            <p>▶ <a href="https://www.youtube.com/watch?v=pm-2PgmtVvI" target="_blank">Click here to open the video in a new tab</a> if it doesn't play below.</p>
+        </div>
+        <div class="video-container">
+            <iframe src="https://www.youtube.com/embed/pm-2PgmtVvI" frameborder="0" allowfullscreen></iframe>
+        </div>
+
+        <h4 style="color:#20c997; margin: 20px 0 12px;">Part 1 — Multiple Choice Questions</h4>
+
+        <div class="question-block">
+            <div class="question-text">1. What is the main message of the speaker?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q1" value="A"> A. Major life changes are the only way to improve your life</label>
+                <label><input type="radio" name="t5q1" value="B"> B. Success depends mainly on luck</label>
+                <label><input type="radio" name="t5q1" value="C"> C. Small consistent habits can create significant improvements over time</label>
+                <label><input type="radio" name="t5q1" value="D"> D. Habits have little impact on long-term success</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q1"></div>
+        </div>
+
+        <div class="question-block">
+            <div class="question-text">2. What does the speaker recommend instead of checking your phone immediately after waking up?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q2" value="A"> A. Watching television</label>
+                <label><input type="radio" name="t5q2" value="B"> B. Exercising intensely</label>
+                <label><input type="radio" name="t5q2" value="C"> C. Reflecting, meditating, or breathing deeply</label>
+                <label><input type="radio" name="t5q2" value="D"> D. Checking emails</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q2"></div>
+        </div>
+
+        <div class="question-block">
+            <div class="question-text">3. Why is drinking more water recommended?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q3" value="A"> A. It improves internet focus</label>
+                <label><input type="radio" name="t5q3" value="B"> B. It boosts energy and supports health</label>
+                <label><input type="radio" name="t5q3" value="C"> C. It replaces the need for exercise</label>
+                <label><input type="radio" name="t5q3" value="D"> D. It helps people sleep less</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q3"></div>
+        </div>
+
+        <div class="question-block">
+            <div class="question-text">4. How often does the speaker suggest moving during the day?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q4" value="A"> A. Once every morning</label>
+                <label><input type="radio" name="t5q4" value="B"> B. Every two hours</label>
+                <label><input type="radio" name="t5q4" value="C"> C. At least five minutes every hour</label>
+                <label><input type="radio" name="t5q4" value="D"> D. Only during workouts</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q4"></div>
+        </div>
+
+        <div class="question-block">
+            <div class="question-text">5. What is one benefit of tech-free meal times?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q5" value="A"> A. Faster eating</label>
+                <label><input type="radio" name="t5q5" value="B"> B. Better phone usage habits</label>
+                <label><input type="radio" name="t5q5" value="C"> C. More mindful eating and meaningful conversations</label>
+                <label><input type="radio" name="t5q5" value="D"> D. Increased productivity at work</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q5"></div>
+        </div>
+
+        <div class="question-block">
+            <div class="question-text">6. What does a daily decluttering habit help reduce?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q6" value="A"> A. Physical strength</label>
+                <label><input type="radio" name="t5q6" value="B"> B. Mental load</label>
+                <label><input type="radio" name="t5q6" value="C"> C. Water consumption</label>
+                <label><input type="radio" name="t5q6" value="D"> D. Social interaction</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q6"></div>
+        </div>
+
+        <div class="question-block">
+            <div class="question-text">7. What should people write down before bedtime?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q7" value="A"> A. Their future goals</label>
+                <label><input type="radio" name="t5q7" value="B"> B. Their daily expenses</label>
+                <label><input type="radio" name="t5q7" value="C"> C. Three things they are grateful for</label>
+                <label><input type="radio" name="t5q7" value="D"> D. Three problems they faced</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q7"></div>
+        </div>
+
+        <div class="question-block">
+            <div class="question-text">8. Why is maintaining a consistent sleep schedule important?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q8" value="A"> A. It reduces work hours</label>
+                <label><input type="radio" name="t5q8" value="B"> B. It improves sleep quality and health</label>
+                <label><input type="radio" name="t5q8" value="C"> C. It eliminates stress completely</label>
+                <label><input type="radio" name="t5q8" value="D"> D. It increases screen time</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q8"></div>
+        </div>
+
+        <div class="question-block">
+            <div class="question-text">9. What is the purpose of a one-hour digital detox before bed?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q9" value="A"> A. To finish work tasks</label>
+                <label><input type="radio" name="t5q9" value="B"> B. To improve sleep and encourage non-digital hobbies</label>
+                <label><input type="radio" name="t5q9" value="C"> C. To increase social media engagement</label>
+                <label><input type="radio" name="t5q9" value="D"> D. To learn new technology skills</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q9"></div>
+        </div>
+
+        <div class="question-block">
+            <div class="question-text">10. What does the speaker say is vital for mental well-being?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q10" value="A"> A. Financial success</label>
+                <label><input type="radio" name="t5q10" value="B"> B. Physical exercise alone</label>
+                <label><input type="radio" name="t5q10" value="C"> C. Human connection</label>
+                <label><input type="radio" name="t5q10" value="D"> D. Academic achievement</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q10"></div>
+        </div>
+
+        <h4 style="color:#20c997; margin:20px 0 12px;">Part 2 — Gap Filling</h4>
+        <div class="word-box">
+            <strong>Word Box:</strong> hydration &nbsp;|&nbsp; gratitude &nbsp;|&nbsp; consistency &nbsp;|&nbsp; decluttering &nbsp;|&nbsp; mindful &nbsp;|&nbsp; intentional &nbsp;|&nbsp; fulfilling
+        </div>
+        <div class="gap-fill-section">
+            <div class="gap-sentence">11. The speaker explains that <input class="gap-input" id="t5g11" placeholder="___"> can boost energy levels and improve health.</div>
+            <div class="gap-sentence">12. Tech-free meals encourage <input class="gap-input" id="t5g12" placeholder="___"> eating.</div>
+            <div class="gap-sentence">13. Spending ten minutes organizing a small area each day is called daily <input class="gap-input" id="t5g13" placeholder="___">.</div>
+            <div class="gap-sentence">14. The key to seeing results from small habits is <input class="gap-input" id="t5g14" placeholder="___">.</div>
+            <div class="gap-sentence">15. Small daily actions can lead to a happier and more <input class="gap-input" id="t5g15" placeholder="___"> life.</div>
+        </div>
+
+        <h4 style="color:#20c997; margin:20px 0 12px;">Part 3 — Vocabulary Matching</h4>
+        <table class="matching-table">
+            <thead><tr><th>#</th><th>Word</th><th>Match (A–J)</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td>habit</td><td><select class="match-select" id="t5m1"><option value="">—</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option><option>J</option></select></td></tr>
+                <tr><td>2</td><td>hydration</td><td><select class="match-select" id="t5m2"><option value="">—</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option><option>J</option></select></td></tr>
+                <tr><td>3</td><td>mindful</td><td><select class="match-select" id="t5m3"><option value="">—</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option><option>J</option></select></td></tr>
+                <tr><td>4</td><td>declutter</td><td><select class="match-select" id="t5m4"><option value="">—</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option><option>J</option></select></td></tr>
+                <tr><td>5</td><td>gratitude</td><td><select class="match-select" id="t5m5"><option value="">—</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option><option>J</option></select></td></tr>
+                <tr><td>6</td><td>intentional</td><td><select class="match-select" id="t5m6"><option value="">—</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option><option>J</option></select></td></tr>
+                <tr><td>7</td><td>consistency</td><td><select class="match-select" id="t5m7"><option value="">—</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option><option>J</option></select></td></tr>
+                <tr><td>8</td><td>foster</td><td><select class="match-select" id="t5m8"><option value="">—</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option><option>J</option></select></td></tr>
+                <tr><td>9</td><td>nurture</td><td><select class="match-select" id="t5m9"><option value="">—</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option><option>J</option></select></td></tr>
+                <tr><td>10</td><td>tidier</td><td><select class="match-select" id="t5m10"><option value="">—</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option><option>H</option><option>I</option><option>J</option></select></td></tr>
+            </tbody>
+        </table>
+        <p style="color:#666; font-size:0.85rem; margin-top:8px;">A=intentional &nbsp; B=habit &nbsp; C=tidier &nbsp; D=hydration &nbsp; E=mindful &nbsp; F=gratitude &nbsp; G=declutter &nbsp; H=foster &nbsp; I=consistency &nbsp; J=nurture</p>
+
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(4)">← Previous</button>
+            <button class="check-btn" id="check5" onclick="checkTask5()" disabled>Check Answers</button>
+            <button class="next-btn" id="next5" disabled onclick="goToTask(6)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns5" onclick="toggleAnswers('ans5')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans5">
+            <p><strong>MCQ:</strong> 1-C, 2-C, 3-B, 4-C, 5-C, 6-B, 7-C, 8-B, 9-B, 10-C</p>
+            <p><strong>Gap Fill:</strong> 11-hydration, 12-mindful, 13-decluttering, 14-consistency, 15-fulfilling</p>
+            <p><strong>Matching:</strong> 1-B, 2-D, 3-E, 4-G, 5-F, 6-A, 7-I, 8-H, 9-J, 10-C</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 6 — Dictation ══ -->
+    <div class="task-card" id="task6">
+        <div class="task-header">
+            <div class="task-number">6</div>
+            <div>
+                <div class="task-title">Dictation Task</div>
+                <div class="task-subtitle">Listen and write ONE WORD ONLY in each gap</div>
+            </div>
+        </div>
+        <div class="audio-player">
+            <p>🎧 Ultra-Processed Food — BBC Learning English</p>
+            <audio controls src="ultra_food.mp3"></audio>
+        </div>
+        <div class="gap-fill-section" id="dictation-gaps"></div>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(5)">← Previous</button>
+            <button class="check-btn" id="check6" onclick="checkTask6()" disabled>Check Answers</button>
+            <button class="next-btn" id="next6" disabled onclick="goToTask(7)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns6" onclick="toggleAnswers('ans6')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans6">
+            <p>1-sweeteners, 2-crisps, 3-health, 4-diabetes, 5-kitchen, 6-sweeteners, 7-avoid, 8-it, 9-vocabulary, 10-invented, 11-convenience, 12-microwave, 13-time, 14-pleasure, 15-microwave, 16-scratch, 17-embarrassed, 18-good, 19-time, 20-panic, 21-occasionally, 22-anything, 23-then, 24-1772, 25-voyages, 26-prepared, 27-beginning, 28-shouldn't, 29-often, 30-anything</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 7 — Practice Listening ══ -->
+    <div class="task-card" id="task7">
+        <div class="task-header">
+            <div class="task-number">7</div>
+            <div>
+                <div class="task-title">Practice Listening</div>
+                <div class="task-subtitle">Full IELTS-style listening test</div>
+            </div>
+        </div>
+        <p style="color:#555; margin-bottom:15px;">Open the listening test and complete all questions. Return here when done.</p>
+        <a class="html-link-btn" href="Practice Listening (2).html" target="_blank">🎧 Open Practice Listening</a>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(6)">← Previous</button>
+            <button class="next-btn" onclick="finishDay()">Finish Day 1 ✓</button>
+        </div>
+    </div>
+
+    <!-- COMPLETION -->
+    <div class="completion-screen" id="completion-screen">
+        <div class="icon">🎉</div>
+        <h2>Day 1 Complete!</h2>
+        <p>Excellent work! You've completed all tasks for Week 2, Day 1.</p>
+        <div style="margin: 30px 0; text-align:left;">
+            <h3 style="color:#20c997; border-bottom: 2px solid #20c997; padding-bottom:10px; margin-bottom:15px;">📋 Review Your Work</h3>
+            <p style="color:#888; margin-bottom:20px; font-size:0.9rem;">Click any task below to go back and review it.</p>
+            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:15px;">
+                <div onclick="reviewTask(1)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'">
+                    <div style="font-weight:bold;color:#20c997;font-size:1.1rem;margin-bottom:5px;">Task 1</div>
+                    <div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Mini Reading</div>
+                    <div style="font-size:1.4rem;">✅</div>
+                </div>
+                <div onclick="reviewTask(2)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'">
+                    <div style="font-weight:bold;color:#20c997;font-size:1.1rem;margin-bottom:5px;">Task 2</div>
+                    <div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Article Reading</div>
+                    <div style="font-size:1.4rem;">✅</div>
+                </div>
+                <div onclick="reviewTask(3)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'">
+                    <div style="font-weight:bold;color:#20c997;font-size:1.1rem;margin-bottom:5px;">Task 3</div>
+                    <div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Reading</div>
+                    <div style="font-size:1.4rem;">✅</div>
+                </div>
+                <div onclick="reviewTask(4)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'">
+                    <div style="font-weight:bold;color:#20c997;font-size:1.1rem;margin-bottom:5px;">Task 4</div>
+                    <div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Listening Mini</div>
+                    <div style="font-size:1.4rem;">✅</div>
+                </div>
+                <div onclick="reviewTask(5)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'">
+                    <div style="font-weight:bold;color:#20c997;font-size:1.1rem;margin-bottom:5px;">Task 5</div>
+                    <div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Video + Vocab</div>
+                    <div style="font-size:1.4rem;">✅</div>
+                </div>
+                <div onclick="reviewTask(6)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'">
+                    <div style="font-weight:bold;color:#20c997;font-size:1.1rem;margin-bottom:5px;">Task 6</div>
+                    <div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Dictation</div>
+                    <div style="font-size:1.4rem;">✅</div>
+                </div>
+                <div onclick="reviewTask(7)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'">
+                    <div style="font-weight:bold;color:#20c997;font-size:1.1rem;margin-bottom:5px;">Task 7</div>
+                    <div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Listening</div>
+                    <div style="font-size:1.4rem;">✅</div>
+                </div>
+            </div>
+        </div>
+        <a href="/student-dashboard.html" class="dashboard-btn">← Back to Dashboard</a>
+    </div>
+
+</div><!-- end main-container -->
+
+<script>
+// ══════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════
+const SUPABASE_URL = 'https://nbfceuhuauizyucugejr.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_0mFIGJkA_DKZfUiDAWFdrA_nXt0hF6H';
+const dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const WEEK = 2, DAY = 1, TOTAL_TASKS = 7;
+let studentId = null, studentGroup = null;
+let currentTask = 1;
+let taskStartTime = Date.now();
+let saveTimeout = null;
+
+// ── DICTATION ANSWERS ──
+const dictationAnswers = [
+    'sweeteners','crisps','health','diabetes','kitchen',
+    'sweeteners','avoid','it','vocabulary','invented',
+    'convenience','microwave','time','pleasure','microwave',
+    'scratch','embarrassed','good','time','panic',
+    'occasionally','anything','then','1772','voyages',
+    'prepared','beginning',"shouldn't",'often','anything'
+];
+
+// ── VOCAB ──
+const vocab = [
+    {word:"1. Nutrition (n)", def:"The process of getting the right food for health"},
+    {word:"2. Diet (n)", def:"The food and drink you regularly consume"},
+    {word:"3. Obesity (n)", def:"The condition of being dangerously overweight"},
+    {word:"4. Metabolism (n)", def:"The chemical processes that occur in the body"},
+    {word:"5. Calorie (n)", def:"A unit of energy found in food"},
+    {word:"6. Protein (n)", def:"A nutrient essential for body repair and growth"},
+    {word:"7. Carbohydrate (n)", def:"A nutrient that provides energy"},
+    {word:"8. Vitamin (n)", def:"A natural substance essential for good health"},
+    {word:"9. Mineral (n)", def:"A natural substance needed by the body"},
+    {word:"10. Fibre (n)", def:"A substance in food that helps digestion"},
+    {word:"11. Hydration (n)", def:"The state of having enough water in the body"},
+    {word:"12. Supplement (n)", def:"Something added to improve nutrition"},
+    {word:"13. Antioxidant (n)", def:"A substance that protects cells from damage"},
+    {word:"14. Cholesterol (n)", def:"A fatty substance found in the blood"},
+    {word:"15. Blood pressure (n)", def:"The force of blood pushing against artery walls"},
+    {word:"16. Immune system (n)", def:"The body's defense against illness"},
+    {word:"17. Cardiovascular (adj)", def:"Relating to the heart and blood vessels"},
+    {word:"18. Aerobic (adj)", def:"Relating to exercise that increases breathing rate"},
+    {word:"19. Sedentary (adj)", def:"Characterized by much sitting and little activity"},
+    {word:"20. Chronic (adj)", def:"Persisting for a long time"},
+    {word:"21. Acute (adj)", def:"Sudden and severe"},
+    {word:"22. Preventable (adj)", def:"Able to be stopped from happening"},
+    {word:"23. Diagnosis (n)", def:"The identification of an illness"},
+    {word:"24. Symptom (n)", def:"A sign that indicates an illness"},
+    {word:"25. Treatment (n)", def:"Medical care given to a patient"},
+    {word:"26. Recovery (n)", def:"The process of getting better after illness"},
+    {word:"27. Prescription (n)", def:"A doctor's written order for medicine"},
+    {word:"28. Epidemic (n)", def:"A widespread occurrence of a disease"},
+    {word:"29. Pandemic (n)", def:"A global outbreak of a disease"},
+    {word:"30. Mortality (n)", def:"The rate of death in a population"},
+    {word:"31. Wellbeing (n)", def:"The state of being comfortable and healthy"},
+    {word:"32. Mindfulness (n)", def:"Focusing on the present moment"},
+    {word:"33. Stress (n)", def:"Mental or emotional pressure or tension"},
+    {word:"34. Anxiety (n)", def:"A feeling of worry or nervousness"},
+    {word:"35. Depression (n)", def:"A mental health condition causing sadness"},
+    {word:"36. Habit (n)", def:"A regular behavior done repeatedly"},
+    {word:"37. Consistency (n)", def:"Regularity in behavior over time"},
+    {word:"38. Moderation (n)", def:"Avoiding excess; keeping things balanced"},
+    {word:"39. Eliminate (v)", def:"To completely remove something"},
+    {word:"40. Maintain (v)", def:"To keep something in good condition"},
+    {word:"41. Consume (v)", def:"To eat or drink something"},
+    {word:"42. Diagnose (v)", def:"To identify an illness"},
+    {word:"43. Prevent (v)", def:"To stop something from happening"},
+    {word:"44. Recover (v)", def:"To get better after illness"},
+    {word:"45. Intake (n)", def:"The amount of food or drink consumed"},
+    {word:"46. Nutrient (n)", def:"A substance that provides nourishment"},
+    {word:"47. Portion (n)", def:"An amount of food served to one person"},
+    {word:"48. Allergy (n)", def:"An adverse reaction to a substance"},
+    {word:"49. Trigger (v)", def:"To cause something to start"},
+    {word:"50. Moderate (adj)", def:"Neither too much nor too little"},
+];
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+async function initStudent() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('teacher') === 'true') {
+        studentId = 'teacher-preview'; studentGroup = 'preview'; return;
+    }
+    try {
+        const userStr = localStorage.getItem('user');
+        if (!userStr) { window.location.href = '/login.html'; return; }
+        const user = JSON.parse(userStr);
+        const { data, error } = await dbClient.from('students').select('*').eq('username', user.username).single();
+        if (error || !data) { console.error('Student load error:', error); return; }
+        studentId = data.id;
+        studentGroup = data.student_group;
+    } catch(e) { console.log('Auth error:', e); }
+}
+
+function buildVocab() {
+    document.getElementById('vocab-grid').innerHTML = vocab.map(v =>
+        `<div class="vocab-item"><div class="vocab-word">${v.word}</div><div class="vocab-definition">${v.def}</div></div>`
+    ).join('');
+}
+
+function buildDictation() {
+    const scripts = [
+        "additives and <input class='gap-input' id='d1' placeholder='(1)'>.",
+        "from sliced bread to chocolate biscuits and <input class='gap-input' id='d2' placeholder='(2)'>.",
+        "linked to poor <input class='gap-input' id='d3' placeholder='(3)'>.",
+        "problems like obesity and <input class='gap-input' id='d4' placeholder='(4)'>.",
+        "you wouldn't find in your average <input class='gap-input' id='d5' placeholder='(5)'>.",
+        "emulsifiers, preservatives, additives, dyes and <input class='gap-input' id='d6' placeholder='(6)'>.",
+        "or do you try to <input class='gap-input' id='d7' placeholder='(7)'> it?",
+        "just so you know what's gone into <input class='gap-input' id='d8' placeholder='(8)'>.",
+        "learning some useful new <input class='gap-input' id='d9' placeholder='(9)'>.",
+        "when were fizzy drinks <input class='gap-input' id='d10' placeholder='(10)'>?",
+        "One reason for popularity of ultra-processed food is <input class='gap-input' id='d11' placeholder='(11)'>.",
+        "you put it in the <input class='gap-input' id='d12' placeholder='(12)'> for a couple of minutes.",
+        "cooking a fresh meal from scratch can take a really long <input class='gap-input' id='d13' placeholder='(13)'>.",
+        "A cake. That's my guilty <input class='gap-input' id='d14' placeholder='(14)'>.",
+        "can be heated up quickly in a <input class='gap-input' id='d15' placeholder='(15)'>.",
+        "That's a lot quicker than cooking from <input class='gap-input' id='d16' placeholder='(16)'>.",
+        "enjoy but think you shouldn't and feel a little <input class='gap-input' id='d17' placeholder='(17)'> about.",
+        "they're cheap, convenient and taste <input class='gap-input' id='d18' placeholder='(18)'>.",
+        "or is there a way to still enjoy them from time to <input class='gap-input' id='d19' placeholder='(19)'>?",
+        "I think the best thing to do is just not to <input class='gap-input' id='d20' placeholder='(20)'>.",
+        "once in a while and from time to time mean <input class='gap-input' id='d21' placeholder='(21)'>.",
+        "it's best to avoid too much of <input class='gap-input' id='d22' placeholder='(22)'>.",
+        "eating chocolate now and <input class='gap-input' id='d23' placeholder='(23)'>.",
+        "I'm afraid the correct answer was <input class='gap-input' id='d24' placeholder='(24)'>.",
+        "carbonated water was used to try to prevent scurvy on sea <input class='gap-input' id='d25' placeholder='(25)'>.",
+        "a meal from a supermarket that has already been <input class='gap-input' id='d26' placeholder='(26)'>.",
+        "you do it from the very <input class='gap-input' id='d27' placeholder='(27)'>, without using anything already made.",
+        "you enjoy but feel guilty because you think you <input class='gap-input' id='d28' placeholder='(28)'>.",
+        "occasionally, not very <input class='gap-input' id='d29' placeholder='(29)'>.",
+        "it's best to avoid too much of <input class='gap-input' id='d30' placeholder='(30)'>.",
+    ];
+    const container = document.getElementById('dictation-gaps');
+    container.innerHTML = scripts.map((s, i) =>
+        `<div class="gap-sentence"><strong>${i+1}.</strong> …${s}</div>`
+    ).join('');
+}
+
+async function startDay() {
+    document.getElementById('splash-screen').style.display = 'none';
+    document.getElementById('main-content').style.display = 'block';
+    buildVocab();
+    buildDictation();
+    await initStudent();
+    await restoreProgress();
+    setupLiveValidation();
+}
+
+// ══════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════
+function goToTask(num) {
+    document.getElementById('task' + currentTask).classList.remove('active');
+    currentTask = num;
+    document.getElementById('task' + num).classList.add('active');
+    document.getElementById('task' + num).scrollIntoView({behavior:'smooth', block:'start'});
+    updateProgress(num);
+    taskStartTime = Date.now();
+    saveResume(num);
+}
+
+function updateProgress(taskNum) {
+    const pct = Math.round(((taskNum - 1) / TOTAL_TASKS) * 100);
+    document.getElementById('progress-bar').style.width = pct + '%';
+    document.getElementById('progress-label').textContent = `Task ${taskNum} of ${TOTAL_TASKS}`;
+}
+
+// ══════════════════════════════════════════
+// AUTO-SAVE SYSTEM
+// ══════════════════════════════════════════
+function showSaveIndicator() {
+    const el = document.getElementById('saveIndicator');
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+async function saveResume(taskNum) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        await dbClient.from('student_resume').upsert({
+            student_id: studentId, week: WEEK, day: DAY, last_task: taskNum,
+            updated_at: new Date().toISOString()
+        }, { onConflict: 'student_id' });
+    } catch(e) { console.error('Resume save error:', e); }
+}
+
+// Debounced save — fires 800ms after last keystroke
+function scheduleSave() {
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => saveAllAnswers(), 800);
+}
+
+async function saveAllAnswers() {
+    if (!studentId || studentId === 'teacher-preview') return;
+    const snapshot = gatherAllAnswers();
+    if (Object.keys(snapshot).length === 0) return;
+    try {
+        localStorage.setItem(`w${WEEK}d${DAY}_answers`, JSON.stringify(snapshot));
+        showSaveIndicator();
+    } catch(e) {}
+}
+
+function gatherAllAnswers() {
+    const data = {};
+    // All gap inputs
+    document.querySelectorAll('.gap-input').forEach(el => {
+        if (el.id) data[el.id] = el.value;
+    });
+    // All radio buttons
+    const radioNames = ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10'];
+    radioNames.forEach(name => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`);
+        if (sel) data[name] = sel.value;
+    });
+    // All selects
+    document.querySelectorAll('select.match-select').forEach(el => {
+        if (el.id) data[el.id] = el.value;
+    });
+    return data;
+}
+
+async function restoreProgress() {
+    try {
+        // Restore answers from localStorage first (fast)
+        const saved = localStorage.getItem(`w${WEEK}d${DAY}_answers`);
+        if (saved) {
+            const data = JSON.parse(saved);
+            // Restore gap inputs
+            Object.entries(data).forEach(([id, val]) => {
+                const el = document.getElementById(id);
+                if (el && el.tagName === 'INPUT') el.value = val;
+            });
+            // Restore radios
+            Object.entries(data).forEach(([name, val]) => {
+                if (name.startsWith('t5q')) {
+                    const radio = document.querySelector(`input[name="${name}"][value="${val}"]`);
+                    if (radio) radio.checked = true;
+                }
+            });
+            // Restore selects
+            Object.entries(data).forEach(([id, val]) => {
+                const el = document.getElementById(id);
+                if (el && el.tagName === 'SELECT') el.value = val;
+            });
+        }
+
+        // Restore last task from Supabase
+        if (studentId && studentId !== 'teacher-preview') {
+            const { data: resume } = await dbClient.from('student_resume')
+                .select('last_task').eq('student_id', studentId)
+                .eq('week', WEEK).eq('day', DAY).single();
+            if (resume && resume.last_task > 1) {
+                document.getElementById('task1').classList.remove('active');
+                currentTask = resume.last_task;
+                document.getElementById('task' + currentTask).classList.add('active');
+                updateProgress(currentTask);
+            }
+        }
+        validateAll();
+    } catch(e) { console.log('Restore error:', e); }
+}
+
+// ══════════════════════════════════════════
+// LIVE VALIDATION (enable Check button)
+// ══════════════════════════════════════════
+function setupLiveValidation() {
+    // Task 1 — all 18 gap inputs
+    const t1ids = ['t1g1','t1g2','t1g3','t1g4','t1g5','t1g6','t1g7','t1g8',
+                   't1m1','t1m2','t1m3','t1m4','t1m5','t1m6','t1m7','t1m8','t1m9','t1m10'];
+    t1ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', () => { validateTask1Check(); scheduleSave(); });
+    });
+
+    // Task 4 — all listening gaps
+    const t4ids = ['t4g1','t4g2','t4g3','t4g4','t4g5','t4g6','t4g7','t4g8','t4g9','t4g10',
+                   't4ex1','t4ex2','t4ex3','t4w1','t4w2','t4w3','t4w4','t4w5','t4w6','t4w7','t4w8'];
+    t4ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', () => { validateTask4Check(); scheduleSave(); });
+    });
+
+    // Task 5 — MCQ, gap fill, matching
+    ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10'].forEach(name => {
+        document.querySelectorAll(`input[name="${name}"]`).forEach(el =>
+            el.addEventListener('change', () => { validateTask5Check(); scheduleSave(); })
+        );
+    });
+    ['t5g11','t5g12','t5g13','t5g14','t5g15'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', () => { validateTask5Check(); scheduleSave(); });
+    });
+    ['t5m1','t5m2','t5m3','t5m4','t5m5','t5m6','t5m7','t5m8','t5m9','t5m10'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('change', () => { validateTask5Check(); scheduleSave(); });
+    });
+
+    // Task 6 — dictation (30 inputs)
+    for (let i = 1; i <= 30; i++) {
+        const el = document.getElementById('d' + i);
+        if (el) el.addEventListener('input', () => { validateTask6Check(); scheduleSave(); });
+    }
+}
+
+function validateAll() {
+    validateTask1Check();
+    validateTask4Check();
+    validateTask5Check();
+    validateTask6Check();
+}
+
+function validateTask1Check() {
+    const ids = ['t1g1','t1g2','t1g3','t1g4','t1g5','t1g6','t1g7','t1g8',
+                 't1m1','t1m2','t1m3','t1m4','t1m5','t1m6','t1m7','t1m8','t1m9','t1m10'];
+    const allFilled = ids.every(id => document.getElementById(id)?.value.trim() !== '');
+    document.getElementById('check1').disabled = !allFilled;
+}
+
+function validateTask4Check() {
+    const ids = ['t4g1','t4g2','t4g3','t4g4','t4g5','t4g6','t4g7','t4g8','t4g9','t4g10',
+                 't4ex1','t4ex2','t4ex3','t4w1','t4w2','t4w3','t4w4','t4w5','t4w6','t4w7','t4w8'];
+    const allFilled = ids.every(id => document.getElementById(id)?.value.trim() !== '');
+    document.getElementById('check4').disabled = !allFilled;
+}
+
+function validateTask5Check() {
+    const mcqs = ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10'];
+    const allMcq = mcqs.every(name => document.querySelector(`input[name="${name}"]:checked`));
+    const allGaps = ['t5g11','t5g12','t5g13','t5g14','t5g15'].every(id => document.getElementById(id)?.value.trim() !== '');
+    const allMatch = ['t5m1','t5m2','t5m3','t5m4','t5m5','t5m6','t5m7','t5m8','t5m9','t5m10'].every(id => document.getElementById(id)?.value !== '');
+    document.getElementById('check5').disabled = !(allMcq && allGaps && allMatch);
+}
+
+function validateTask6Check() {
+    let allFilled = true;
+    for (let i = 1; i <= 30; i++) {
+        if (!document.getElementById('d' + i)?.value.trim()) { allFilled = false; break; }
+    }
+    document.getElementById('check6').disabled = !allFilled;
+}
+
+// ══════════════════════════════════════════
+// CHECK ANSWERS + SAVE TO SUPABASE
+// ══════════════════════════════════════════
+const t1p1Answers = {t1g1:'variety',t1g2:'nutrients',t1g3:'servings',t1g4:'maintain',t1g5:'overweight',t1g6:'factors',t1g7:'overeating',t1g8:'ingredients'};
+const t1p2Answers = {t1m1:'vital',t1m2:'dietitians',t1m3:'moderate',t1m4:'portions',t1m5:'skipping',t1m6:'curb',t1m7:'appetite',t1m8:'eliminate',t1m9:'allergy',t1m10:'trigger'};
+
+function checkTask1() {
+    const answers = [];
+    [...Object.entries(t1p1Answers), ...Object.entries(t1p2Answers)].forEach(([id, correct], idx) => {
+        const inp = document.getElementById(id);
+        const val = inp.value.trim().toLowerCase();
+        const ok = val === correct.toLowerCase();
+        inp.classList.toggle('correct', ok);
+        inp.classList.toggle('incorrect', !ok);
+        answers.push({ question_id: id, question_type: 'gap_fill', student_answer: inp.value.trim(), correct_answer: correct, is_correct: ok });
+    });
+    document.getElementById('showAns1').style.display = 'inline-block';
+    document.getElementById('next1').disabled = false;
+    saveAnswers(1, answers);
+    saveTaskProgress(1);
+}
+
+const t4p1Answers = {t4g1:'muscle',t4g2:'fat',t4g3:'blood flow',t4g4:'carries blood',t4g5:'blocked',t4g6:'treatment',t4g7:'brain',t4g8:'cure',t4g9:'clear',t4g10:'risk'};
+const t4WordAnswers = {t4w1:'regular',t4w2:'briskly',t4w3:'gradually',t4w4:'recommendation',t4w5:'pace',t4w6:'overdoing',t4w7:'recover',t4w8:'alternate'};
+const validExercises = ['walking','jogging','running','swimming','cycling'];
+
+function checkTask4() {
+    const answers = [];
+    Object.entries(t4p1Answers).forEach(([id, correct]) => {
+        const inp = document.getElementById(id);
+        const val = inp.value.trim().toLowerCase();
+        const ok = val === correct.toLowerCase();
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({ question_id: id, question_type: 'gap_fill', student_answer: inp.value.trim(), correct_answer: correct, is_correct: ok });
+    });
+    // Exercises
+    ['t4ex1','t4ex2','t4ex3'].forEach((id, i) => {
+        const inp = document.getElementById(id);
+        const val = inp.value.trim().toLowerCase();
+        const ok = validExercises.includes(val);
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({ question_id: id, question_type: 'gap_fill', student_answer: inp.value.trim(), correct_answer: 'any valid exercise', is_correct: ok });
+    });
+    Object.entries(t4WordAnswers).forEach(([id, correct]) => {
+        const inp = document.getElementById(id);
+        const val = inp.value.trim().toLowerCase();
+        const ok = val === correct.toLowerCase();
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({ question_id: id, question_type: 'gap_fill', student_answer: inp.value.trim(), correct_answer: correct, is_correct: ok });
+    });
+    document.getElementById('showAns4').style.display = 'inline-block';
+    document.getElementById('next4').disabled = false;
+    saveAnswers(4, answers);
+    saveTaskProgress(4);
+}
+
+const t5McqAnswers = {t5q1:'C',t5q2:'C',t5q3:'B',t5q4:'C',t5q5:'C',t5q6:'B',t5q7:'C',t5q8:'B',t5q9:'B',t5q10:'C'};
+const t5GapAnswers = {t5g11:'hydration',t5g12:'mindful',t5g13:'decluttering',t5g14:'consistency',t5g15:'fulfilling'};
+const t5MatchAnswers = {t5m1:'B',t5m2:'D',t5m3:'E',t5m4:'G',t5m5:'F',t5m6:'A',t5m7:'I',t5m8:'H',t5m9:'J',t5m10:'C'};
+
+function checkTask5() {
+    const answers = [];
+    Object.entries(t5McqAnswers).forEach(([name, correct]) => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`);
+        const fb = document.getElementById('fb_' + name);
+        if (!sel) return;
+        const ok = sel.value === correct;
+        fb.textContent = ok ? '✅ Correct!' : `❌ Incorrect — correct answer: ${correct}`;
+        fb.className = 'answer-feedback ' + (ok ? 'correct' : 'incorrect');
+        answers.push({ question_id: name, question_type: 'mcq', student_answer: sel.value, correct_answer: correct, is_correct: ok });
+    });
+    Object.entries(t5GapAnswers).forEach(([id, correct]) => {
+        const inp = document.getElementById(id);
+        const val = inp.value.trim().toLowerCase();
+        const ok = val === correct.toLowerCase();
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({ question_id: id, question_type: 'gap_fill', student_answer: inp.value.trim(), correct_answer: correct, is_correct: ok });
+    });
+    Object.entries(t5MatchAnswers).forEach(([id, correct]) => {
+        const sel = document.getElementById(id);
+        const ok = sel.value === correct;
+        sel.classList.toggle('correct', ok); sel.classList.toggle('incorrect', !ok);
+        answers.push({ question_id: id, question_type: 'matching', student_answer: sel.value, correct_answer: correct, is_correct: ok });
+    });
+    document.getElementById('showAns5').style.display = 'inline-block';
+    document.getElementById('next5').disabled = false;
+    saveAnswers(5, answers);
+    saveTaskProgress(5);
+}
+
+function checkTask6() {
+    const answers = [];
+    for (let i = 1; i <= 30; i++) {
+        const inp = document.getElementById('d' + i);
+        const val = inp.value.trim().toLowerCase();
+        const correct = dictationAnswers[i-1];
+        const ok = val === correct.toLowerCase();
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({ question_id: 'd' + i, question_type: 'gap_fill', student_answer: inp.value.trim(), correct_answer: correct, is_correct: ok });
+    }
+    document.getElementById('showAns6').style.display = 'inline-block';
+    document.getElementById('next6').disabled = false;
+    saveAnswers(6, answers);
+    saveTaskProgress(6);
+}
+
+// ══════════════════════════════════════════
+// SUPABASE SAVES
+// ══════════════════════════════════════════
+async function saveAnswers(taskNum, answers) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        const rows = answers.map(a => ({
+            student_id: studentId, week: WEEK, day: DAY,
+            task_number: taskNum,
+            question_id: a.question_id,
+            question_type: a.question_type,
+            student_answer: a.student_answer,
+            correct_answer: a.correct_answer,
+            is_correct: a.is_correct,
+            answered_at: new Date().toISOString()
+        }));
+        await dbClient.from('student_answers').upsert(rows, { onConflict: 'student_id,week,day,task_number,question_id' });
+    } catch(e) { console.error('Answer save error:', e); }
+}
+
+async function saveTaskProgress(taskNum) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        await dbClient.from('task_progress').upsert({
+            student_id: studentId, week: WEEK, day: DAY,
+            task_number: taskNum, status: 'completed',
+            time_completed: new Date().toISOString(),
+            time_spent_seconds: Math.round((Date.now() - taskStartTime) / 1000)
+        }, { onConflict: 'student_id,week,day,task_number' });
+    } catch(e) { console.error('Progress save error:', e); }
+}
+
+async function finishDay() {
+    document.getElementById('task7').classList.remove('active');
+    document.getElementById('completion-screen').style.display = 'block';
+    document.getElementById('completion-screen').scrollIntoView({behavior:'smooth'});
+    localStorage.removeItem(`w${WEEK}d${DAY}_answers`);
+    for (let i = 1; i <= TOTAL_TASKS; i++) await saveTaskProgress(i);
+    // Clear resume
+    if (studentId && studentId !== 'teacher-preview') {
+        await dbClient.from('student_resume').delete().eq('student_id', studentId);
+    }
+}
+
+function reviewTask(num) {
+    document.getElementById('completion-screen').style.display = 'none';
+    currentTask = num;
+    document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active'));
+    document.getElementById('task' + num).classList.add('active');
+    document.getElementById('task' + num).scrollIntoView({behavior:'smooth', block:'start'});
+    const existing = document.getElementById('back-to-results');
+    if (!existing) {
+        const btn = document.createElement('button');
+        btn.id = 'back-to-results';
+        btn.textContent = '🏆 Back to Results';
+        btn.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#20c997;color:white;border:none;padding:12px 22px;border-radius:50px;cursor:pointer;font-weight:bold;font-size:0.95rem;box-shadow:0 4px 15px rgba(32,201,151,0.4);z-index:9998;';
+        btn.onclick = () => {
+            btn.remove();
+            document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active'));
+            document.getElementById('completion-screen').style.display = 'block';
+            document.getElementById('completion-screen').scrollIntoView({behavior:'smooth'});
+        };
+        document.body.appendChild(btn);
+    }
+}
+
+function toggleVocab() {
+    document.getElementById('vocab-body').classList.toggle('open');
+    document.getElementById('vocab-arrow').classList.toggle('open');
+}
+
+function toggleAnswers(id) {
+    const div = document.getElementById(id);
+    const btn = div.previousElementSibling;
+    div.style.display = div.style.display === 'block' ? 'none' : 'block';
+    btn.textContent = div.style.display === 'block' ? '▲ Hide Answers' : '▼ Show Answers';
+}
+</script>
+</body>
+</html>
