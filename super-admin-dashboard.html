@@ -475,7 +475,21 @@
                 </div>
             </div>
         </div>
-
+<div class="day-controls" style="margin-top:20px;">
+                <h3>Week 2: Health</h3>
+                <div class="day-toggle-list">
+                    <div class="day-toggle-item">
+                        <div class="day-info">
+                            <span class="day-number">Day 1</span>
+                            <span class="day-status" id="status-2-1">Locked</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="toggle-2-1" onchange="toggleDayAvailability(2, 1, this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
         <!-- Teachers Section -->
         <div class="admin-section" id="teachers-section">
             <h2>👨‍🏫 All Teachers</h2>
@@ -747,7 +761,7 @@
                 const { data, error } = await supabaseClient
                     .from('day_availability')
                     .select('*')
-                    .eq('week', 1)
+                    .in('week', [1, 2])
                     .order('day');
                 
                 if (error) {
