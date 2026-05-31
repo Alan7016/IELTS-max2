@@ -882,7 +882,8 @@ async function restoreProgress() {
             const completedCount = taskData ? taskData.filter(t => t.status === 'completed').length : 0;
 
             if (completedCount >= TOTAL_TASKS) {
-                // Day fully done — show completion screen, make tasks read-only
+                // Day fully done — restore all answers from Supabase then show completion screen
+                await restoreAnswersFromSupabase();
                 document.getElementById('task1').classList.remove('active');
                 document.getElementById('completion-screen').style.display = 'block';
                 updateProgress(TOTAL_TASKS);
@@ -1134,6 +1135,57 @@ async function finishDay() {
         await dbClient.from('student_resume').delete().eq('student_id', studentId);
     }
     makeReadOnly();
+}
+
+async function restoreAnswersFromSupabase() {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        const { data: answers } = await dbClient.from('student_answers')
+            .select('*')
+            .eq('student_id', studentId)
+            .eq('week', WEEK)
+            .eq('day', DAY);
+
+        if (!answers || answers.length === 0) return;
+
+        answers.forEach(a => {
+            const { question_id, student_answer, question_type, is_correct } = a;
+
+            if (question_type === 'mcq') {
+                // Restore radio button
+                const radio = document.querySelector(`input[name="${question_id}"][value="${student_answer}"]`);
+                if (radio) radio.checked = true;
+                // Show feedback
+                const fb = document.getElementById('fb_' + question_id);
+                if (fb) {
+                    fb.textContent = is_correct ? '✅ Correct!' : `❌ Incorrect — correct answer: ${a.correct_answer}`;
+                    fb.className = 'answer-feedback ' + (is_correct ? 'correct' : 'incorrect');
+                }
+            } else if (question_type === 'gap_fill') {
+                // Restore input
+                const inp = document.getElementById(question_id);
+                if (inp) {
+                    inp.value = student_answer || '';
+                    inp.classList.toggle('correct', is_correct);
+                    inp.classList.toggle('incorrect', !is_correct);
+                }
+            } else if (question_type === 'matching') {
+                // Restore select
+                const sel = document.getElementById(question_id);
+                if (sel) {
+                    sel.value = student_answer || '';
+                    sel.classList.toggle('correct', is_correct);
+                    sel.classList.toggle('incorrect', !is_correct);
+                }
+            }
+        });
+
+        // Show all answer panels
+        document.querySelectorAll('.show-answers-btn').forEach(btn => btn.style.display = 'inline-block');
+        // Unlock all next buttons
+        document.querySelectorAll('.next-btn').forEach(btn => btn.disabled = false);
+
+    } catch(e) { console.error('Restore answers error:', e); }
 }
 
 function makeReadOnly() {
