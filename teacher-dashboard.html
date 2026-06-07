@@ -239,9 +239,12 @@
             <a href="/week2/day4/day4.html?teacher=true" class="material-card" style="background: linear-gradient(135deg, #20c997 0%, #0ca678 100%);">
                 <div class="day-num">Day 4</div><div class="day-label">Health</div><div class="day-topic">Food & Brain</div>
             </a>
-            <a href="/week2/day5/day5.html?teacher=true" class="material-card" style="background: linear-gradient(135deg, #20c997 0%, #0ca678 100%);">
-    <div class="day-num">Day 5</div><div class="day-label">Health</div><div class="day-topic">Review & Walking</div>
-</a>
+        </div>
+        <div style="margin-top:20px; color:#667eea; font-weight:600; font-size:0.95rem;">💻 Week 3: Technology</div>
+        <div class="materials-grid" style="margin-top:10px;">
+            <a href="/week3/day1/day1.html?teacher=true" class="material-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="day-num">Day 1</div><div class="day-label">Technology</div><div class="day-topic">Tech Basics</div>
+            </a>
         </div>
     </div>
 
@@ -318,7 +321,8 @@
     // Tasks per day per week
     const TASKS_PER_DAY = {
         1: { 1:6, 2:7, 3:7, 4:7, 5:8 },
-        2: { 1:7, 2:7, 3:7, 4:7, 5:7 }
+        2: { 1:7, 2:7, 3:7, 4:7, 5:7 },
+        3: { 1:7, 2:7, 3:7, 4:7, 5:7 }
     };
 
     // ── INIT ──
@@ -550,7 +554,7 @@
             ]);
 
             // Group data by week
-            const weeks = [1, 2];
+            const weeks = [1, 2, 3];
             let tabsHtml = '<div class="day-tabs" id="weekTabs">';
             weeks.forEach((w, i) => {
                 tabsHtml += `<button class="day-tab ${i === 0 ? 'active' : ''}" onclick="switchWeekTab(${w})">Week ${w}</button>`;
@@ -559,7 +563,7 @@
 
             let weeksHtml = '';
             weeks.forEach((week, wi) => {
-                const maxDay = week === 1 ? 5 : 5; // Week 2 has days 1,2,3,4 built so far
+                const maxDay = week === 1 ? 5 : week === 2 ? 5 : 1; // W1=5days, W2=5days, W3=1day built
                 weeksHtml += `<div class="day-content ${wi === 0 ? 'active' : ''}" id="week-tab-${week}">`;
 
                 // Day tabs within week
