@@ -46,6 +46,9 @@
         .week-title { font-size: 1.8rem; margin-bottom: 10px; }
         .week-title.w1 { color: #667eea; }
         .week-title.w2 { color: #20c997; }
+        .w3 { color: #667eea; }
+        .w3-card { border-top: 4px solid #667eea; }
+        .progress-fill.purple { background: linear-gradient(90deg, #667eea, #764ba2); }
         .week-description { color: #666; margin-bottom: 30px; }
 
         .days-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
@@ -65,6 +68,9 @@
         .day-number { font-size: 2rem; font-weight: bold; }
         .day-number.w1 { color: #667eea; }
         .day-number.w2 { color: #20c997; }
+        .w3 { color: #667eea; }
+        .w3-card { border-top: 4px solid #667eea; }
+        .progress-fill.purple { background: linear-gradient(90deg, #667eea, #764ba2); }
         .day-status-icon { font-size: 1.5rem; }
         .day-title { font-size: 1.1rem; font-weight: 600; color: #333; margin-bottom: 10px; }
 
@@ -337,6 +343,115 @@
             </div>
         </div>
 
+        <!-- ══ WEEK 3 ══ -->
+        <div class="week-section">
+            <div class="week-title w3">💻 Week 3: Technology</div>
+            <div class="week-description">Technology vocabulary, listening and reading skills</div>
+            <div class="days-grid">
+
+                <!-- W3 Day 1 -->
+                <a href="/week3/day1/day1.html" class="day-link" id="w3d1-link">
+                    <div class="day-card w3-card" id="w3d1">
+                        <div class="day-header">
+                            <div class="day-number w3">Day 1</div>
+                            <div class="day-status-icon"><span id="w3d1-lock" style="display:none;">🔒</span><span id="w3d1-check" style="display:none;">✅</span></div>
+                        </div>
+                        <div class="day-title">Tech Basics</div>
+                        <span class="status-badge not-started" id="w3d1-status">Not Started</span>
+                        <div class="progress-container">
+                            <div class="progress-label"><span id="w3d1-text">0/7 tasks</span><span id="w3d1-pct">0%</span></div>
+                            <div class="progress-bar"><div class="progress-fill purple" id="w3d1-bar" style="width:0%"></div></div>
+                        </div>
+                        <div class="day-stats">
+                            <div class="stat-item">⏱️ <span id="w3d1-time">0 min</span></div>
+                            <div class="stat-item">📝 7 exercises</div>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- W3 Day 2 -->
+                <a href="/week3/day2/day2.html" class="day-link" id="w3d2-link">
+                    <div class="day-card w3-card" id="w3d2">
+                        <div class="day-header">
+                            <div class="day-number w3">Day 2</div>
+                            <div class="day-status-icon"><span id="w3d2-lock" style="display:none;">🔒</span><span id="w3d2-check" style="display:none;">✅</span></div>
+                        </div>
+                        <div class="day-title">Digital World</div>
+                        <span class="status-badge not-started" id="w3d2-status">Not Started</span>
+                        <div class="progress-container">
+                            <div class="progress-label"><span id="w3d2-text">0/7 tasks</span><span id="w3d2-pct">0%</span></div>
+                            <div class="progress-bar"><div class="progress-fill purple" id="w3d2-bar" style="width:0%"></div></div>
+                        </div>
+                        <div class="day-stats">
+                            <div class="stat-item">⏱️ <span id="w3d2-time">0 min</span></div>
+                            <div class="stat-item">📝 7 exercises</div>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- W3 Day 3 -->
+                <a href="/week3/day3/day3.html" class="day-link" id="w3d3-link">
+                    <div class="day-card w3-card" id="w3d3">
+                        <div class="day-header">
+                            <div class="day-number w3">Day 3</div>
+                            <div class="day-status-icon"><span id="w3d3-lock" style="display:none;">🔒</span><span id="w3d3-check" style="display:none;">✅</span></div>
+                        </div>
+                        <div class="day-title">AI & Automation</div>
+                        <span class="status-badge not-started" id="w3d3-status">Not Started</span>
+                        <div class="progress-container">
+                            <div class="progress-label"><span id="w3d3-text">0/7 tasks</span><span id="w3d3-pct">0%</span></div>
+                            <div class="progress-bar"><div class="progress-fill purple" id="w3d3-bar" style="width:0%"></div></div>
+                        </div>
+                        <div class="day-stats">
+                            <div class="stat-item">⏱️ <span id="w3d3-time">0 min</span></div>
+                            <div class="stat-item">📝 7 exercises</div>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- W3 Day 4 -->
+                <a href="/week3/day4/day4.html" class="day-link" id="w3d4-link">
+                    <div class="day-card w3-card" id="w3d4">
+                        <div class="day-header">
+                            <div class="day-number w3">Day 4</div>
+                            <div class="day-status-icon"><span id="w3d4-lock" style="display:none;">🔒</span><span id="w3d4-check" style="display:none;">✅</span></div>
+                        </div>
+                        <div class="day-title">Internet & Society</div>
+                        <span class="status-badge not-started" id="w3d4-status">Not Started</span>
+                        <div class="progress-container">
+                            <div class="progress-label"><span id="w3d4-text">0/7 tasks</span><span id="w3d4-pct">0%</span></div>
+                            <div class="progress-bar"><div class="progress-fill purple" id="w3d4-bar" style="width:0%"></div></div>
+                        </div>
+                        <div class="day-stats">
+                            <div class="stat-item">⏱️ <span id="w3d4-time">0 min</span></div>
+                            <div class="stat-item">📝 7 exercises</div>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- W3 Day 5 -->
+                <a href="/week3/day5/day5.html" class="day-link" id="w3d5-link">
+                    <div class="day-card w3-card" id="w3d5">
+                        <div class="day-header">
+                            <div class="day-number w3">Day 5</div>
+                            <div class="day-status-icon"><span id="w3d5-lock" style="display:none;">🔒</span><span id="w3d5-check" style="display:none;">✅</span></div>
+                        </div>
+                        <div class="day-title">Tech Review</div>
+                        <span class="status-badge not-started" id="w3d5-status">Not Started</span>
+                        <div class="progress-container">
+                            <div class="progress-label"><span id="w3d5-text">0/7 tasks</span><span id="w3d5-pct">0%</span></div>
+                            <div class="progress-bar"><div class="progress-fill purple" id="w3d5-bar" style="width:0%"></div></div>
+                        </div>
+                        <div class="day-stats">
+                            <div class="stat-item">⏱️ <span id="w3d5-time">0 min</span></div>
+                            <div class="stat-item">📝 7 exercises</div>
+                        </div>
+                    </div>
+                </a>
+
+            </div>
+        </div>
+
     </div><!-- end mainContent -->
 </div><!-- end container -->
 
@@ -351,7 +466,8 @@
     // Day config: week -> day -> totalTasks
     const DAY_CONFIG = {
         1: { 1:6, 2:7, 3:7, 4:7, 5:8 },
-        2: { 1:7, 2:7, 3:7, 4:7, 5:7 }
+        2: { 1:7, 2:7, 3:7, 4:7, 5:7 },
+        3: { 1:7, 2:7, 3:7, 4:7, 5:7 }
     };
 
     document.addEventListener('DOMContentLoaded', async function() {
@@ -430,7 +546,9 @@
                 { week: 1, day: 1 }, { week: 1, day: 2 }, { week: 1, day: 3 },
                 { week: 1, day: 4 }, { week: 1, day: 5 },
                 { week: 2, day: 1 }, { week: 2, day: 2 }, { week: 2, day: 3 },
-                { week: 2, day: 4 }, { week: 2, day: 5 }
+                { week: 2, day: 4 }, { week: 2, day: 5 },
+                { week: 3, day: 1 }, { week: 3, day: 2 }, { week: 3, day: 3 },
+                { week: 3, day: 4 }, { week: 3, day: 5 }
             ];
 
             allDays.forEach(({ week, day }) => {
