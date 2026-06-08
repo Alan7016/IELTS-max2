@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEEK 3 - DAY 2 (Technology)</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f4ff; color: #333; }
+        #splash-screen { position: fixed; inset: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; color: white; text-align: center; padding: 20px; }
+        #splash-screen h1 { font-size: 3rem; margin-bottom: 10px; }
+        #splash-screen h2 { font-size: 2rem; margin-bottom: 10px; opacity: 0.9; }
+        #splash-screen p { font-size: 1.2rem; margin-bottom: 40px; opacity: 0.8; }
+        .splash-btn { background: white; color: #667eea; border: none; padding: 18px 60px; font-size: 1.4rem; font-weight: bold; border-radius: 50px; cursor: pointer; box-shadow: 0 8px 25px rgba(0,0,0,0.2); transition: all 0.3s; }
+        .splash-btn:hover { transform: translateY(-3px); box-shadow: 0 12px 35px rgba(0,0,0,0.3); }
+        .main-container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        .day-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px 30px; border-radius: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; }
+        .day-header h1 { font-size: 1.6rem; }
+        .day-header .topic { opacity: 0.85; font-size: 1rem; margin-top: 4px; }
+        .back-btn { background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; text-decoration: none; font-size: 0.9rem; transition: all 0.3s; }
+        .back-btn:hover { background: white; color: #667eea; }
+        .vocab-section { background: white; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-left: 5px solid #667eea; overflow: hidden; }
+        .vocab-toggle { width: 100%; background: none; border: none; cursor: pointer; padding: 18px 25px; display: flex; align-items: center; justify-content: space-between; text-align: left; }
+        .vocab-toggle:hover { background: #f0f0ff; }
+        .vocab-toggle-left { display: flex; align-items: center; gap: 10px; }
+        .vocab-toggle h3 { color: #667eea; font-size: 1.1rem; margin: 0; }
+        .vocab-count { background: #667eea; color: white; font-size: 0.75rem; font-weight: bold; padding: 3px 10px; border-radius: 20px; }
+        .vocab-arrow { color: #667eea; font-size: 1rem; transition: transform 0.3s; }
+        .vocab-arrow.open { transform: rotate(180deg); }
+        .vocab-body { display: none; padding: 0 25px 20px; }
+        .vocab-body.open { display: block; }
+        .vocab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+        .vocab-item { background: #f0f0ff; padding: 10px 14px; border-radius: 8px; }
+        .vocab-word { font-weight: bold; color: #333; font-size: 0.95rem; }
+        .vocab-definition { color: #666; font-size: 0.82rem; margin-top: 2px; }
+        .progress-label { text-align: center; color: #667eea; font-size: 0.85rem; margin-bottom: 8px; font-weight: 600; }
+        .progress-bar-wrap { background: #e0e8ff; border-radius: 20px; height: 10px; margin-bottom: 20px; overflow: hidden; }
+        .progress-bar-fill { background: linear-gradient(90deg, #667eea, #764ba2); height: 100%; border-radius: 20px; transition: width 0.5s ease; }
+        .task-card { background: white; border-radius: 15px; padding: 28px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); display: none; }
+        .task-card.active { display: block; }
+        .task-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .task-number { background: linear-gradient(135deg, #667eea, #764ba2); color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; flex-shrink: 0; }
+        .task-title { font-size: 1.3rem; font-weight: bold; color: #333; }
+        .task-subtitle { color: #888; font-size: 0.9rem; margin-top: 2px; }
+        .pdf-links { display: flex; flex-direction: column; gap: 12px; margin: 15px 0; }
+        .pdf-link { display: flex; align-items: center; gap: 12px; background: #f0f0ff; padding: 15px 20px; border-radius: 10px; text-decoration: none; color: #333; font-weight: 600; border: 2px solid #c5ceff; transition: all 0.3s; }
+        .pdf-link:hover { background: #667eea; color: white; border-color: #667eea; transform: translateX(5px); }
+        .pdf-icon { font-size: 1.5rem; }
+        .html-link-btn { display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 15px 30px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 1rem; transition: all 0.3s; margin: 10px 0; }
+        .html-link-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(102,126,234,0.4); }
+        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; margin: 15px 0; }
+        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .video-fallback { background: #f0f0ff; padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align: center; }
+        .video-fallback a { color: #667eea; font-weight: bold; }
+        .audio-player { background: #f0f0ff; border: 2px solid #c5ceff; border-radius: 12px; padding: 20px; margin: 15px 0; }
+        .audio-player p { color: #555; margin-bottom: 10px; font-weight: 600; }
+        .audio-player audio { width: 100%; }
+        .passage-text { background: #fafbff; border: 1px solid #c5ceff; border-radius: 10px; padding: 25px; margin: 15px 0; line-height: 1.8; font-size: 0.97rem; color: #333; }
+        .passage-text h3 { color: #667eea; margin-bottom: 15px; font-size: 1.2rem; }
+        .passage-text p { margin-bottom: 14px; }
+        .question-block { margin-bottom: 20px; padding: 18px; background: #f8f9fa; border-radius: 10px; }
+        .question-text { font-weight: 600; margin-bottom: 12px; color: #333; line-height: 1.5; }
+        .options label { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: background 0.2s; margin-bottom: 5px; }
+        .options label:hover { background: #e8eaff; }
+        .options input[type="radio"] { margin-top: 3px; flex-shrink: 0; }
+        .answer-feedback { margin-top: 8px; font-weight: bold; font-size: 0.9rem; }
+        .answer-feedback.correct { color: #28a745; }
+        .answer-feedback.incorrect { color: #dc3545; }
+        .gap-fill-section { margin-top: 20px; }
+        .gap-sentence { margin-bottom: 14px; line-height: 2; font-size: 1rem; }
+        .gap-input { border: none; border-bottom: 2px solid #667eea; padding: 4px 8px; font-size: 0.95rem; width: 200px; background: transparent; outline: none; color: #333; }
+        .gap-input.correct { border-bottom-color: #28a745; background: #d4edda33; }
+        .gap-input.incorrect { border-bottom-color: #dc3545; background: #f8d7da33; }
+        .word-box { background: #f0f0ff; border: 2px solid #c5ceff; border-radius: 10px; padding: 12px 18px; margin-bottom: 15px; }
+        .word-box strong { color: #667eea; }
+        .yn-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        .yn-table th { background: #667eea; color: white; padding: 10px 14px; text-align: left; }
+        .yn-table td { padding: 10px 14px; border-bottom: 1px solid #eee; }
+        .yn-table tr:nth-child(even) td { background: #f0f0ff; }
+        .yn-select { border: 2px solid #c5ceff; border-radius: 6px; padding: 5px 10px; font-size: 0.9rem; background: white; width: 100px; }
+        .yn-select.correct { border-color: #28a745; }
+        .yn-select.incorrect { border-color: #dc3545; }
+        .matching-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .matching-table th { background: #667eea; color: white; padding: 10px 14px; text-align: left; }
+        .matching-table td { padding: 10px 14px; border-bottom: 1px solid #eee; }
+        .matching-table tr:nth-child(even) td { background: #f0f0ff; }
+        .match-select { border: 2px solid #c5ceff; border-radius: 6px; padding: 5px 8px; font-size: 0.88rem; background: white; width: 100%; max-width: 380px; }
+        .match-select.correct { border-color: #28a745; }
+        .match-select.incorrect { border-color: #dc3545; }
+        .flow-chart { display: flex; flex-direction: column; align-items: center; gap: 5px; margin: 15px 0; }
+        .flow-box { background: white; border: 2px solid #c5ceff; border-radius: 8px; padding: 12px 20px; text-align: center; width: 100%; max-width: 480px; font-size: 0.95rem; }
+        .flow-arrow { color: #667eea; font-size: 1.5rem; }
+        .btn-row { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+        .check-btn { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .check-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(102,126,234,0.4); }
+        .check-btn:disabled { background: #ccc; cursor: not-allowed; transform: none !important; box-shadow: none; }
+        .next-btn { background: #28a745; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .next-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .next-btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(40,167,69,0.4); }
+        .prev-btn { background: #6c757d; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .prev-btn:hover { background: #5a6268; }
+        .show-answers-btn { background: #ffc107; color: #333; border: none; padding: 10px 22px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.88rem; display: none; }
+        .show-answers-btn:hover { background: #e0a800; }
+        .answers-panel { display: none; background: #fffbea; border: 2px solid #ffc107; border-radius: 10px; padding: 15px; margin-top: 12px; }
+        .answers-panel p { margin-bottom: 6px; font-size: 0.9rem; }
+        .completion-screen { text-align: center; padding: 60px 20px; display: none; }
+        .completion-screen .icon { font-size: 5rem; margin-bottom: 20px; }
+        .completion-screen h2 { font-size: 2.2rem; color: #667eea; margin-bottom: 10px; }
+        .completion-screen p { color: #666; font-size: 1rem; margin-bottom: 30px; }
+        .dashboard-btn { background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 16px 40px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 1.1rem; display: inline-block; transition: all 0.3s; }
+        .dashboard-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(102,126,234,0.4); }
+        .save-indicator { position: fixed; bottom: 20px; right: 20px; background: #667eea; color: white; padding: 10px 18px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; opacity: 0; transition: opacity 0.4s; z-index: 9000; pointer-events: none; }
+        .save-indicator.show { opacity: 1; }
+    </style>
+</head>
+<body>
+
+<div id="splash-screen">
+    <h1>💻 WEEK 3</h1>
+    <h2>DAY 2</h2>
+    <p>Topic: Technology</p>
+    <button class="splash-btn" onclick="startDay()">LET'S GO!</button>
+</div>
+
+<div class="save-indicator" id="saveIndicator">✓ Progress saved</div>
+
+<div class="main-container" id="main-content" style="display:none;">
+    <div class="day-header">
+        <div>
+            <h1>💻 Week 3 — Day 2</h1>
+            <div class="topic">Topic: Technology</div>
+        </div>
+        <a href="/student-dashboard.html" class="back-btn">← Dashboard</a>
+    </div>
+
+    <div class="progress-label" id="progress-label">Task 0 of 7</div>
+    <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progress-bar" style="width:0%"></div>
+    </div>
+
+    <!-- VOCAB -->
+    <div class="vocab-section">
+        <button class="vocab-toggle" onclick="toggleVocab()">
+            <div class="vocab-toggle-left">
+                <h3>📖 Today's Vocabulary</h3>
+                <span class="vocab-count">50 words</span>
+            </div>
+            <span class="vocab-arrow" id="vocab-arrow">▼</span>
+        </button>
+        <div class="vocab-body" id="vocab-body">
+            <div class="vocab-grid" id="vocab-grid"></div>
+        </div>
+    </div>
+
+    <!-- ══ TASK 1 — Yes/No Reading ══ -->
+    <div class="task-card active" id="task1">
+        <div class="task-header">
+            <div class="task-number">1</div>
+            <div>
+                <div class="task-title">Reading Comprehension</div>
+                <div class="task-subtitle">Read the article and write Yes or No for each statement</div>
+            </div>
+        </div>
+        <div class="passage-text">
+            <h3>Technology Predictions: Past and Present</h3>
+            <p>Has the present lived up to the expectations of the past? Throughout the ages people have tried to predict what life in the twenty-first century would be like. Many science-fiction writers did manage to predict the influence the computer would have on our world. Some even imagined that it would take over our lives, develop a personality, and turn on its creators. To some extent they were right, especially when it comes to children and <strong>cyber addiction</strong>. One constant prediction was that, thanks to computers and machines, the time devoted to labour would diminish. Even in 1971, in his book Future Shock, Alvin Toffler envisaged a society awash with 'free time'. The author noted that time at work had been cut in half since the turn of the previous century and wrongly <strong>speculated</strong> that it would be cut in half again by 2000.</p>
+            <p>However, our <strong>gadget</strong>-filled homes are a tribute to the various visions of the future: the microwave oven, internet fridges with ice-cube dispensers, freezers, video <strong>monitors</strong>, climate control, dishwashers, washing machines, personal computers, wireless connections and cupboards full of instant food. These may no longer be considered <strong>cutting-edge</strong> but they have matched, if not <strong>surpassed</strong>, visions of how we would live. The domestic robot never quite happened, but if you can phone ahead to set the heating and use a remote control to operate the garage door, they may as well be redundant.</p>
+            <p>The car, of course, has failed to live up to our expectations. It has been given turbo engines, DVD players and automatic windows, but its tyres stick stubbornly to the road. Why doesn't it take off? The past promised us a flying car in various guises. In 1947 a <strong>prototype</strong> circled San Diego for more than an hour but later crashed in the desert. Some 30 patents for flying cars were registered in the US patent office last century but none of these ideas has been transformed into a commercially available vehicle.</p>
+            <p>At least communication technology in this <strong>digital</strong> age hasn't let us down. Even in the most remote areas people have access to some form of communication <strong>device</strong>. The introduction of the telephone last century changed our world, but today's mobile phones and the <strong>virtual</strong> world of the Internet have revolutionised it.</p>
+        </div>
+        <h4 style="color:#667eea; margin:20px 0 12px;">Write <strong>Yes</strong> if the statement agrees with the opinions in the text, or <strong>No</strong> if it contradicts them:</h4>
+        <table class="yn-table">
+            <thead><tr><th>#</th><th>Statement</th><th>Yes / No</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td>A modern problem proves that computers are dominating our lives in some way. <em style="color:#999;">(Example: Yes)</em></td><td><select class="yn-select" id="t1s1"><option value="">—</option><option>Yes</option><option>No</option></select></td></tr>
+                <tr><td>2</td><td>Alan Toffler's predictions have been proven true.</td><td><select class="yn-select" id="t1s2"><option value="">—</option><option>Yes</option><option>No</option></select></td></tr>
+                <tr><td>3</td><td>Household gadgets today have been a disappointment.</td><td><select class="yn-select" id="t1s3"><option value="">—</option><option>Yes</option><option>No</option></select></td></tr>
+                <tr><td>4</td><td>We have enough gadgets now to make robots unnecessary in the home.</td><td><select class="yn-select" id="t1s4"><option value="">—</option><option>Yes</option><option>No</option></select></td></tr>
+                <tr><td>5</td><td>Today's cars have fulfilled all predictions.</td><td><select class="yn-select" id="t1s5"><option value="">—</option><option>Yes</option><option>No</option></select></td></tr>
+                <tr><td>6</td><td>The mobile phone and the Internet have changed our world for the better.</td><td><select class="yn-select" id="t1s6"><option value="">—</option><option>Yes</option><option>No</option></select></td></tr>
+            </tbody>
+        </table>
+        <div class="btn-row">
+            <button class="check-btn" id="check1" onclick="checkTask1()" disabled>Check Answers</button>
+            <button class="next-btn" id="next1" disabled onclick="goToTask(2)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns1" onclick="toggleAnswers('ans1')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans1">
+            <p><strong>Answers:</strong> 1-Yes, 2-No, 3-No, 4-Yes, 5-No, 6-Yes</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 2 — PDFs ══ -->
+    <div class="task-card" id="task2">
+        <div class="task-header">
+            <div class="task-number">2</div>
+            <div>
+                <div class="task-title">Article Reading</div>
+                <div class="task-subtitle">Read the article and study the vocabulary</div>
+            </div>
+        </div>
+        <div class="pdf-links">
+            <a class="pdf-link" href="smartphones_behaviour_article.pdf" target="_blank"><span class="pdf-icon">📄</span> Smartphones & Behaviour — Article</a>
+            <a class="pdf-link" href="smartphones_behaviour_worksheet.pdf" target="_blank"><span class="pdf-icon">📘</span> Smartphones & Behaviour — Worksheet</a>
+            <a class="pdf-link" href="smartphones_behaviour_answers.pdf" target="_blank"><span class="pdf-icon">📋</span> Smartphones & Behaviour — Answers</a>
+        </div>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(1)">← Previous</button>
+            <button class="next-btn" onclick="goToTask(3)">Next Task →</button>
+        </div>
+    </div>
+
+    <!-- ══ TASK 3 — Practice Reading ══ -->
+    <div class="task-card" id="task3">
+        <div class="task-header">
+            <div class="task-number">3</div>
+            <div>
+                <div class="task-title">Practice Reading</div>
+                <div class="task-subtitle">IELTS-style reading test</div>
+            </div>
+        </div>
+        <a class="html-link-btn" href="Reading (6).html" target="_blank">📖 Open Practice Reading</a>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(2)">← Previous</button>
+            <button class="next-btn" onclick="goToTask(4)">Next Task →</button>
+        </div>
+    </div>
+
+    <!-- ══ TASK 4 — Mini Listening ══ -->
+    <div class="task-card" id="task4">
+        <div class="task-header">
+            <div class="task-number">4</div>
+            <div>
+                <div class="task-title">Listening Mini Task</div>
+                <div class="task-subtitle">Listen and complete the sentences and flow chart</div>
+            </div>
+        </div>
+
+        <!-- Part 1 -->
+        <h4 style="color:#667eea; margin-bottom:12px;">Part 1 — Complete the sentences (ONE OR TWO WORDS)</h4>
+        <div class="audio-player">
+            <p>🎧 Track 15 — Citizen Journalism</p>
+            <audio controls src="track15.mp3"></audio>
+        </div>
+        <div class="gap-fill-section">
+            <div class="gap-sentence">1. Ordinary people can provide a news story, a <input class="gap-input" id="t4g1" placeholder="___" style="width:200px;"> or a video when no professional journalist is present.</div>
+            <div class="gap-sentence">2. Amateur journalists often report on subjects which would be of little interest to a large <input class="gap-input" id="t4g2" placeholder="___" style="width:200px;">.</div>
+            <div class="gap-sentence">3. In the past, someone who wanted to express an opinion used to write a <input class="gap-input" id="t4g3" placeholder="___" style="width:180px;">, while now they write a blog.</div>
+            <div class="gap-sentence">4. An amateur journalist's subject is more likely to be a <input class="gap-input" id="t4g4" placeholder="___" style="width:200px;"> rather than national or international news.</div>
+            <div class="gap-sentence">5. Amateur news websites, such as Ohmynews in South Korea, earn money from <input class="gap-input" id="t4g5" placeholder="___" style="width:180px;">.</div>
+        </div>
+
+        <!-- Part 2 -->
+        <h4 style="color:#667eea; margin:20px 0 12px;">Part 2 — Complete the flow chart (ONE WORD ONLY)</h4>
+        <div class="audio-player">
+            <p>🎧 Track 16 — How to Write an Article</p>
+            <audio controls src="track16.mp3"></audio>
+        </div>
+        <div class="flow-chart">
+            <div class="flow-box">Put the main facts at the beginning to attract attention.</div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-box">Use a model in the shape of a <input class="gap-input" id="t4g6" placeholder="6 ___" style="width:150px;"> to build up details.</div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-box">Include <input class="gap-input" id="t4g7" placeholder="7 ___" style="width:180px;"> from people involved.</div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-box">Check the accuracy of your <input class="gap-input" id="t4g8" placeholder="8 ___" style="width:150px;">.</div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-box">Rewrite, making sure paragraphs are short.</div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-box">Don't write a <input class="gap-input" id="t4g9" placeholder="9 ___" style="width:160px;">.</div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-box">Add a picture to accompany the article.</div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-box">Finally, write an attractive <input class="gap-input" id="t4g10" placeholder="10 ___" style="width:160px;">.</div>
+        </div>
+
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(3)">← Previous</button>
+            <button class="check-btn" id="check4" onclick="checkTask4()" disabled>Check Answers</button>
+            <button class="next-btn" id="next4" disabled onclick="goToTask(5)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns4" onclick="toggleAnswers('ans4')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans4">
+            <p><strong>Part 1:</strong> 1-photo/photograph, 2-organisation, 3-letter, 4-local issue, 5-advertising</p>
+            <p><strong>Part 2:</strong> 6-pyramid, 7-quotes/quotations, 8-figures, 9-conclusion, 10-headline</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 5 — Video ══ -->
+    <div class="task-card" id="task5">
+        <div class="task-header">
+            <div class="task-number">5</div>
+            <div>
+                <div class="task-title">Video Watching Task</div>
+                <div class="task-subtitle">Watch and answer questions</div>
+            </div>
+        </div>
+        <div class="video-fallback">
+            <p>▶ <a href="https://www.youtube.com/watch?v=wvs26fcJNwg" target="_blank">Click here to open the video in a new tab</a> if it doesn't play below.</p>
+        </div>
+        <div class="video-container">
+            <iframe src="https://www.youtube.com/embed/wvs26fcJNwg" frameborder="0" allowfullscreen></iframe>
+        </div>
+
+        <h4 style="color:#667eea; margin:20px 0 12px;">Part 1 — Multiple Choice Questions</h4>
+        <div class="question-block">
+            <div class="question-text">1. According to the video, what is a smartphone essentially?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q1" value="A"> A. A small television</label>
+                <label><input type="radio" name="t5q1" value="B"> B. A portable gaming console</label>
+                <label><input type="radio" name="t5q1" value="C"> C. A small powerful computer</label>
+                <label><input type="radio" name="t5q1" value="D"> D. A digital camera</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q1"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">2. What role does the CPU play in a smartphone?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q2" value="A"> A. It stores photos and videos</label>
+                <label><input type="radio" name="t5q2" value="B"> B. It acts as the phone's brain</label>
+                <label><input type="radio" name="t5q2" value="C"> C. It provides internet access</label>
+                <label><input type="radio" name="t5q2" value="D"> D. It powers the screen</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q2"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">3. Why do modern smartphones use multi-core processors?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q3" value="A"> A. To improve battery life only</label>
+                <label><input type="radio" name="t5q3" value="B"> B. To make phones cheaper</label>
+                <label><input type="radio" name="t5q3" value="C"> C. To handle multiple tasks simultaneously</label>
+                <label><input type="radio" name="t5q3" value="D"> D. To increase storage space</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q3"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">4. What is the primary function of RAM?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q4" value="A"> A. Storing photos permanently</label>
+                <label><input type="radio" name="t5q4" value="B"> B. Keeping apps running and enabling smooth multitasking</label>
+                <label><input type="radio" name="t5q4" value="C"> C. Charging the battery</label>
+                <label><input type="radio" name="t5q4" value="D"> D. Connecting to Wi-Fi</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q4"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">5. How is storage different from RAM?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q5" value="A"> A. Storage is temporary, while RAM is permanent</label>
+                <label><input type="radio" name="t5q5" value="B"> B. Storage only holds apps</label>
+                <label><input type="radio" name="t5q5" value="C"> C. Storage keeps data permanently until it is deleted</label>
+                <label><input type="radio" name="t5q5" value="D"> D. Storage is slower than paper records</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q5"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">6. What is one advantage of OLED screens?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q6" value="A"> A. They use no electricity</label>
+                <label><input type="radio" name="t5q6" value="B"> B. Each pixel lights up individually</label>
+                <label><input type="radio" name="t5q6" value="C"> C. They cannot display dark colors</label>
+                <label><input type="radio" name="t5q6" value="D"> D. They require a backlight</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q6"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">7. How does a capacitive touch screen detect your touch?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q7" value="A"> A. By measuring heat from your finger</label>
+                <label><input type="radio" name="t5q7" value="B"> B. By detecting pressure</label>
+                <label><input type="radio" name="t5q7" value="C"> C. By sensing electrical charge from your finger</label>
+                <label><input type="radio" name="t5q7" value="D"> D. By using a small camera</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q7"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">8. What happens when light reaches a smartphone camera sensor?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q8" value="A"> A. It charges the battery</label>
+                <label><input type="radio" name="t5q8" value="B"> B. It is converted into digital information</label>
+                <label><input type="radio" name="t5q8" value="C"> C. It creates a Wi-Fi signal</label>
+                <label><input type="radio" name="t5q8" value="D"> D. It increases screen brightness</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q8"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">9. Which operating systems are mentioned in the video?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q9" value="A"> A. Linux and Windows</label>
+                <label><input type="radio" name="t5q9" value="B"> B. Android and iOS</label>
+                <label><input type="radio" name="t5q9" value="C"> C. ChromeOS and Linux</label>
+                <label><input type="radio" name="t5q9" value="D"> D. Windows and Android</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q9"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">10. What allows smartphones to communicate with Wi-Fi, Bluetooth, and mobile networks?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q10" value="A"> A. Flash memory</label>
+                <label><input type="radio" name="t5q10" value="B"> B. Sensors</label>
+                <label><input type="radio" name="t5q10" value="C"> C. Radios, modems, and antennas</label>
+                <label><input type="radio" name="t5q10" value="D"> D. Cameras</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q10"></div>
+        </div>
+
+        <h4 style="color:#667eea; margin:20px 0 12px;">Part 2 — Gap Filling</h4>
+        <div class="word-box">
+            <strong>Word Box:</strong> processor &nbsp;|&nbsp; storage &nbsp;|&nbsp; battery &nbsp;|&nbsp; sensors &nbsp;|&nbsp; operating system &nbsp;|&nbsp; antennas &nbsp;|&nbsp; multitasking
+        </div>
+        <div class="gap-fill-section">
+            <div class="gap-sentence">11. The <input class="gap-input" id="t5g11" placeholder="___"> is often described as the brain of a smartphone.</div>
+            <div class="gap-sentence">12. More RAM generally improves a phone's ability to handle <input class="gap-input" id="t5g12" placeholder="___">.</div>
+            <div class="gap-sentence">13. Photos, videos, and apps are saved in the phone's <input class="gap-input" id="t5g13" placeholder="___">.</div>
+            <div class="gap-sentence">14. The <input class="gap-input" id="t5g14" placeholder="___" style="width:220px;"> manages the hardware and software of the phone.</div>
+            <div class="gap-sentence">15. Signals are sent and received through components such as modems and <input class="gap-input" id="t5g15" placeholder="___">.</div>
+        </div>
+
+        <h4 style="color:#667eea; margin:20px 0 12px;">Part 3 — Vocabulary Matching</h4>
+        <p style="color:#666; font-size:0.88rem; margin-bottom:12px;">Match each word with the correct definition.</p>
+        <table class="matching-table">
+            <thead><tr><th>#</th><th>Word</th><th>Definition</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td><strong>processor</strong></td><td><select class="match-select" id="t5m1"><option value="">— select —</option><option value="A">A. system software that manages the phone</option><option value="B">B. rechargeable power source of a device</option><option value="C">C. computer chip that processes instructions</option><option value="D">D. temporary memory used for active tasks</option><option value="E">E. screen technology where each pixel emits its own light</option><option value="F">F. device that detects changes in the environment</option><option value="G">G. permanent storage technology that keeps data without power</option><option value="H">H. technology used for wireless short-range communication</option><option value="I">I. device that enables communication over networks</option><option value="J">J. technology used for contactless communication and payments</option></select></td></tr>
+                <tr><td>2</td><td><strong>RAM</strong></td><td><select class="match-select" id="t5m2"><option value="">— select —</option><option value="A">A. system software that manages the phone</option><option value="B">B. rechargeable power source of a device</option><option value="C">C. computer chip that processes instructions</option><option value="D">D. temporary memory used for active tasks</option><option value="E">E. screen technology where each pixel emits its own light</option><option value="F">F. device that detects changes in the environment</option><option value="G">G. permanent storage technology that keeps data without power</option><option value="H">H. technology used for wireless short-range communication</option><option value="I">I. device that enables communication over networks</option><option value="J">J. technology used for contactless communication and payments</option></select></td></tr>
+                <tr><td>3</td><td><strong>flash memory</strong></td><td><select class="match-select" id="t5m3"><option value="">— select —</option><option value="A">A. system software that manages the phone</option><option value="B">B. rechargeable power source of a device</option><option value="C">C. computer chip that processes instructions</option><option value="D">D. temporary memory used for active tasks</option><option value="E">E. screen technology where each pixel emits its own light</option><option value="F">F. device that detects changes in the environment</option><option value="G">G. permanent storage technology that keeps data without power</option><option value="H">H. technology used for wireless short-range communication</option><option value="I">I. device that enables communication over networks</option><option value="J">J. technology used for contactless communication and payments</option></select></td></tr>
+                <tr><td>4</td><td><strong>OLED</strong></td><td><select class="match-select" id="t5m4"><option value="">— select —</option><option value="A">A. system software that manages the phone</option><option value="B">B. rechargeable power source of a device</option><option value="C">C. computer chip that processes instructions</option><option value="D">D. temporary memory used for active tasks</option><option value="E">E. screen technology where each pixel emits its own light</option><option value="F">F. device that detects changes in the environment</option><option value="G">G. permanent storage technology that keeps data without power</option><option value="H">H. technology used for wireless short-range communication</option><option value="I">I. device that enables communication over networks</option><option value="J">J. technology used for contactless communication and payments</option></select></td></tr>
+                <tr><td>5</td><td><strong>sensor</strong></td><td><select class="match-select" id="t5m5"><option value="">— select —</option><option value="A">A. system software that manages the phone</option><option value="B">B. rechargeable power source of a device</option><option value="C">C. computer chip that processes instructions</option><option value="D">D. temporary memory used for active tasks</option><option value="E">E. screen technology where each pixel emits its own light</option><option value="F">F. device that detects changes in the environment</option><option value="G">G. permanent storage technology that keeps data without power</option><option value="H">H. technology used for wireless short-range communication</option><option value="I">I. device that enables communication over networks</option><option value="J">J. technology used for contactless communication and payments</option></select></td></tr>
+                <tr><td>6</td><td><strong>lithium-ion battery</strong></td><td><select class="match-select" id="t5m6"><option value="">— select —</option><option value="A">A. system software that manages the phone</option><option value="B">B. rechargeable power source of a device</option><option value="C">C. computer chip that processes instructions</option><option value="D">D. temporary memory used for active tasks</option><option value="E">E. screen technology where each pixel emits its own light</option><option value="F">F. device that detects changes in the environment</option><option value="G">G. permanent storage technology that keeps data without power</option><option value="H">H. technology used for wireless short-range communication</option><option value="I">I. device that enables communication over networks</option><option value="J">J. technology used for contactless communication and payments</option></select></td></tr>
+                <tr><td>7</td><td><strong>operating system</strong></td><td><select class="match-select" id="t5m7"><option value="">— select —</option><option value="A">A. system software that manages the phone</option><option value="B">B. rechargeable power source of a device</option><option value="C">C. computer chip that processes instructions</option><option value="D">D. temporary memory used for active tasks</option><option value="E">E. screen technology where each pixel emits its own light</option><option value="F">F. device that detects changes in the environment</option><option value="G">G. permanent storage technology that keeps data without power</option><option value="H">H. technology used for wireless short-range communication</option><option value="I">I. device that enables communication over networks</option><option value="J">J. technology used for contactless communication and payments</option></select></td></tr>
+                <tr><td>8</td><td><strong>modem</strong></td><td><select class="match-select" id="t5m8"><option value="">— select —</option><option value="A">A. system software that manages the phone</option><option value="B">B. rechargeable power source of a device</option><option value="C">C. computer chip that processes instructions</option><option value="D">D. temporary memory used for active tasks</option><option value="E">E. screen technology where each pixel emits its own light</option><option value="F">F. device that detects changes in the environment</option><option value="G">G. permanent storage technology that keeps data without power</option><option value="H">H. technology used for wireless short-range communication</option><option value="I">I. device that enables communication over networks</option><option value="J">J. technology used for contactless communication and payments</option></select></td></tr>
+                <tr><td>9</td><td><strong>Bluetooth</strong></td><td><select class="match-select" id="t5m9"><option value="">— select —</option><option value="A">A. system software that manages the phone</option><option value="B">B. rechargeable power source of a device</option><option value="C">C. computer chip that processes instructions</option><option value="D">D. temporary memory used for active tasks</option><option value="E">E. screen technology where each pixel emits its own light</option><option value="F">F. device that detects changes in the environment</option><option value="G">G. permanent storage technology that keeps data without power</option><option value="H">H. technology used for wireless short-range communication</option><option value="I">I. device that enables communication over networks</option><option value="J">J. technology used for contactless communication and payments</option></select></td></tr>
+                <tr><td>10</td><td><strong>NFC</strong></td><td><select class="match-select" id="t5m10"><option value="">— select —</option><option value="A">A. system software that manages the phone</option><option value="B">B. rechargeable power source of a device</option><option value="C">C. computer chip that processes instructions</option><option value="D">D. temporary memory used for active tasks</option><option value="E">E. screen technology where each pixel emits its own light</option><option value="F">F. device that detects changes in the environment</option><option value="G">G. permanent storage technology that keeps data without power</option><option value="H">H. technology used for wireless short-range communication</option><option value="I">I. device that enables communication over networks</option><option value="J">J. technology used for contactless communication and payments</option></select></td></tr>
+            </tbody>
+        </table>
+
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(4)">← Previous</button>
+            <button class="check-btn" id="check5" onclick="checkTask5()" disabled>Check Answers</button>
+            <button class="next-btn" id="next5" disabled onclick="goToTask(6)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns5" onclick="toggleAnswers('ans5')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans5">
+            <p><strong>MCQ:</strong> 1-C, 2-B, 3-C, 4-B, 5-C, 6-B, 7-C, 8-B, 9-B, 10-C</p>
+            <p><strong>Gap Fill:</strong> 11-processor, 12-multitasking, 13-storage, 14-operating system, 15-antennas</p>
+            <p><strong>Matching:</strong> 1-C, 2-D, 3-G, 4-E, 5-F, 6-B, 7-A, 8-I, 9-H, 10-J</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 6 — Dictation ══ -->
+    <div class="task-card" id="task6">
+        <div class="task-header">
+            <div class="task-number">6</div>
+            <div>
+                <div class="task-title">Dictation Task</div>
+                <div class="task-subtitle">Listen and write ONE WORD ONLY in each gap</div>
+            </div>
+        </div>
+        <div class="audio-player">
+            <p>🎧 Smartphone Addiction — BBC Learning English</p>
+            <audio controls src="smartphoneaddiction.mp3"></audio>
+        </div>
+        <div class="gap-fill-section" id="dictation-gaps"></div>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(5)">← Previous</button>
+            <button class="check-btn" id="check6" onclick="checkTask6()" disabled>Check Answers</button>
+            <button class="next-btn" id="next6" disabled onclick="goToTask(7)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns6" onclick="toggleAnswers('ans6')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans6">
+            <p>1-smartphone, 2-FOMO, 3-out, 4-phubber, 5-doing, 6-phones, 7-palms, 8-print, 9-society, 10-passed, 11-passing, 12-control, 13-long, 14-touch, 15-person, 16-communicating, 17-smartphone, 18-1995, 19-acronym, 20-phones, 21-need, 22-again, 23-regularly, 24-person, 25-platforms</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 7 — Practice Listening ══ -->
+    <div class="task-card" id="task7">
+        <div class="task-header">
+            <div class="task-number">7</div>
+            <div>
+                <div class="task-title">Practice Listening</div>
+                <div class="task-subtitle">Full IELTS-style listening test</div>
+            </div>
+        </div>
+        <a class="html-link-btn" href="Listening (6).html" target="_blank">🎧 Open Practice Listening</a>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(6)">← Previous</button>
+            <button class="next-btn" onclick="finishDay()">Finish Day 2 ✓</button>
+        </div>
+    </div>
+
+    <!-- COMPLETION -->
+    <div class="completion-screen" id="completion-screen">
+        <div class="icon">🎉</div>
+        <h2>Day 2 Complete!</h2>
+        <p>Excellent work! You've completed all tasks for Week 3, Day 2.</p>
+        <div style="margin:30px 0; text-align:left;">
+            <h3 style="color:#667eea; border-bottom:2px solid #667eea; padding-bottom:10px; margin-bottom:15px;">📋 Review Your Work</h3>
+            <p style="color:#888; margin-bottom:20px; font-size:0.9rem;">Click any task below to go back and review it.</p>
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:15px;">
+                <div onclick="reviewTask(1)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#667eea;font-size:1.1rem;margin-bottom:5px;">Task 1</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Yes/No Reading</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(2)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#667eea;font-size:1.1rem;margin-bottom:5px;">Task 2</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Article Reading</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(3)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#667eea;font-size:1.1rem;margin-bottom:5px;">Task 3</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Reading</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(4)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#667eea;font-size:1.1rem;margin-bottom:5px;">Task 4</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Listening Mini</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(5)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#667eea;font-size:1.1rem;margin-bottom:5px;">Task 5</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Video + Vocab</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(6)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#667eea;font-size:1.1rem;margin-bottom:5px;">Task 6</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Dictation</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(7)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#667eea;font-size:1.1rem;margin-bottom:5px;">Task 7</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Listening</div><div style="font-size:1.4rem;">✅</div></div>
+            </div>
+        </div>
+        <a href="/student-dashboard.html" class="dashboard-btn">← Back to Dashboard</a>
+    </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://nbfceuhuauizyucugejr.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_0mFIGJkA_DKZfUiDAWFdrA_nXt0hF6H';
+const dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const WEEK = 3, DAY = 2, TOTAL_TASKS = 7;
+let studentId = null, studentGroup = null, currentTask = 1;
+let taskStartTime = Date.now(), saveTimeout = null;
+
+const dictationAnswers = ['smartphone','FOMO','out','phubber','doing','phones','palms','print','society','passed','passing','control','long','touch','person','communicating','smartphone','1995','acronym','phones','need','again','regularly','person','platforms'];
+
+const dictationScripts = [
+    "So, Catherine, how long do you spend on your <input class='gap-input' id='d1' placeholder='(1)'>?",
+    "I suffer from <input class='gap-input' id='d2' placeholder='(2)'>.",
+    "I have to keep checking my phone to make sure I don't miss <input class='gap-input' id='d3' placeholder='(3)'> on anything.",
+    "We could call you a <input class='gap-input' id='d4' placeholder='(4)'> – someone who ignores other people because you'd rather look at your phone.",
+    "you have a physical or mental need to keep on <input class='gap-input' id='d5' placeholder='(5)'> it.",
+    "you can be addicted to other things too, like mobile <input class='gap-input' id='d6' placeholder='(6)'>.",
+    "I'd probably get sweaty <input class='gap-input' id='d7' placeholder='(7)'> and start feeling a bit panicky.",
+    "In what year did the term 'smartphone' first appear in <input class='gap-input' id='d8' placeholder='(8)'>?",
+    "She says smartphones have probably led to an increase in mental health problems for teenagers and <input class='gap-input' id='d9' placeholder='(9)'>.",
+    "looking up and realising that an hour has <input class='gap-input' id='d10' placeholder='(10)'>.",
+    "we can get so involved in our phones that we don't notice the time <input class='gap-input' id='d11' placeholder='(11)'>.",
+    "If you do something compulsively, you can't really <input class='gap-input' id='d12' placeholder='(12)'> it.",
+    "building in timers to apps which will warn us when we have spent too <input class='gap-input' id='d13' placeholder='(13)'> on them.",
+    "they do what it really should be used for, which is to keep in <input class='gap-input' id='d14' placeholder='(14)'> with people.",
+    "go see some of those people in <input class='gap-input' id='d15' placeholder='(15)'> or give them a phone call.",
+    "This means contacting and <input class='gap-input' id='d16' placeholder='(16)'> with them.",
+    "You don't do it online or through your <input class='gap-input' id='d17' placeholder='(17)'>.",
+    "The answer was actually <input class='gap-input' id='d18' placeholder='(18)'>.",
+    "We had FOMO, an <input class='gap-input' id='d19' placeholder='(19)'> meaning Fear of Missing Out.",
+    "someone who ignores the real people around them because they are concentrating on their <input class='gap-input' id='d20' placeholder='(20)'>.",
+    "I have a psychological and physical <input class='gap-input' id='d21' placeholder='(21)'> to have it.",
+    "You can't stop looking at it. You do it again and <input class='gap-input' id='d22' placeholder='(22)'>.",
+    "To keep in touch with someone is to contact them and share your news <input class='gap-input' id='d23' placeholder='(23)'>.",
+    "if you do that yourself by actually meeting them, then you are doing it in <input class='gap-input' id='d24' placeholder='(24)'>.",
+    "you can find us on the usual social media <input class='gap-input' id='d25' placeholder='(25)'> – Facebook, Twitter, Instagram and YouTube.",
+];
+
+const vocab = [
+    {word:"1. Cyber addiction (n)", def:"Compulsive use of the internet or devices"},
+    {word:"2. Speculation (n)", def:"Forming opinions without firm evidence"},
+    {word:"3. Gadget (n)", def:"A small mechanical or electronic device"},
+    {word:"4. Cutting-edge (adj)", def:"The most modern and advanced"},
+    {word:"5. Surpass (v)", def:"To exceed or go beyond expectations"},
+    {word:"6. Prototype (n)", def:"An early model of something to be developed"},
+    {word:"7. Digital (adj)", def:"Relating to computer technology"},
+    {word:"8. Virtual (adj)", def:"Existing in computers rather than physically"},
+    {word:"9. FOMO (n)", def:"Fear of Missing Out — anxiety about missing events"},
+    {word:"10. Phubber (n)", def:"Someone who ignores others to look at their phone"},
+    {word:"11. Addicted (adj)", def:"Having a compulsive need to do something"},
+    {word:"12. Compulsive (adj)", def:"Unable to stop doing something"},
+    {word:"13. Acronym (n)", def:"A word formed from the first letters of other words"},
+    {word:"14. Processor (n)", def:"The brain chip of a smartphone or computer"},
+    {word:"15. RAM (n)", def:"Temporary memory used for active tasks"},
+    {word:"16. Flash memory (n)", def:"Permanent storage that keeps data without power"},
+    {word:"17. OLED (n)", def:"Screen technology where each pixel lights independently"},
+    {word:"18. Sensor (n)", def:"A device that detects changes in the environment"},
+    {word:"19. Modem (n)", def:"A device enabling communication over networks"},
+    {word:"20. Bluetooth (n)", def:"Wireless short-range communication technology"},
+    {word:"21. NFC (n)", def:"Technology for contactless communication and payments"},
+    {word:"22. Operating system (n)", def:"Software that manages phone hardware and apps"},
+    {word:"23. Multitasking (n)", def:"Performing multiple tasks at the same time"},
+    {word:"24. Antennas (n)", def:"Components for sending and receiving signals"},
+    {word:"25. Citizen journalism (n)", def:"News reported by ordinary members of the public"},
+    {word:"26. Amateur journalist (n)", def:"A non-professional person who reports news"},
+    {word:"27. Blog (n)", def:"An online journal or informational website"},
+    {word:"28. Headline (n)", def:"The title of a news article"},
+    {word:"29. Pyramid (n)", def:"A structure used in journalism to organise information"},
+    {word:"30. Quotation (n)", def:"A phrase or passage taken from a source"},
+    {word:"31. Figures (n)", def:"Statistical data or numerical facts"},
+    {word:"32. Conclusion (n)", def:"The final part of a piece of writing"},
+    {word:"33. Advertising (n)", def:"Promoting products or services to earn money"},
+    {word:"34. Monitor (n)", def:"A screen that displays visual output"},
+    {word:"35. Device (n)", def:"A piece of equipment made for a specific purpose"},
+    {word:"36. Redundant (adj)", def:"No longer needed; replaced by something else"},
+    {word:"37. Patent (n)", def:"An official right to make or sell an invention"},
+    {word:"38. Revolutionise (v)", def:"To change something completely and fundamentally"},
+    {word:"39. Diminish (v)", def:"To become or make less"},
+    {word:"40. Prediction (n)", def:"A statement about what will happen in the future"},
+    {word:"41. Envisage (v)", def:"To imagine or picture something in the future"},
+    {word:"42. Labour (n)", def:"Work, especially physical work"},
+    {word:"43. Remote (adj)", def:"Far away from main centres of population"},
+    {word:"44. Access (n)", def:"The right or ability to use something"},
+    {word:"45. Interaction (n)", def:"Communication or direct involvement with someone"},
+    {word:"46. Face-to-face (adj)", def:"Meeting in person rather than online"},
+    {word:"47. Platform (n)", def:"A digital service or social media channel"},
+    {word:"48. Capacitive (adj)", def:"Using electrical charge to detect touch"},
+    {word:"49. Simultaneously (adv)", def:"At the same time"},
+    {word:"50. Innovation (n)", def:"A new method, idea, or product"},
+];
+
+async function initStudent() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('teacher') === 'true') { studentId = 'teacher-preview'; studentGroup = 'preview'; return; }
+    try {
+        const userStr = localStorage.getItem('user');
+        if (!userStr) { window.location.href = '/login.html'; return; }
+        const user = JSON.parse(userStr);
+        const { data, error } = await dbClient.from('students').select('*').eq('username', user.username).single();
+        if (error || !data) return;
+        studentId = data.id; studentGroup = data.student_group;
+    } catch(e) { console.log('Auth error:', e); }
+}
+
+function buildVocab() {
+    document.getElementById('vocab-grid').innerHTML = vocab.map(v =>
+        `<div class="vocab-item"><div class="vocab-word">${v.word}</div><div class="vocab-definition">${v.def}</div></div>`).join('');
+}
+
+function buildDictation() {
+    document.getElementById('dictation-gaps').innerHTML = dictationScripts.map((s, i) =>
+        `<div class="gap-sentence"><strong>${i+1}.</strong> …${s}</div>`).join('');
+}
+
+async function startDay() {
+    document.getElementById('splash-screen').style.display = 'none';
+    document.getElementById('main-content').style.display = 'block';
+    buildVocab(); buildDictation();
+    await initStudent();
+    await restoreProgress();
+    setupLiveValidation();
+}
+
+function goToTask(num) {
+    document.getElementById('task' + currentTask).classList.remove('active');
+    currentTask = num;
+    document.getElementById('task' + num).classList.add('active');
+    document.getElementById('task' + num).scrollIntoView({behavior:'smooth', block:'start'});
+    updateProgress(num); taskStartTime = Date.now(); saveResume(num);
+}
+
+function updateProgress(taskNum) {
+    document.getElementById('progress-bar').style.width = Math.round(((taskNum-1)/TOTAL_TASKS)*100) + '%';
+    document.getElementById('progress-label').textContent = `Task ${taskNum} of ${TOTAL_TASKS}`;
+}
+
+function showSaveIndicator() {
+    const el = document.getElementById('saveIndicator');
+    el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+async function saveResume(taskNum) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try { await dbClient.from('student_resume').upsert({student_id:studentId, week:WEEK, day:DAY, last_task:taskNum, updated_at:new Date().toISOString()}, {onConflict:'student_id'}); } catch(e) {}
+}
+
+function scheduleSave() {
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+        localStorage.setItem(`w${WEEK}d${DAY}_answers`, JSON.stringify(gatherAllAnswers()));
+        showSaveIndicator();
+    }, 800);
+}
+
+function gatherAllAnswers() {
+    const data = {};
+    document.querySelectorAll('.gap-input').forEach(el => { if (el.id) data[el.id] = el.value; });
+    ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10'].forEach(name => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`); if (sel) data[name] = sel.value;
+    });
+    document.querySelectorAll('select').forEach(el => { if (el.id) data[el.id] = el.value; });
+    return data;
+}
+
+async function restoreProgress() {
+    try {
+        const saved = localStorage.getItem(`w${WEEK}d${DAY}_answers`);
+        if (saved) {
+            const data = JSON.parse(saved);
+            Object.entries(data).forEach(([id, val]) => { const el = document.getElementById(id); if (el && el.tagName === 'INPUT') el.value = val; });
+            Object.entries(data).forEach(([name, val]) => { if (name.startsWith('t5q')) { const r = document.querySelector(`input[name="${name}"][value="${val}"]`); if (r) r.checked = true; } });
+            Object.entries(data).forEach(([id, val]) => { const el = document.getElementById(id); if (el && el.tagName === 'SELECT') el.value = val; });
+        }
+        if (studentId && studentId !== 'teacher-preview') {
+            const { data: taskData } = await dbClient.from('task_progress').select('task_number,status').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY);
+            const completedCount = taskData ? taskData.filter(t => t.status === 'completed').length : 0;
+            if (completedCount >= TOTAL_TASKS) {
+                await restoreAnswersFromSupabase();
+                document.getElementById('task1').classList.remove('active');
+                document.getElementById('completion-screen').style.display = 'block';
+                updateProgress(TOTAL_TASKS); validateAll(); makeReadOnly(); return;
+            }
+            const { data: resume } = await dbClient.from('student_resume').select('last_task').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY).single();
+            if (resume && resume.last_task > 1) {
+                document.getElementById('task1').classList.remove('active');
+                currentTask = resume.last_task;
+                document.getElementById('task' + currentTask).classList.add('active');
+                updateProgress(currentTask);
+            }
+        }
+        validateAll();
+    } catch(e) { console.log('Restore error:', e); }
+}
+
+async function restoreAnswersFromSupabase() {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        const { data: answers } = await dbClient.from('student_answers').select('*').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY);
+        if (!answers || answers.length === 0) return;
+        answers.forEach(a => {
+            const { question_id, student_answer, question_type, is_correct, correct_answer } = a;
+            if (question_type === 'mcq') {
+                const radio = document.querySelector(`input[name="${question_id}"][value="${student_answer}"]`);
+                if (radio) radio.checked = true;
+                const fb = document.getElementById('fb_' + question_id);
+                if (fb) { fb.textContent = is_correct ? '✅ Correct!' : `❌ Incorrect — correct answer: ${correct_answer}`; fb.className = 'answer-feedback ' + (is_correct ? 'correct' : 'incorrect'); }
+            } else if (question_type === 'gap_fill') {
+                const inp = document.getElementById(question_id);
+                if (inp) { inp.value = student_answer || ''; inp.classList.toggle('correct', is_correct); inp.classList.toggle('incorrect', !is_correct); }
+            } else if (question_type === 'matching') {
+                const sel = document.getElementById(question_id);
+                if (sel) { sel.value = student_answer || ''; sel.classList.toggle('correct', is_correct); sel.classList.toggle('incorrect', !is_correct); }
+            }
+        });
+        document.querySelectorAll('.show-answers-btn').forEach(btn => btn.style.display = 'inline-block');
+        document.querySelectorAll('.next-btn').forEach(btn => btn.disabled = false);
+    } catch(e) { console.error('Restore answers error:', e); }
+}
+
+function makeReadOnly() {
+    document.querySelectorAll('.gap-input').forEach(el => { el.disabled = true; el.style.opacity = '0.85'; });
+    document.querySelectorAll('input[type="radio"]').forEach(el => el.disabled = true);
+    document.querySelectorAll('select').forEach(el => { el.disabled = true; });
+    document.querySelectorAll('.check-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.next-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.prev-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.show-answers-btn').forEach(el => el.style.display = 'inline-block');
+}
+
+function setupLiveValidation() {
+    ['t1s1','t1s2','t1s3','t1s4','t1s5','t1s6'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('change', () => { validateTask1Check(); scheduleSave(); }); });
+    ['t4g1','t4g2','t4g3','t4g4','t4g5'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', () => { validateTask4Check(); scheduleSave(); }); });
+    ['t4g6','t4g7','t4g8','t4g9','t4g10'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', () => { validateTask4Check(); scheduleSave(); }); });
+    ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10'].forEach(name => { document.querySelectorAll(`input[name="${name}"]`).forEach(el => el.addEventListener('change', () => { validateTask5Check(); scheduleSave(); })); });
+    ['t5g11','t5g12','t5g13','t5g14','t5g15'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', () => { validateTask5Check(); scheduleSave(); }); });
+    ['t5m1','t5m2','t5m3','t5m4','t5m5','t5m6','t5m7','t5m8','t5m9','t5m10'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('change', () => { validateTask5Check(); scheduleSave(); }); });
+    for (let i = 1; i <= 25; i++) { const el = document.getElementById('d' + i); if (el) el.addEventListener('input', () => { validateTask6Check(); scheduleSave(); }); }
+}
+
+function validateAll() { validateTask1Check(); validateTask4Check(); validateTask5Check(); validateTask6Check(); }
+function validateTask1Check() { document.getElementById('check1').disabled = !['t1s1','t1s2','t1s3','t1s4','t1s5','t1s6'].every(id => document.getElementById(id)?.value); }
+function validateTask4Check() {
+    const p1 = ['t4g1','t4g2','t4g3','t4g4','t4g5'].every(id => document.getElementById(id)?.value.trim());
+    const p2 = ['t4g6','t4g7','t4g8','t4g9','t4g10'].every(id => document.getElementById(id)?.value.trim());
+    document.getElementById('check4').disabled = !(p1 && p2);
+}
+function validateTask5Check() {
+    const allMcq = ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10'].every(name => document.querySelector(`input[name="${name}"]:checked`));
+    const allGaps = ['t5g11','t5g12','t5g13','t5g14','t5g15'].every(id => document.getElementById(id)?.value.trim());
+    const allMatch = ['t5m1','t5m2','t5m3','t5m4','t5m5','t5m6','t5m7','t5m8','t5m9','t5m10'].every(id => document.getElementById(id)?.value);
+    document.getElementById('check5').disabled = !(allMcq && allGaps && allMatch);
+}
+function validateTask6Check() { let all = true; for (let i=1;i<=25;i++) { if (!document.getElementById('d'+i)?.value.trim()) { all=false; break; } } document.getElementById('check6').disabled = !all; }
+
+const t1Answers = {t1s1:'Yes', t1s2:'No', t1s3:'No', t1s4:'Yes', t1s5:'No', t1s6:'Yes'};
+const t4Part1Accepted = {
+    t4g1: ['photo','photograph'],
+    t4g2: ['organisation'],
+    t4g3: ['letter'],
+    t4g4: ['local issue'],
+    t4g5: ['advertising']
+};
+const t4Part2Accepted = {
+    t4g6: ['pyramid'],
+    t4g7: ['quotes','quotations'],
+    t4g8: ['figures'],
+    t4g9: ['conclusion'],
+    t4g10: ['headline']
+};
+const t5McqAnswers = {t5q1:'C',t5q2:'B',t5q3:'C',t5q4:'B',t5q5:'C',t5q6:'B',t5q7:'C',t5q8:'B',t5q9:'B',t5q10:'C'};
+const t5GapAnswers = {t5g11:'processor',t5g12:'multitasking',t5g13:'storage',t5g14:'operating system',t5g15:'antennas'};
+const t5MatchAnswers = {t5m1:'C',t5m2:'D',t5m3:'G',t5m4:'E',t5m5:'F',t5m6:'B',t5m7:'A',t5m8:'I',t5m9:'H',t5m10:'J'};
+
+function checkTask1() {
+    const answers = [];
+    Object.entries(t1Answers).forEach(([id, correct]) => {
+        const sel = document.getElementById(id);
+        const ok = sel.value === correct;
+        sel.classList.toggle('correct', ok); sel.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'gap_fill', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    document.getElementById('showAns1').style.display = 'inline-block';
+    document.getElementById('next1').disabled = false;
+    saveAnswers(1, answers); saveTaskProgress(1);
+}
+
+function checkTask4() {
+    const answers = [];
+    Object.entries(t4Part1Accepted).forEach(([id, opts]) => {
+        const inp = document.getElementById(id);
+        const val = inp.value.trim().toLowerCase();
+        const ok = opts.some(o => val.includes(o.toLowerCase()));
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:opts[0], is_correct:ok});
+    });
+    Object.entries(t4Part2Accepted).forEach(([id, opts]) => {
+        const inp = document.getElementById(id);
+        const val = inp.value.trim().toLowerCase();
+        const ok = opts.some(o => val.includes(o.toLowerCase()));
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:opts[0], is_correct:ok});
+    });
+    document.getElementById('showAns4').style.display = 'inline-block';
+    document.getElementById('next4').disabled = false;
+    saveAnswers(4, answers); saveTaskProgress(4);
+}
+
+function checkTask5() {
+    const answers = [];
+    Object.entries(t5McqAnswers).forEach(([name, correct]) => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`);
+        const fb = document.getElementById('fb_' + name);
+        if (!sel) return;
+        const ok = sel.value === correct;
+        fb.textContent = ok ? '✅ Correct!' : `❌ Incorrect — correct answer: ${correct}`;
+        fb.className = 'answer-feedback ' + (ok ? 'correct' : 'incorrect');
+        answers.push({question_id:name, question_type:'mcq', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    Object.entries(t5GapAnswers).forEach(([id, correct]) => {
+        const inp = document.getElementById(id);
+        const val = inp.value.trim().toLowerCase();
+        const ok = val === correct.toLowerCase();
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:correct, is_correct:ok});
+    });
+    Object.entries(t5MatchAnswers).forEach(([id, correct]) => {
+        const sel = document.getElementById(id);
+        const ok = sel.value === correct;
+        sel.classList.toggle('correct', ok); sel.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'matching', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    document.getElementById('showAns5').style.display = 'inline-block';
+    document.getElementById('next5').disabled = false;
+    saveAnswers(5, answers); saveTaskProgress(5);
+}
+
+function checkTask6() {
+    const answers = [];
+    for (let i = 1; i <= 25; i++) {
+        const inp = document.getElementById('d' + i);
+        const val = inp.value.trim().toLowerCase();
+        const correct = dictationAnswers[i-1];
+        const ok = val === correct.toLowerCase();
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:'d'+i, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:correct, is_correct:ok});
+    }
+    document.getElementById('showAns6').style.display = 'inline-block';
+    document.getElementById('next6').disabled = false;
+    saveAnswers(6, answers); saveTaskProgress(6);
+}
+
+async function saveAnswers(taskNum, answers) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        const rows = answers.map(a => ({student_id:studentId, week:WEEK, day:DAY, task_number:taskNum, question_id:a.question_id, question_type:a.question_type, student_answer:a.student_answer, correct_answer:a.correct_answer, is_correct:a.is_correct, answered_at:new Date().toISOString()}));
+        await dbClient.from('student_answers').upsert(rows, {onConflict:'student_id,week,day,task_number,question_id'});
+    } catch(e) { console.error('Answer save error:', e); }
+}
+
+async function saveTaskProgress(taskNum) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        await dbClient.from('task_progress').upsert({student_id:studentId, week:WEEK, day:DAY, task_number:taskNum, status:'completed', time_completed:new Date().toISOString(), time_spent_seconds:Math.round((Date.now()-taskStartTime)/1000)}, {onConflict:'student_id,week,day,task_number'});
+    } catch(e) { console.error('Progress save error:', e); }
+}
+
+async function finishDay() {
+    document.getElementById('task7').classList.remove('active');
+    document.getElementById('completion-screen').style.display = 'block';
+    document.getElementById('completion-screen').scrollIntoView({behavior:'smooth'});
+    localStorage.removeItem(`w${WEEK}d${DAY}_answers`);
+    for (let i = 1; i <= TOTAL_TASKS; i++) await saveTaskProgress(i);
+    if (studentId && studentId !== 'teacher-preview') await dbClient.from('student_resume').delete().eq('student_id', studentId);
+    makeReadOnly();
+}
+
+function reviewTask(num) {
+    document.getElementById('completion-screen').style.display = 'none';
+    currentTask = num;
+    document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active'));
+    document.getElementById('task' + num).classList.add('active');
+    document.getElementById('task' + num).scrollIntoView({behavior:'smooth', block:'start'});
+    const existing = document.getElementById('back-to-results');
+    if (!existing) {
+        const btn = document.createElement('button');
+        btn.id = 'back-to-results';
+        btn.textContent = '🏆 Back to Results';
+        btn.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#667eea;color:white;border:none;padding:12px 22px;border-radius:50px;cursor:pointer;font-weight:bold;font-size:0.95rem;box-shadow:0 4px 15px rgba(102,126,234,0.4);z-index:9998;';
+        btn.onclick = () => { btn.remove(); document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active')); document.getElementById('completion-screen').style.display = 'block'; document.getElementById('completion-screen').scrollIntoView({behavior:'smooth'}); };
+        document.body.appendChild(btn);
+    }
+}
+
+function toggleVocab() { document.getElementById('vocab-body').classList.toggle('open'); document.getElementById('vocab-arrow').classList.toggle('open'); }
+function toggleAnswers(id) {
+    const div = document.getElementById(id);
+    const btn = div.previousElementSibling;
+    div.style.display = div.style.display === 'block' ? 'none' : 'block';
+    btn.textContent = div.style.display === 'block' ? '▲ Hide Answers' : '▼ Show Answers';
+}
+</script>
+</body>
+</html>
