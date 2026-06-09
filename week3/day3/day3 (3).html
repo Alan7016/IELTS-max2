@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEEK 3 - DAY 3 (Technology)</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f4ff; color: #333; }
+        #splash-screen { position: fixed; inset: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; color: white; text-align: center; padding: 20px; }
+        #splash-screen h1 { font-size: 3rem; margin-bottom: 10px; }
+        #splash-screen h2 { font-size: 2rem; margin-bottom: 10px; opacity: 0.9; }
+        #splash-screen p { font-size: 1.2rem; margin-bottom: 40px; opacity: 0.8; }
+        .splash-btn { background: white; color: #667eea; border: none; padding: 18px 60px; font-size: 1.4rem; font-weight: bold; border-radius: 50px; cursor: pointer; box-shadow: 0 8px 25px rgba(0,0,0,0.2); transition: all 0.3s; }
+        .splash-btn:hover { transform: translateY(-3px); box-shadow: 0 12px 35px rgba(0,0,0,0.3); }
+        .main-container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        .day-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px 30px; border-radius: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; }
+        .day-header h1 { font-size: 1.6rem; }
+        .day-header .topic { opacity: 0.85; font-size: 1rem; margin-top: 4px; }
+        .back-btn { background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; text-decoration: none; font-size: 0.9rem; transition: all 0.3s; }
+        .back-btn:hover { background: white; color: #667eea; }
+        .vocab-section { background: white; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-left: 5px solid #667eea; overflow: hidden; }
+        .vocab-toggle { width: 100%; background: none; border: none; cursor: pointer; padding: 18px 25px; display: flex; align-items: center; justify-content: space-between; text-align: left; }
+        .vocab-toggle:hover { background: #f0f0ff; }
+        .vocab-toggle-left { display: flex; align-items: center; gap: 10px; }
+        .vocab-toggle h3 { color: #667eea; font-size: 1.1rem; margin: 0; }
+        .vocab-count { background: #667eea; color: white; font-size: 0.75rem; font-weight: bold; padding: 3px 10px; border-radius: 20px; }
+        .vocab-arrow { color: #667eea; font-size: 1rem; transition: transform 0.3s; }
+        .vocab-arrow.open { transform: rotate(180deg); }
+        .vocab-body { display: none; padding: 0 25px 20px; }
+        .vocab-body.open { display: block; }
+        .vocab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+        .vocab-item { background: #f0f0ff; padding: 10px 14px; border-radius: 8px; }
+        .vocab-word { font-weight: bold; color: #333; font-size: 0.95rem; }
+        .vocab-definition { color: #666; font-size: 0.82rem; margin-top: 2px; }
+        .progress-label { text-align: center; color: #667eea; font-size: 0.85rem; margin-bottom: 8px; font-weight: 600; }
+        .progress-bar-wrap { background: #e0e8ff; border-radius: 20px; height: 10px; margin-bottom: 20px; overflow: hidden; }
+        .progress-bar-fill { background: linear-gradient(90deg, #667eea, #764ba2); height: 100%; border-radius: 20px; transition: width 0.5s ease; }
+        .task-card { background: white; border-radius: 15px; padding: 28px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); display: none; }
+        .task-card.active { display: block; }
+        .task-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .task-number { background: linear-gradient(135deg, #667eea, #764ba2); color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; flex-shrink: 0; }
+        .task-title { font-size: 1.3rem; font-weight: bold; color: #333; }
+        .task-subtitle { color: #888; font-size: 0.9rem; margin-top: 2px; }
+        .pdf-links { display: flex; flex-direction: column; gap: 12px; margin: 15px 0; }
+        .pdf-link { display: flex; align-items: center; gap: 12px; background: #f0f0ff; padding: 15px 20px; border-radius: 10px; text-decoration: none; color: #333; font-weight: 600; border: 2px solid #c5ceff; transition: all 0.3s; }
+        .pdf-link:hover { background: #667eea; color: white; border-color: #667eea; transform: translateX(5px); }
+        .pdf-icon { font-size: 1.5rem; }
+        .html-link-btn { display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 15px 30px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 1rem; transition: all 0.3s; margin: 10px 0; }
+        .html-link-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(102,126,234,0.4); }
+        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; margin: 15px 0; }
+        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .video-fallback { background: #f0f0ff; padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align: center; }
+        .video-fallback a { color: #667eea; font-weight: bold; }
+        .audio-player { background: #f0f0ff; border: 2px solid #c5ceff; border-radius: 12px; padding: 20px; margin: 15px 0; }
+        .audio-player p { color: #555; margin-bottom: 10px; font-weight: 600; }
+        .audio-player audio { width: 100%; }
+        .passage-text { background: #fafbff; border: 1px solid #c5ceff; border-radius: 10px; padding: 25px; margin: 15px 0; line-height: 1.8; font-size: 0.97rem; color: #333; }
+        .passage-text h3 { color: #667eea; margin-bottom: 15px; font-size: 1.2rem; }
+        .passage-text p { margin-bottom: 14px; }
+        .highlight { font-style: italic; color: #764ba2; font-weight: 600; }
+        .question-block { margin-bottom: 20px; padding: 18px; background: #f8f9fa; border-radius: 10px; }
+        .question-text { font-weight: 600; margin-bottom: 12px; color: #333; line-height: 1.5; }
+        .options label { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: background 0.2s; margin-bottom: 5px; }
+        .options label:hover { background: #e8eaff; }
+        .options input[type="radio"] { margin-top: 3px; flex-shrink: 0; }
+        .answer-feedback { margin-top: 8px; font-weight: bold; font-size: 0.9rem; }
+        .answer-feedback.correct { color: #28a745; }
+        .answer-feedback.incorrect { color: #dc3545; }
+        .gap-fill-section { margin-top: 20px; }
+        .gap-sentence { margin-bottom: 14px; line-height: 2; font-size: 1rem; }
+        .gap-input { border: none; border-bottom: 2px solid #667eea; padding: 4px 8px; font-size: 0.95rem; width: 200px; background: transparent; outline: none; color: #333; }
+        .gap-input.correct { border-bottom-color: #28a745; background: #d4edda33; }
+        .gap-input.incorrect { border-bottom-color: #dc3545; background: #f8d7da33; }
+        .word-box { background: #f0f0ff; border: 2px solid #c5ceff; border-radius: 10px; padding: 12px 18px; margin-bottom: 15px; }
+        .word-box strong { color: #667eea; }
+        .matching-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .matching-table th { background: #667eea; color: white; padding: 10px 14px; text-align: left; }
+        .matching-table td { padding: 10px 14px; border-bottom: 1px solid #eee; }
+        .matching-table tr:nth-child(even) td { background: #f0f0ff; }
+        .match-select { border: 2px solid #c5ceff; border-radius: 6px; padding: 5px 8px; font-size: 0.88rem; background: white; width: 100%; max-width: 380px; }
+        .match-select.correct { border-color: #28a745; }
+        .match-select.incorrect { border-color: #dc3545; }
+        .notes-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        .notes-table th { background: #667eea; color: white; padding: 10px 14px; text-align: left; }
+        .notes-table td { padding: 12px 14px; border-bottom: 1px solid #eee; vertical-align: top; line-height: 1.8; }
+        .notes-table tr:nth-child(even) td { background: #f0f0ff; }
+        .discussion-box { background: #f0f0ff; border: 2px solid #c5ceff; border-radius: 12px; padding: 20px; margin: 20px 0; }
+        .discussion-box h4 { color: #667eea; margin-bottom: 12px; }
+        .discussion-box ol { padding-left: 20px; }
+        .discussion-box li { margin-bottom: 8px; color: #555; line-height: 1.6; }
+        .btn-row { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+        .check-btn { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .check-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(102,126,234,0.4); }
+        .check-btn:disabled { background: #ccc; cursor: not-allowed; transform: none !important; box-shadow: none; }
+        .next-btn { background: #28a745; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .next-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .next-btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(40,167,69,0.4); }
+        .prev-btn { background: #6c757d; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .prev-btn:hover { background: #5a6268; }
+        .show-answers-btn { background: #ffc107; color: #333; border: none; padding: 10px 22px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.88rem; display: none; }
+        .show-answers-btn:hover { background: #e0a800; }
+        .answers-panel { display: none; background: #fffbea; border: 2px solid #ffc107; border-radius: 10px; padding: 15px; margin-top: 12px; }
+        .answers-panel p { margin-bottom: 6px; font-size: 0.9rem; }
+        .completion-screen { text-align: center; padding: 60px 20px; display: none; }
+        .completion-screen .icon { font-size: 5rem; margin-bottom: 20px; }
+        .completion-screen h2 { font-size: 2.2rem; color: #667eea; margin-bottom: 10px; }
+        .completion-screen p { color: #666; font-size: 1rem; margin-bottom: 30px; }
+        .dashboard-btn { background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 16px 40px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 1.1rem; display: inline-block; transition: all 0.3s; }
+        .dashboard-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(102,126,234,0.4); }
+        .save-indicator { position: fixed; bottom: 20px; right: 20px; background: #667eea; color: white; padding: 10px 18px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; opacity: 0; transition: opacity 0.4s; z-index: 9000; pointer-events: none; }
+        .save-indicator.show { opacity: 1; }
+    </style>
+</head>
+<body>
+
+<div id="splash-screen">
+    <h1>💻 WEEK 3</h1>
+    <h2>DAY 3</h2>
+    <p>Topic: Technology</p>
+    <button class="splash-btn" onclick="startDay()">LET'S GO!</button>
+</div>
+
+<div class="save-indicator" id="saveIndicator">✓ Progress saved</div>
+
+<div class="main-container" id="main-content" style="display:none;">
+    <div class="day-header">
+        <div>
+            <h1>💻 Week 3 — Day 3</h1>
+            <div class="topic">Topic: Technology</div>
+        </div>
+        <a href="/student-dashboard.html" class="back-btn">← Dashboard</a>
+    </div>
+
+    <div class="progress-label" id="progress-label">Task 0 of 7</div>
+    <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progress-bar" style="width:0%"></div>
+    </div>
+
+    <!-- VOCAB -->
+    <div class="vocab-section">
+        <button class="vocab-toggle" onclick="toggleVocab()">
+            <div class="vocab-toggle-left">
+                <h3>📖 Today's Vocabulary</h3>
+                <span class="vocab-count">50 words</span>
+            </div>
+            <span class="vocab-arrow" id="vocab-arrow">▼</span>
+        </button>
+        <div class="vocab-body" id="vocab-body">
+            <div class="vocab-grid" id="vocab-grid"></div>
+        </div>
+    </div>
+
+    <!-- ══ TASK 1 — Reading ══ -->
+    <div class="task-card active" id="task1">
+        <div class="task-header">
+            <div class="task-number">1</div>
+            <div>
+                <div class="task-title">Reading Comprehension</div>
+                <div class="task-subtitle">Read the passage then complete both parts below</div>
+            </div>
+        </div>
+        <div class="passage-text">
+            <h3>Technological Advances: Benefits and Challenges</h3>
+            <p>Advances in technology have done much to change the way we live and communicate, but no breakthrough revolutionised life as much as the advent of wireless technology, according to a panel of experts assembled by CNN in 2010. Back in 1980, when it came to communication technology, telephones were stuck to walls, facts were found in books, and people had to browse shelves in a record store if they wanted to buy the latest music. However, developments that occurred at the start of the twenty-first century meant we could access all that information just by reaching into our pockets for our mobile phone. From the very beginning of the Information Age, having immediate access to data was fundamental to progress. In some cases, technological advances served to overhaul industries at a lightning-fast pace. For example, the internet helped tech-savvy music lovers to force changes in the way the music industry did business, while text messaging over cellphones made written communication more immediate.</p>
+            <p>We embraced information technology to such an extent that having computer access in our homes was not quite enough. We wanted to use these tools everywhere. Wireless hot spots popped up in cafés, airports, universities – even whole city blocks. And just as computer use worldwide exploded, the brains behind them – the processors – became increasingly smaller. A computer chip that you could balance on your fingertip could hold massive amounts of data. This ability to store tons of information in cellphones or digital cameras allowed us to keep computer technology portable. The entertainment industry harnessed satellite technology to give consumers more choice, and video game technology developed to the point where it became a $10 billion a year industry, producing games that invite players into a virtual world of fantasy, sport and even war.</p>
+            <p>However, there was a downside. This cutting-edge, more sophisticated technology brought with it a whole new set of problems. When the Information Age dawned, the World Wide Web seemed like a paradise. However, within a relatively short space of time, we were mired in problems caused by things like online scams and viruses – traps aimed at crashing our computers and even stealing our identity.</p>
+        </div>
+
+        <h4 style="color:#667eea; margin:20px 0 10px;">Part 1 — Note the advantages and disadvantage:</h4>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:20px;">
+            <div style="background:#f0f0ff; border-radius:10px; padding:15px;">
+                <h5 style="color:#667eea; margin-bottom:10px;">✅ Advantages (find 6):</h5>
+                <div class="gap-fill-section">
+                    <div class="gap-sentence"><input class="gap-input" id="t1a1" placeholder="1. ___" style="width:100%;"></div>
+                    <div class="gap-sentence"><input class="gap-input" id="t1a2" placeholder="2. ___" style="width:100%;"></div>
+                    <div class="gap-sentence"><input class="gap-input" id="t1a3" placeholder="3. ___" style="width:100%;"></div>
+                    <div class="gap-sentence"><input class="gap-input" id="t1a4" placeholder="4. ___" style="width:100%;"></div>
+                    <div class="gap-sentence"><input class="gap-input" id="t1a5" placeholder="5. ___" style="width:100%;"></div>
+                    <div class="gap-sentence"><input class="gap-input" id="t1a6" placeholder="6. ___" style="width:100%;"></div>
+                </div>
+            </div>
+            <div style="background:#fff0f0; border-radius:10px; padding:15px;">
+                <h5 style="color:#dc3545; margin-bottom:10px;">❌ Disadvantage (find 1):</h5>
+                <div class="gap-fill-section">
+                    <div class="gap-sentence"><input class="gap-input" id="t1d1" placeholder="1. ___" style="width:100%; border-bottom-color:#dc3545;"></div>
+                </div>
+            </div>
+        </div>
+
+        <h4 style="color:#667eea; margin:20px 0 10px;">Part 2 — Answer the questions (NO MORE THAN THREE WORDS):</h4>
+        <div class="gap-fill-section">
+            <div class="gap-sentence">1. What term refers to the era we live in now?<br><input class="gap-input" id="t1q1" placeholder="___" style="width:260px; margin-top:8px;"></div>
+            <div class="gap-sentence">2. What is the name for areas where anyone can access the internet?<br><input class="gap-input" id="t1q2" placeholder="___" style="width:260px; margin-top:8px;"></div>
+            <div class="gap-sentence">3. What adjective describes a game experience that is close to real?<br><input class="gap-input" id="t1q3" placeholder="___" style="width:260px; margin-top:8px;"></div>
+            <div class="gap-sentence">4. Name one hazard associated with the internet.<br><input class="gap-input" id="t1q4" placeholder="___" style="width:260px; margin-top:8px;"></div>
+        </div>
+
+        <div class="btn-row">
+            <button class="check-btn" id="check1" onclick="checkTask1()" disabled>Check Answers</button>
+            <button class="next-btn" id="next1" disabled onclick="goToTask(2)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns1" onclick="toggleAnswers('ans1')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans1">
+            <p><strong>Advantages:</strong> can access information more easily/quickly, can access music more easily, written communication is more immediate, can access internet almost anywhere, more choice in entertainment, more realistic video games</p>
+            <p><strong>Disadvantage:</strong> online scams and viruses</p>
+            <p><strong>Part 2:</strong> 1-(the) Information Age, 2-wireless hot spots, 3-virtual, 4-(online) scams / (online) viruses</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 2 — PDFs ══ -->
+    <div class="task-card" id="task2">
+        <div class="task-header">
+            <div class="task-number">2</div>
+            <div>
+                <div class="task-title">Article Reading</div>
+                <div class="task-subtitle">Read the article and study the vocabulary</div>
+            </div>
+        </div>
+        <div class="pdf-links">
+            <a class="pdf-link" href="social_media_politics_article.pdf" target="_blank"><span class="pdf-icon">📄</span> Social Media & Politics — Article</a>
+            <a class="pdf-link" href="social_media_politics_worksheet.pdf" target="_blank"><span class="pdf-icon">📘</span> Social Media & Politics — Worksheet</a>
+            <a class="pdf-link" href="social_media_politics_answers.pdf" target="_blank"><span class="pdf-icon">📋</span> Social Media & Politics — Answers</a>
+        </div>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(1)">← Previous</button>
+            <button class="next-btn" onclick="goToTask(3)">Next Task →</button>
+        </div>
+    </div>
+
+    <!-- ══ TASK 3 — Practice Reading ══ -->
+    <div class="task-card" id="task3">
+        <div class="task-header">
+            <div class="task-number">3</div>
+            <div>
+                <div class="task-title">Practice Reading</div>
+                <div class="task-subtitle">IELTS-style reading test</div>
+            </div>
+        </div>
+        <a class="html-link-btn" href="Reading (7).html" target="_blank">📖 Open Practice Reading</a>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(2)">← Previous</button>
+            <button class="next-btn" onclick="goToTask(4)">Next Task →</button>
+        </div>
+    </div>
+
+    <!-- ══ TASK 4 — Mini Listening ══ -->
+    <div class="task-card" id="task4">
+        <div class="task-header">
+            <div class="task-number">4</div>
+            <div>
+                <div class="task-title">Listening Mini Task</div>
+                <div class="task-subtitle">Listen to a talk about Leonardo da Vinci — ONE WORD ONLY</div>
+            </div>
+        </div>
+        <div class="audio-player">
+            <p>🎧 Track 21 — Leonardo da Vinci</p>
+            <audio controls src="track21.mp3"></audio>
+        </div>
+        <p style="color:#555; margin-bottom:15px; font-weight:600;">Complete the notes. Write NO MORE THAN ONE WORD for each answer.</p>
+        <table class="notes-table">
+            <thead><tr><th colspan="2">Notes on Leonardo da Vinci</th></tr></thead>
+            <tbody>
+                <tr><td colspan="2" style="background:#667eea; color:white; font-weight:bold; padding:8px 14px;">Introduction</td></tr>
+                <tr><td style="width:60%;">• he was an artist, scientist, engineer and inventor</td><td></td></tr>
+                <tr><td>• his inventions could not be built in his day due to expense and a lack of the necessary <input class="gap-input" id="t4g1" placeholder="1 ___" style="width:160px;"></td><td></td></tr>
+                <tr><td>• examples of his futuristic inventions: the helicopter, obtaining energy from the sun, the <input class="gap-input" id="t4g2" placeholder="2 ___" style="width:150px;"></td><td></td></tr>
+                <tr><td colspan="2" style="background:#667eea; color:white; font-weight:bold; padding:8px 14px;">His legacy</td></tr>
+                <tr><td>• he kept journals containing his notes and <input class="gap-input" id="t4g3" placeholder="3 ___" style="width:160px;"></td><td></td></tr>
+                <tr><td>• he built <input class="gap-input" id="t4g4" placeholder="4 ___" style="width:130px;"> to show how a technique would work (e.g. the use of a <input class="gap-input" id="t4g5" placeholder="5 ___" style="width:130px;"> to make movement from one area to another possible)</td><td></td></tr>
+                <tr><td colspan="2" style="background:#667eea; color:white; font-weight:bold; padding:8px 14px;">Mechanics</td></tr>
+                <tr><td>• he showed how heavy weights can be lifted and how a <input class="gap-input" id="t4g6" placeholder="6 ___" style="width:130px;"> could be used in deep water</td><td></td></tr>
+                <tr><td colspan="2" style="background:#667eea; color:white; font-weight:bold; padding:8px 14px;">Inventions</td></tr>
+                <tr><td>• he worked in a time before <input class="gap-input" id="t4g7" placeholder="7 ___" style="width:130px;"> so we do not know how many of his inventions were made and used</td><td></td></tr>
+                <tr><td>• some of his inventions are still used today: a type of <input class="gap-input" id="t4g8" placeholder="8 ___" style="width:130px;">, a wire testing machine and <input class="gap-input" id="t4g9" placeholder="9 ___" style="width:130px;"></td><td></td></tr>
+                <tr><td colspan="2" style="background:#667eea; color:white; font-weight:bold; padding:8px 14px;">War machines</td></tr>
+                <tr><td>• if made, Leonardo's tank could have moved in a circle but would not have moved <input class="gap-input" id="t4g10" placeholder="10 ___" style="width:130px;"></td><td></td></tr>
+            </tbody>
+        </table>
+
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(3)">← Previous</button>
+            <button class="check-btn" id="check4" onclick="checkTask4()" disabled>Check Answers</button>
+            <button class="next-btn" id="next4" disabled onclick="goToTask(5)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns4" onclick="toggleAnswers('ans4')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans4">
+            <p><strong>Answers:</strong> 1-material(s), 2-calculator, 3-diagrams/drawings, 4-models, 5-tunnel, 6-pump, 7-patents, 8-bridge, 9-scissors, 10-forwards</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 5 — Video ══ -->
+    <div class="task-card" id="task5">
+        <div class="task-header">
+            <div class="task-number">5</div>
+            <div>
+                <div class="task-title">Video Watching Task</div>
+                <div class="task-subtitle">Watch and answer questions</div>
+            </div>
+        </div>
+        <div class="video-fallback">
+            <p>▶ <a href="https://www.youtube.com/watch?v=ij_xXZAhJPs" target="_blank">Click here to open the video in a new tab</a> if it doesn't play below.</p>
+        </div>
+        <div class="video-container">
+            <iframe src="https://www.youtube.com/embed/ij_xXZAhJPs" frameborder="0" allowfullscreen></iframe>
+        </div>
+
+        <h4 style="color:#667eea; margin:20px 0 12px;">Part 1 — Multiple Choice Questions</h4>
+        <div class="question-block">
+            <div class="question-text">1. Why did one speaker stop using social media?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q1" value="A"> A. They moved to another country</label>
+                <label><input type="radio" name="t5q1" value="B"> B. Their phone stopped working</label>
+                <label><input type="radio" name="t5q1" value="C"> C. A break-up encouraged them to remove someone from their life</label>
+                <label><input type="radio" name="t5q1" value="D"> D. They wanted to save money</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q1"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">2. What positive change did the speaker notice after quitting social media?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q2" value="A"> A. They started sleeping all day</label>
+                <label><input type="radio" name="t5q2" value="B"> B. They paid more attention to the people around them</label>
+                <label><input type="radio" name="t5q2" value="C"> C. They became famous</label>
+                <label><input type="radio" name="t5q2" value="D"> D. They stopped using public transport</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q2"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">3. According to the video, why is social media difficult to quit?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q3" value="A"> A. It is required by law</label>
+                <label><input type="radio" name="t5q3" value="B"> B. It is designed to be addictive</label>
+                <label><input type="radio" name="t5q3" value="C"> C. It improves memory</label>
+                <label><input type="radio" name="t5q3" value="D"> D. It replaces real-life communication</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q3"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">4. What does the speaker mean by "take control of these machines"?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q4" value="A"> A. Destroy all technology</label>
+                <label><input type="radio" name="t5q4" value="B"> B. Stop using computers completely</label>
+                <label><input type="radio" name="t5q4" value="C"> C. Use technology intentionally rather than letting it control us</label>
+                <label><input type="radio" name="t5q4" value="D"> D. Learn computer programming</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q4"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">5. What negative effect can social media have on people's perceptions?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q5" value="A"> A. It makes them forget their passwords</label>
+                <label><input type="radio" name="t5q5" value="B"> B. It convinces them that other people's lives are more exciting than their own</label>
+                <label><input type="radio" name="t5q5" value="C"> C. It improves their concentration</label>
+                <label><input type="radio" name="t5q5" value="D"> D. It increases their income</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q5"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">6. Why does one speaker prefer face-to-face conversations?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q6" value="A"> A. They dislike speaking English online</label>
+                <label><input type="radio" name="t5q6" value="B"> B. They can immediately receive feedback and provide context</label>
+                <label><input type="radio" name="t5q6" value="C"> C. They don't own a smartphone</label>
+                <label><input type="radio" name="t5q6" value="D"> D. They find conversations easier to record</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q6"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">7. According to the video, what is the real purpose of many social media platforms?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q7" value="A"> A. Education only</label>
+                <label><input type="radio" name="t5q7" value="B"> B. Scientific research</label>
+                <label><input type="radio" name="t5q7" value="C"> C. Advertising and capturing attention</label>
+                <label><input type="radio" name="t5q7" value="D"> D. Improving friendships</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q7"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">8. Why do social media platforms often use clickbait and sensational content?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q8" value="A"> A. To improve academic knowledge</label>
+                <label><input type="radio" name="t5q8" value="B"> B. To attract and hold users' attention</label>
+                <label><input type="radio" name="t5q8" value="C"> C. To reduce internet traffic</label>
+                <label><input type="radio" name="t5q8" value="D"> D. To help people relax</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q8"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">9. What does the speaker compare many people on buses to?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q9" value="A"> A. Robots</label>
+                <label><input type="radio" name="t5q9" value="B"> B. Athletes</label>
+                <label><input type="radio" name="t5q9" value="C"> C. Zombies</label>
+                <label><input type="radio" name="t5q9" value="D"> D. Tourists</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q9"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">10. According to the final speaker, which activities tend to be the most fulfilling?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q10" value="A"> A. Activities that provide instant pleasure only</label>
+                <label><input type="radio" name="t5q10" value="B"> B. Activities that require effort and long-term commitment</label>
+                <label><input type="radio" name="t5q10" value="C"> C. Activities involving social media</label>
+                <label><input type="radio" name="t5q10" value="D"> D. Activities that cost a lot of money</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q10"></div>
+        </div>
+
+        <h4 style="color:#667eea; margin:20px 0 12px;">Part 2 — Gap Filling</h4>
+        <div class="word-box">
+            <strong>Word Box:</strong> attention &nbsp;|&nbsp; addictive &nbsp;|&nbsp; outrage &nbsp;|&nbsp; context &nbsp;|&nbsp; fulfilling &nbsp;|&nbsp; impulsive &nbsp;|&nbsp; satisfaction
+        </div>
+        <div class="gap-fill-section">
+            <div class="gap-sentence">11. The video suggests that social media platforms are designed to capture our <input class="gap-input" id="t5g11" placeholder="___">.</div>
+            <div class="gap-sentence">12. Many online behaviours become difficult to stop because they are highly <input class="gap-input" id="t5g12" placeholder="___">.</div>
+            <div class="gap-sentence">13. Clickbait headlines often appeal to emotions such as anger and <input class="gap-input" id="t5g13" placeholder="___">.</div>
+            <div class="gap-sentence">14. One speaker prefers face-to-face communication because they can provide additional <input class="gap-input" id="t5g14" placeholder="___"> to their stories.</div>
+            <div class="gap-sentence">15. Activities that require time and effort often provide deeper <input class="gap-input" id="t5g15" placeholder="___"> than instant pleasures.</div>
+        </div>
+
+        <h4 style="color:#667eea; margin:20px 0 12px;">Part 3 — Vocabulary Matching</h4>
+        <p style="color:#666; font-size:0.88rem; margin-bottom:12px;">Match each word with the correct definition.</p>
+        <table class="matching-table">
+            <thead><tr><th>#</th><th>Word</th><th>Definition</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td><strong>addictive</strong></td><td><select class="match-select" id="t5m1"><option value="">— select —</option><option value="A">A. desire to know about other people's lives</option><option value="B">B. likely to create a habit that is difficult to stop</option><option value="C">C. carefully watch or notice something</option><option value="D">D. done with full awareness and intention</option><option value="E">E. a small but important difference in meaning</option><option value="F">F. strong anger or shock</option><option value="G">G. acting without careful thought</option><option value="H">H. a person who gives professional advice</option><option value="I">I. helping someone achieve their full potential</option><option value="J">J. content designed to attract clicks and attention</option></select></td></tr>
+                <tr><td>2</td><td><strong>observe</strong></td><td><select class="match-select" id="t5m2"><option value="">— select —</option><option value="A">A. desire to know about other people's lives</option><option value="B">B. likely to create a habit that is difficult to stop</option><option value="C">C. carefully watch or notice something</option><option value="D">D. done with full awareness and intention</option><option value="E">E. a small but important difference in meaning</option><option value="F">F. strong anger or shock</option><option value="G">G. acting without careful thought</option><option value="H">H. a person who gives professional advice</option><option value="I">I. helping someone achieve their full potential</option><option value="J">J. content designed to attract clicks and attention</option></select></td></tr>
+                <tr><td>3</td><td><strong>consciously</strong></td><td><select class="match-select" id="t5m3"><option value="">— select —</option><option value="A">A. desire to know about other people's lives</option><option value="B">B. likely to create a habit that is difficult to stop</option><option value="C">C. carefully watch or notice something</option><option value="D">D. done with full awareness and intention</option><option value="E">E. a small but important difference in meaning</option><option value="F">F. strong anger or shock</option><option value="G">G. acting without careful thought</option><option value="H">H. a person who gives professional advice</option><option value="I">I. helping someone achieve their full potential</option><option value="J">J. content designed to attract clicks and attention</option></select></td></tr>
+                <tr><td>4</td><td><strong>nuance</strong></td><td><select class="match-select" id="t5m4"><option value="">— select —</option><option value="A">A. desire to know about other people's lives</option><option value="B">B. likely to create a habit that is difficult to stop</option><option value="C">C. carefully watch or notice something</option><option value="D">D. done with full awareness and intention</option><option value="E">E. a small but important difference in meaning</option><option value="F">F. strong anger or shock</option><option value="G">G. acting without careful thought</option><option value="H">H. a person who gives professional advice</option><option value="I">I. helping someone achieve their full potential</option><option value="J">J. content designed to attract clicks and attention</option></select></td></tr>
+                <tr><td>5</td><td><strong>clickbait</strong></td><td><select class="match-select" id="t5m5"><option value="">— select —</option><option value="A">A. desire to know about other people's lives</option><option value="B">B. likely to create a habit that is difficult to stop</option><option value="C">C. carefully watch or notice something</option><option value="D">D. done with full awareness and intention</option><option value="E">E. a small but important difference in meaning</option><option value="F">F. strong anger or shock</option><option value="G">G. acting without careful thought</option><option value="H">H. a person who gives professional advice</option><option value="I">I. helping someone achieve their full potential</option><option value="J">J. content designed to attract clicks and attention</option></select></td></tr>
+                <tr><td>6</td><td><strong>outrage</strong></td><td><select class="match-select" id="t5m6"><option value="">— select —</option><option value="A">A. desire to know about other people's lives</option><option value="B">B. likely to create a habit that is difficult to stop</option><option value="C">C. carefully watch or notice something</option><option value="D">D. done with full awareness and intention</option><option value="E">E. a small but important difference in meaning</option><option value="F">F. strong anger or shock</option><option value="G">G. acting without careful thought</option><option value="H">H. a person who gives professional advice</option><option value="I">I. helping someone achieve their full potential</option><option value="J">J. content designed to attract clicks and attention</option></select></td></tr>
+                <tr><td>7</td><td><strong>impulsive</strong></td><td><select class="match-select" id="t5m7"><option value="">— select —</option><option value="A">A. desire to know about other people's lives</option><option value="B">B. likely to create a habit that is difficult to stop</option><option value="C">C. carefully watch or notice something</option><option value="D">D. done with full awareness and intention</option><option value="E">E. a small but important difference in meaning</option><option value="F">F. strong anger or shock</option><option value="G">G. acting without careful thought</option><option value="H">H. a person who gives professional advice</option><option value="I">I. helping someone achieve their full potential</option><option value="J">J. content designed to attract clicks and attention</option></select></td></tr>
+                <tr><td>8</td><td><strong>consultant</strong></td><td><select class="match-select" id="t5m8"><option value="">— select —</option><option value="A">A. desire to know about other people's lives</option><option value="B">B. likely to create a habit that is difficult to stop</option><option value="C">C. carefully watch or notice something</option><option value="D">D. done with full awareness and intention</option><option value="E">E. a small but important difference in meaning</option><option value="F">F. strong anger or shock</option><option value="G">G. acting without careful thought</option><option value="H">H. a person who gives professional advice</option><option value="I">I. helping someone achieve their full potential</option><option value="J">J. content designed to attract clicks and attention</option></select></td></tr>
+                <tr><td>9</td><td><strong>self-actualizing</strong></td><td><select class="match-select" id="t5m9"><option value="">— select —</option><option value="A">A. desire to know about other people's lives</option><option value="B">B. likely to create a habit that is difficult to stop</option><option value="C">C. carefully watch or notice something</option><option value="D">D. done with full awareness and intention</option><option value="E">E. a small but important difference in meaning</option><option value="F">F. strong anger or shock</option><option value="G">G. acting without careful thought</option><option value="H">H. a person who gives professional advice</option><option value="I">I. helping someone achieve their full potential</option><option value="J">J. content designed to attract clicks and attention</option></select></td></tr>
+                <tr><td>10</td><td><strong>nosy</strong></td><td><select class="match-select" id="t5m10"><option value="">— select —</option><option value="A">A. desire to know about other people's lives</option><option value="B">B. likely to create a habit that is difficult to stop</option><option value="C">C. carefully watch or notice something</option><option value="D">D. done with full awareness and intention</option><option value="E">E. a small but important difference in meaning</option><option value="F">F. strong anger or shock</option><option value="G">G. acting without careful thought</option><option value="H">H. a person who gives professional advice</option><option value="I">I. helping someone achieve their full potential</option><option value="J">J. content designed to attract clicks and attention</option></select></td></tr>
+            </tbody>
+        </table>
+
+        <h4 style="color:#667eea; margin:20px 0 12px;">💬 Discussion Questions</h4>
+        <div class="discussion-box">
+            <h4>Talk about these questions with your class:</h4>
+            <ol>
+                <li>How much time do you spend on social media every day?</li>
+                <li>Have you ever taken a social media break? Why / Why not?</li>
+                <li>Do you think social media does more harm than good?</li>
+                <li>Why do people often compare their lives with others online?</li>
+                <li>What hobbies give long-term satisfaction rather than instant pleasure?</li>
+                <li>Should social media companies be responsible for reducing addiction among users?</li>
+                <li>Would you be willing to delete all social media for one month? What would be the biggest challenge?</li>
+                <li>Do you agree that social media companies are primarily advertising systems rather than social platforms? Why?</li>
+            </ol>
+        </div>
+
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(4)">← Previous</button>
+            <button class="check-btn" id="check5" onclick="checkTask5()" disabled>Check Answers</button>
+            <button class="next-btn" id="next5" disabled onclick="goToTask(6)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns5" onclick="toggleAnswers('ans5')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans5">
+            <p><strong>MCQ:</strong> 1-C, 2-B, 3-B, 4-C, 5-B, 6-B, 7-C, 8-B, 9-C, 10-B</p>
+            <p><strong>Gap Fill:</strong> 11-attention, 12-addictive, 13-outrage, 14-context, 15-satisfaction</p>
+            <p><strong>Matching:</strong> 1-B, 2-C, 3-D, 4-E, 5-J, 6-F, 7-G, 8-H, 9-I, 10-A</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 6 — Dictation ══ -->
+    <div class="task-card" id="task6">
+        <div class="task-header">
+            <div class="task-number">6</div>
+            <div>
+                <div class="task-title">Dictation Task</div>
+                <div class="task-subtitle">Listen and write ONE WORD ONLY in each gap</div>
+            </div>
+        </div>
+        <div class="audio-player">
+            <p>🎧 Social Media and Phone Etiquette — BBC Learning English</p>
+            <audio controls src="socialmediadist.mp3"></audio>
+        </div>
+        <div class="gap-fill-section" id="dictation-gaps"></div>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(5)">← Previous</button>
+            <button class="check-btn" id="check6" onclick="checkTask6()" disabled>Check Answers</button>
+            <button class="next-btn" id="next6" disabled onclick="goToTask(7)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns6" onclick="toggleAnswers('ans6')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans6">
+            <p>1-tweet, 2-lives, 3-phubbing, 4-behaviour, 5-society, 6-three, 7-alive, 8-attention, 9-annoy, 10-devices, 11-emotionally, 12-connected, 13-being, 14-bodies, 15-engage, 16-closeness, 17-ignore, 18-blends, 19-behaviour, 20-annoy, 21-works, 22-person, 23-closeness, 24-ignore, 25-soon</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 7 — Practice Listening ══ -->
+    <div class="task-card" id="task7">
+        <div class="task-header">
+            <div class="task-number">7</div>
+            <div>
+                <div class="task-title">Practice Listening</div>
+                <div class="task-subtitle">Full IELTS-style listening test</div>
+            </div>
+        </div>
+        <a class="html-link-btn" href="Listening (7).html" target="_blank">🎧 Open Practice Listening</a>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(6)">← Previous</button>
+            <button class="next-btn" onclick="finishDay()">Finish Day 3 ✓</button>
+        </div>
+    </div>
+
+    <!-- COMPLETION -->
+    <div class="completion-screen" id="completion-screen">
+        <div class="icon">🎉</div>
+        <h2>Day 3 Complete!</h2>
+        <p>Excellent work! You've completed all tasks for Week 3, Day 3.</p>
+        <div style="margin:30px 0; text-align:left;">
+            <h3 style="color:#667eea; border-bottom:2px solid #667eea; padding-bottom:10px; margin-bottom:15px;">📋 Review Your Work</h3>
+            <p style="color:#888; margin-bottom:20px; font-size:0.9rem;">Click any task below to go back and review it.</p>
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:15px;">
+                <div onclick="reviewTask(1)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#667eea;font-size:1.1rem;margin-bottom:5px;">Task 1</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Reading</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(2)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#667eea;font-size:1.1rem;margin-bottom:5px;">Task 2</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Article Reading</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(3)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#667eea;font-size:1.1rem;margin-bottom:5px;">Task 3</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Reading</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(4)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#667eea;font-size:1.1rem;margin-bottom:5px;">Task 4</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Listening Mini</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(5)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#667eea;font-size:1.1rem;margin-bottom:5px;">Task 5</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Video + Vocab</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(6)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#667eea;font-size:1.1rem;margin-bottom:5px;">Task 6</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Dictation</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(7)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#667eea;font-size:1.1rem;margin-bottom:5px;">Task 7</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Listening</div><div style="font-size:1.4rem;">✅</div></div>
+            </div>
+        </div>
+        <a href="/student-dashboard.html" class="dashboard-btn">← Back to Dashboard</a>
+    </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://nbfceuhuauizyucugejr.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_0mFIGJkA_DKZfUiDAWFdrA_nXt0hF6H';
+const dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const WEEK = 3, DAY = 3, TOTAL_TASKS = 7;
+let studentId = null, studentGroup = null, currentTask = 1;
+let taskStartTime = Date.now(), saveTimeout = null;
+
+const dictationAnswers = ['tweet','lives','phubbing','behaviour','society','three','alive','attention','annoy','devices','emotionally','connected','being','bodies','engage','closeness','ignore','blends','behaviour','annoy','works','person','closeness','ignore','soon'];
+
+const dictationScripts = [
+    "I just need to <input class='gap-input' id='d1' placeholder='(1)'> something and… done!",
+    "The subject of today's show is social media and its impact on our daily <input class='gap-input' id='d2' placeholder='(2)'>.",
+    "Which word describes a situation where you're talking to someone and they suddenly look down at their phone? c) <input class='gap-input' id='d3' placeholder='(3)'>?",
+    "Etiquette means rules of polite <input class='gap-input' id='d4' placeholder='(4)'> in society.",
+    "Social norms are the rules of behaviour considered acceptable in a group or <input class='gap-input' id='d5' placeholder='(5)'>.",
+    "what some of them called 'the rule of <input class='gap-input' id='d6' placeholder='(6)'>': you don't look down at your phone until you see that three people are looking up.",
+    "you don't look down unless three people are looking up to keep a little conversation <input class='gap-input' id='d7' placeholder='(7)'>.",
+    "I'm not going to carry on with the show unless you pay <input class='gap-input' id='d8' placeholder='(8)'>!",
+    "To wind someone up means to say or do something deliberately in order to <input class='gap-input' id='d9' placeholder='(9)'> someone.",
+    "They sat down and started chatting away – but they were tapping away at their <input class='gap-input' id='d10' placeholder='(10)'>.",
+    "If you have a connection with someone, you engage <input class='gap-input' id='d11' placeholder='(11)'>.",
+    "They were looking at the screen and talking about what they saw there. It was very intimate and they were very <input class='gap-input' id='d12' placeholder='(12)'>.",
+    "The neck muscles are tipped over to look down. We're getting a new kind of human <input class='gap-input' id='d13' placeholder='(13)'>.",
+    "Physiology means the way our <input class='gap-input' id='d14' placeholder='(14)'> work.",
+    "Interact means to <input class='gap-input' id='d15' placeholder='(15)'> with one another.",
+    "Intimacy means emotional <input class='gap-input' id='d16' placeholder='(16)'>.",
+    "Snub means to deliberately <input class='gap-input' id='d17' placeholder='(17)'> someone you know.",
+    "New words formed by putting together parts of existing words are known as <input class='gap-input' id='d18' placeholder='(18)'>.",
+    "We had etiquette – rules of polite <input class='gap-input' id='d19' placeholder='(19)'>.",
+    "To wind someone up means to deliberately <input class='gap-input' id='d20' placeholder='(20)'> them.",
+    "Physiology refers to the way the body <input class='gap-input' id='d21' placeholder='(21)'>.",
+    "Interact means to engage or communicate with another <input class='gap-input' id='d22' placeholder='(22)'>.",
+    "Intimacy means emotional <input class='gap-input' id='d23' placeholder='(23)'>.",
+    "to snub someone means to deliberately <input class='gap-input' id='d24' placeholder='(24)'> them.",
+    "Don't forget to connect with us again <input class='gap-input' id='d25' placeholder='(25)'>!",
+];
+
+const vocab = [
+    {word:"1. IoT (n)", def:"Internet of Things — connected everyday objects"},
+    {word:"2. Vulnerability (n)", def:"A weakness that can be exploited by attackers"},
+    {word:"3. Privacy (n)", def:"The right to keep personal information secret"},
+    {word:"4. Sensor (n)", def:"A device that detects changes in the environment"},
+    {word:"5. Efficiency (n)", def:"Doing something well with minimum waste"},
+    {word:"6. Infrastructure (n)", def:"Basic systems that support a society"},
+    {word:"7. Cybercriminal (n)", def:"Someone who commits crimes using computers"},
+    {word:"8. Wireless (adj)", def:"Using radio waves rather than physical cables"},
+    {word:"9. Information Age (n)", def:"The current era dominated by digital information"},
+    {word:"10. Wireless hot spot (n)", def:"An area where internet access is available"},
+    {word:"11. Virtual (adj)", def:"Existing in computers rather than physically"},
+    {word:"12. Online scam (n)", def:"A fraudulent scheme carried out over the internet"},
+    {word:"13. Virus (n)", def:"Malicious software designed to damage systems"},
+    {word:"14. Processor (n)", def:"The brain chip of a computer or smartphone"},
+    {word:"15. Portable (adj)", def:"Easy to carry and use in different locations"},
+    {word:"16. Satellite (n)", def:"An object orbiting Earth used for communication"},
+    {word:"17. Cutting-edge (adj)", def:"The most modern and advanced"},
+    {word:"18. Addictive (adj)", def:"Likely to create a habit difficult to stop"},
+    {word:"19. Observe (v)", def:"To carefully watch or notice something"},
+    {word:"20. Consciously (adv)", def:"Done with full awareness and intention"},
+    {word:"21. Nuance (n)", def:"A small but important difference in meaning"},
+    {word:"22. Clickbait (n)", def:"Content designed to attract clicks and attention"},
+    {word:"23. Outrage (n)", def:"Strong anger or shock"},
+    {word:"24. Impulsive (adj)", def:"Acting without careful thought"},
+    {word:"25. Consultant (n)", def:"A person who gives professional advice"},
+    {word:"26. Self-actualizing (adj)", def:"Helping someone achieve their full potential"},
+    {word:"27. Nosy (adj)", def:"Desiring to know about other people's lives"},
+    {word:"28. Etiquette (n)", def:"Rules of polite behaviour in society"},
+    {word:"29. Phubbing (n)", def:"Ignoring someone to look at your phone"},
+    {word:"30. Social norm (n)", def:"Rules of behaviour considered acceptable in a group"},
+    {word:"31. Physiology (n)", def:"The way the body works and functions"},
+    {word:"32. Intimacy (n)", def:"Emotional closeness between people"},
+    {word:"33. Interact (v)", def:"To engage or communicate with another person"},
+    {word:"34. Blend (n)", def:"A new word formed from parts of existing words"},
+    {word:"35. Snub (v)", def:"To deliberately ignore someone you know"},
+    {word:"36. Patent (n)", def:"An official right to make or sell an invention"},
+    {word:"37. Futuristic (adj)", def:"Having or involving very modern technology"},
+    {word:"38. Diagram (n)", def:"A drawing that explains how something works"},
+    {word:"39. Model (n)", def:"A small copy made to show how something looks"},
+    {word:"40. Mechanics (n)", def:"The way a machine or system works"},
+    {word:"41. Legacy (n)", def:"Something left behind by a person after their death"},
+    {word:"42. Digital detox (n)", def:"A period of time without using digital devices"},
+    {word:"43. Social media (n)", def:"Websites and apps for sharing content and networking"},
+    {word:"44. Fulfilling (adj)", def:"Making you feel happy and satisfied"},
+    {word:"45. Attention (n)", def:"Notice taken of someone or something"},
+    {word:"46. Context (n)", def:"Background information that helps understanding"},
+    {word:"47. Satisfaction (n)", def:"A feeling of pleasure from achieving something"},
+    {word:"48. Instant (adj)", def:"Happening immediately without delay"},
+    {word:"49. Commitment (n)", def:"Dedication to a cause or activity over time"},
+    {word:"50. Breakthrough (n)", def:"An important discovery or development"},
+];
+
+async function initStudent() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('teacher') === 'true') { studentId = 'teacher-preview'; studentGroup = 'preview'; return; }
+    try {
+        const userStr = localStorage.getItem('user');
+        if (!userStr) { window.location.href = '/login.html'; return; }
+        const user = JSON.parse(userStr);
+        const { data, error } = await dbClient.from('students').select('*').eq('username', user.username).single();
+        if (error || !data) return;
+        studentId = data.id; studentGroup = data.student_group;
+    } catch(e) { console.log('Auth error:', e); }
+}
+
+function buildVocab() {
+    document.getElementById('vocab-grid').innerHTML = vocab.map(v =>
+        `<div class="vocab-item"><div class="vocab-word">${v.word}</div><div class="vocab-definition">${v.def}</div></div>`).join('');
+}
+
+function buildDictation() {
+    document.getElementById('dictation-gaps').innerHTML = dictationScripts.map((s, i) =>
+        `<div class="gap-sentence"><strong>${i+1}.</strong> …${s}</div>`).join('');
+}
+
+async function startDay() {
+    document.getElementById('splash-screen').style.display = 'none';
+    document.getElementById('main-content').style.display = 'block';
+    buildVocab(); buildDictation();
+    await initStudent();
+    await restoreProgress();
+    setupLiveValidation();
+}
+
+function goToTask(num) {
+    document.getElementById('task' + currentTask).classList.remove('active');
+    currentTask = num;
+    document.getElementById('task' + num).classList.add('active');
+    document.getElementById('task' + num).scrollIntoView({behavior:'smooth', block:'start'});
+    updateProgress(num); taskStartTime = Date.now(); saveResume(num);
+}
+
+function updateProgress(taskNum) {
+    document.getElementById('progress-bar').style.width = Math.round(((taskNum-1)/TOTAL_TASKS)*100) + '%';
+    document.getElementById('progress-label').textContent = `Task ${taskNum} of ${TOTAL_TASKS}`;
+}
+
+function showSaveIndicator() {
+    const el = document.getElementById('saveIndicator');
+    el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+async function saveResume(taskNum) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try { await dbClient.from('student_resume').upsert({student_id:studentId, week:WEEK, day:DAY, last_task:taskNum, updated_at:new Date().toISOString()}, {onConflict:'student_id'}); } catch(e) {}
+}
+
+function scheduleSave() {
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+        localStorage.setItem(`w${WEEK}d${DAY}_answers`, JSON.stringify(gatherAllAnswers()));
+        showSaveIndicator();
+    }, 800);
+}
+
+function gatherAllAnswers() {
+    const data = {};
+    document.querySelectorAll('.gap-input').forEach(el => { if (el.id) data[el.id] = el.value; });
+    ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10'].forEach(name => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`); if (sel) data[name] = sel.value;
+    });
+    document.querySelectorAll('select.match-select').forEach(el => { if (el.id) data[el.id] = el.value; });
+    return data;
+}
+
+async function restoreProgress() {
+    try {
+        const saved = localStorage.getItem(`w${WEEK}d${DAY}_answers`);
+        if (saved) {
+            const data = JSON.parse(saved);
+            Object.entries(data).forEach(([id, val]) => { const el = document.getElementById(id); if (el && el.tagName === 'INPUT') el.value = val; });
+            Object.entries(data).forEach(([name, val]) => { if (name.startsWith('t5q')) { const r = document.querySelector(`input[name="${name}"][value="${val}"]`); if (r) r.checked = true; } });
+            Object.entries(data).forEach(([id, val]) => { const el = document.getElementById(id); if (el && el.tagName === 'SELECT') el.value = val; });
+        }
+        if (studentId && studentId !== 'teacher-preview') {
+            const { data: taskData } = await dbClient.from('task_progress').select('task_number,status').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY);
+            const completedCount = taskData ? taskData.filter(t => t.status === 'completed').length : 0;
+            if (completedCount >= TOTAL_TASKS) {
+                await restoreAnswersFromSupabase();
+                document.getElementById('task1').classList.remove('active');
+                document.getElementById('completion-screen').style.display = 'block';
+                updateProgress(TOTAL_TASKS); validateAll(); makeReadOnly(); return;
+            }
+            const { data: resume } = await dbClient.from('student_resume').select('last_task').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY).single();
+            if (resume && resume.last_task > 1) {
+                document.getElementById('task1').classList.remove('active');
+                currentTask = resume.last_task;
+                document.getElementById('task' + currentTask).classList.add('active');
+                updateProgress(currentTask);
+            }
+        }
+        validateAll();
+    } catch(e) { console.log('Restore error:', e); }
+}
+
+async function restoreAnswersFromSupabase() {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        const { data: answers } = await dbClient.from('student_answers').select('*').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY);
+        if (!answers || answers.length === 0) return;
+        answers.forEach(a => {
+            const { question_id, student_answer, question_type, is_correct, correct_answer } = a;
+            if (question_type === 'mcq') {
+                const radio = document.querySelector(`input[name="${question_id}"][value="${student_answer}"]`);
+                if (radio) radio.checked = true;
+                const fb = document.getElementById('fb_' + question_id);
+                if (fb) { fb.textContent = is_correct ? '✅ Correct!' : `❌ Incorrect — correct answer: ${correct_answer}`; fb.className = 'answer-feedback ' + (is_correct ? 'correct' : 'incorrect'); }
+            } else if (question_type === 'gap_fill') {
+                const inp = document.getElementById(question_id);
+                if (inp) { inp.value = student_answer || ''; inp.classList.toggle('correct', is_correct); inp.classList.toggle('incorrect', !is_correct); }
+            } else if (question_type === 'matching') {
+                const sel = document.getElementById(question_id);
+                if (sel) { sel.value = student_answer || ''; sel.classList.toggle('correct', is_correct); sel.classList.toggle('incorrect', !is_correct); }
+            }
+        });
+        document.querySelectorAll('.show-answers-btn').forEach(btn => btn.style.display = 'inline-block');
+        document.querySelectorAll('.next-btn').forEach(btn => btn.disabled = false);
+    } catch(e) { console.error('Restore answers error:', e); }
+}
+
+function makeReadOnly() {
+    document.querySelectorAll('.gap-input').forEach(el => { el.disabled = true; el.style.opacity = '0.85'; });
+    document.querySelectorAll('input[type="radio"]').forEach(el => el.disabled = true);
+    document.querySelectorAll('select.match-select').forEach(el => { el.disabled = true; });
+    document.querySelectorAll('.check-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.next-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.prev-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.show-answers-btn').forEach(el => el.style.display = 'inline-block');
+}
+
+function setupLiveValidation() {
+    const t1ids = ['t1a1','t1a2','t1a3','t1a4','t1a5','t1a6','t1d1','t1q1','t1q2','t1q3','t1q4'];
+    t1ids.forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', () => { validateTask1Check(); scheduleSave(); }); });
+    ['t4g1','t4g2','t4g3','t4g4','t4g5','t4g6','t4g7','t4g8','t4g9','t4g10'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', () => { validateTask4Check(); scheduleSave(); }); });
+    ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10'].forEach(name => { document.querySelectorAll(`input[name="${name}"]`).forEach(el => el.addEventListener('change', () => { validateTask5Check(); scheduleSave(); })); });
+    ['t5g11','t5g12','t5g13','t5g14','t5g15'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', () => { validateTask5Check(); scheduleSave(); }); });
+    ['t5m1','t5m2','t5m3','t5m4','t5m5','t5m6','t5m7','t5m8','t5m9','t5m10'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('change', () => { validateTask5Check(); scheduleSave(); }); });
+    for (let i = 1; i <= 25; i++) { const el = document.getElementById('d' + i); if (el) el.addEventListener('input', () => { validateTask6Check(); scheduleSave(); }); }
+}
+
+function validateAll() { validateTask1Check(); validateTask4Check(); validateTask5Check(); validateTask6Check(); }
+function validateTask1Check() {
+    const adv = ['t1a1','t1a2','t1a3','t1a4','t1a5','t1a6'].every(id => document.getElementById(id)?.value.trim());
+    const dis = document.getElementById('t1d1')?.value.trim();
+    const q = ['t1q1','t1q2','t1q3','t1q4'].every(id => document.getElementById(id)?.value.trim());
+    document.getElementById('check1').disabled = !(adv && dis && q);
+}
+function validateTask4Check() { document.getElementById('check4').disabled = !['t4g1','t4g2','t4g3','t4g4','t4g5','t4g6','t4g7','t4g8','t4g9','t4g10'].every(id => document.getElementById(id)?.value.trim()); }
+function validateTask5Check() {
+    const allMcq = ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10'].every(name => document.querySelector(`input[name="${name}"]:checked`));
+    const allGaps = ['t5g11','t5g12','t5g13','t5g14','t5g15'].every(id => document.getElementById(id)?.value.trim());
+    const allMatch = ['t5m1','t5m2','t5m3','t5m4','t5m5','t5m6','t5m7','t5m8','t5m9','t5m10'].every(id => document.getElementById(id)?.value);
+    document.getElementById('check5').disabled = !(allMcq && allGaps && allMatch);
+}
+function validateTask6Check() { let all = true; for (let i=1;i<=25;i++) { if (!document.getElementById('d'+i)?.value.trim()) { all=false; break; } } document.getElementById('check6').disabled = !all; }
+
+const t1q2Answers = {
+    t1q1: ['information age','the information age'],
+    t1q2: ['wireless hot spots','wireless hot spot'],
+    t1q3: ['virtual'],
+    t1q4: ['scams','viruses','online scams','online viruses']
+};
+
+const t4Accepted = {
+    t4g1: ['material','materials'],
+    t4g2: ['calculator'],
+    t4g3: ['diagrams','drawings','diagram','drawing'],
+    t4g4: ['models','model'],
+    t4g5: ['tunnel'],
+    t4g6: ['pump'],
+    t4g7: ['patents','patent'],
+    t4g8: ['bridge'],
+    t4g9: ['scissors'],
+    t4g10: ['forwards','forward']
+};
+
+const t5McqAnswers = {t5q1:'C',t5q2:'B',t5q3:'B',t5q4:'C',t5q5:'B',t5q6:'B',t5q7:'C',t5q8:'B',t5q9:'C',t5q10:'B'};
+const t5GapAnswers = {t5g11:'attention',t5g12:'addictive',t5g13:'outrage',t5g14:'context',t5g15:'satisfaction'};
+const t5MatchAnswers = {t5m1:'B',t5m2:'C',t5m3:'D',t5m4:'E',t5m5:'J',t5m6:'F',t5m7:'G',t5m8:'H',t5m9:'I',t5m10:'A'};
+
+function checkTask1() {
+    const answers = [];
+    // Advantages - just save what student wrote (open-ended)
+    ['t1a1','t1a2','t1a3','t1a4','t1a5','t1a6','t1d1'].forEach(id => {
+        const inp = document.getElementById(id);
+        inp.classList.add('correct');
+        answers.push({question_id:id, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:'open-ended', is_correct:true});
+    });
+    // Part 2 questions - check against answers
+    Object.entries(t1q2Answers).forEach(([id, opts]) => {
+        const inp = document.getElementById(id);
+        const val = inp.value.trim().toLowerCase();
+        const ok = opts.some(o => val.includes(o.toLowerCase()));
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:opts[0], is_correct:ok});
+    });
+    document.getElementById('showAns1').style.display = 'inline-block';
+    document.getElementById('next1').disabled = false;
+    saveAnswers(1, answers); saveTaskProgress(1);
+}
+
+function checkTask4() {
+    const answers = [];
+    Object.entries(t4Accepted).forEach(([id, opts]) => {
+        const inp = document.getElementById(id);
+        const val = inp.value.trim().toLowerCase();
+        const ok = opts.some(o => val === o.toLowerCase());
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:opts[0], is_correct:ok});
+    });
+    document.getElementById('showAns4').style.display = 'inline-block';
+    document.getElementById('next4').disabled = false;
+    saveAnswers(4, answers); saveTaskProgress(4);
+}
+
+function checkTask5() {
+    const answers = [];
+    Object.entries(t5McqAnswers).forEach(([name, correct]) => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`);
+        const fb = document.getElementById('fb_' + name);
+        if (!sel) return;
+        const ok = sel.value === correct;
+        fb.textContent = ok ? '✅ Correct!' : `❌ Incorrect — correct answer: ${correct}`;
+        fb.className = 'answer-feedback ' + (ok ? 'correct' : 'incorrect');
+        answers.push({question_id:name, question_type:'mcq', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    Object.entries(t5GapAnswers).forEach(([id, correct]) => {
+        const inp = document.getElementById(id);
+        const val = inp.value.trim().toLowerCase();
+        const ok = val === correct.toLowerCase();
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:correct, is_correct:ok});
+    });
+    Object.entries(t5MatchAnswers).forEach(([id, correct]) => {
+        const sel = document.getElementById(id);
+        const ok = sel.value === correct;
+        sel.classList.toggle('correct', ok); sel.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'matching', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    document.getElementById('showAns5').style.display = 'inline-block';
+    document.getElementById('next5').disabled = false;
+    saveAnswers(5, answers); saveTaskProgress(5);
+}
+
+function checkTask6() {
+    const answers = [];
+    for (let i = 1; i <= 25; i++) {
+        const inp = document.getElementById('d' + i);
+        const val = inp.value.trim().toLowerCase();
+        const correct = dictationAnswers[i-1];
+        const ok = val === correct.toLowerCase();
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:'d'+i, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:correct, is_correct:ok});
+    }
+    document.getElementById('showAns6').style.display = 'inline-block';
+    document.getElementById('next6').disabled = false;
+    saveAnswers(6, answers); saveTaskProgress(6);
+}
+
+async function saveAnswers(taskNum, answers) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        const rows = answers.map(a => ({student_id:studentId, week:WEEK, day:DAY, task_number:taskNum, question_id:a.question_id, question_type:a.question_type, student_answer:a.student_answer, correct_answer:a.correct_answer, is_correct:a.is_correct, answered_at:new Date().toISOString()}));
+        await dbClient.from('student_answers').upsert(rows, {onConflict:'student_id,week,day,task_number,question_id'});
+    } catch(e) { console.error('Answer save error:', e); }
+}
+
+async function saveTaskProgress(taskNum) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        await dbClient.from('task_progress').upsert({student_id:studentId, week:WEEK, day:DAY, task_number:taskNum, status:'completed', time_completed:new Date().toISOString(), time_spent_seconds:Math.round((Date.now()-taskStartTime)/1000)}, {onConflict:'student_id,week,day,task_number'});
+    } catch(e) { console.error('Progress save error:', e); }
+}
+
+async function finishDay() {
+    document.getElementById('task7').classList.remove('active');
+    document.getElementById('completion-screen').style.display = 'block';
+    document.getElementById('completion-screen').scrollIntoView({behavior:'smooth'});
+    localStorage.removeItem(`w${WEEK}d${DAY}_answers`);
+    for (let i = 1; i <= TOTAL_TASKS; i++) await saveTaskProgress(i);
+    if (studentId && studentId !== 'teacher-preview') await dbClient.from('student_resume').delete().eq('student_id', studentId);
+    makeReadOnly();
+}
+
+function reviewTask(num) {
+    document.getElementById('completion-screen').style.display = 'none';
+    currentTask = num;
+    document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active'));
+    document.getElementById('task' + num).classList.add('active');
+    document.getElementById('task' + num).scrollIntoView({behavior:'smooth', block:'start'});
+    const existing = document.getElementById('back-to-results');
+    if (!existing) {
+        const btn = document.createElement('button');
+        btn.id = 'back-to-results';
+        btn.textContent = '🏆 Back to Results';
+        btn.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#667eea;color:white;border:none;padding:12px 22px;border-radius:50px;cursor:pointer;font-weight:bold;font-size:0.95rem;box-shadow:0 4px 15px rgba(102,126,234,0.4);z-index:9998;';
+        btn.onclick = () => { btn.remove(); document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active')); document.getElementById('completion-screen').style.display = 'block'; document.getElementById('completion-screen').scrollIntoView({behavior:'smooth'}); };
+        document.body.appendChild(btn);
+    }
+}
+
+function toggleVocab() { document.getElementById('vocab-body').classList.toggle('open'); document.getElementById('vocab-arrow').classList.toggle('open'); }
+function toggleAnswers(id) {
+    const div = document.getElementById(id);
+    const btn = div.previousElementSibling;
+    div.style.display = div.style.display === 'block' ? 'none' : 'block';
+    btn.textContent = div.style.display === 'block' ? '▲ Hide Answers' : '▼ Show Answers';
+}
+</script>
+</body>
+</html>
