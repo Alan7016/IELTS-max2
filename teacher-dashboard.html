@@ -251,6 +251,9 @@
             <a href="/week3/day3/day3.html?teacher=true" class="material-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                 <div class="day-num">Day 3</div><div class="day-label">Technology</div><div class="day-topic">Social Media</div>
             </a>
+            <a href="/week3/day4/day4.html?teacher=true" class="material-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="day-num">Day 4</div><div class="day-label">Technology</div><div class="day-topic">AI & Education</div>
+            </a>
         </div>
     </div>
 
@@ -569,7 +572,7 @@
 
             let weeksHtml = '';
             weeks.forEach((week, wi) => {
-                const maxDay = week === 1 ? 5 : week === 2 ? 5 : 3; // W1=5days, W2=5days, W3=3days built
+                const maxDay = week === 1 ? 5 : week === 2 ? 5 : 4; // W1=5days, W2=5days, W3=4days built
                 weeksHtml += `<div class="day-content ${wi === 0 ? 'active' : ''}" id="week-tab-${week}">`;
 
                 // Day tabs within week
