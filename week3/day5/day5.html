@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEEK 3 - DAY 5 (Technology)</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f4ff; color: #333; }
+        #splash-screen { position: fixed; inset: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; color: white; text-align: center; padding: 20px; }
+        #splash-screen h1 { font-size: 3rem; margin-bottom: 10px; }
+        #splash-screen h2 { font-size: 2rem; margin-bottom: 10px; opacity: 0.9; }
+        #splash-screen p { font-size: 1.2rem; margin-bottom: 40px; opacity: 0.8; }
+        .splash-btn { background: white; color: #667eea; border: none; padding: 18px 60px; font-size: 1.4rem; font-weight: bold; border-radius: 50px; cursor: pointer; box-shadow: 0 8px 25px rgba(0,0,0,0.2); transition: all 0.3s; }
+        .splash-btn:hover { transform: translateY(-3px); box-shadow: 0 12px 35px rgba(0,0,0,0.3); }
+        .main-container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        .day-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px 30px; border-radius: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; }
+        .day-header h1 { font-size: 1.6rem; }
+        .day-header .topic { opacity: 0.85; font-size: 1rem; margin-top: 4px; }
+        .back-btn { background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; text-decoration: none; font-size: 0.9rem; transition: all 0.3s; }
+        .back-btn:hover { background: white; color: #667eea; }
+        .vocab-section { background: white; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-left: 5px solid #667eea; overflow: hidden; }
+        .vocab-toggle { width: 100%; background: none; border: none; cursor: pointer; padding: 18px 25px; display: flex; align-items: center; justify-content: space-between; text-align: left; }
+        .vocab-toggle:hover { background: #f0f0ff; }
+        .vocab-toggle-left { display: flex; align-items: center; gap: 10px; }
+        .vocab-toggle h3 { color: #667eea; font-size: 1.1rem; margin: 0; }
+        .vocab-count { background: #667eea; color: white; font-size: 0.75rem; font-weight: bold; padding: 3px 10px; border-radius: 20px; }
+        .vocab-arrow { color: #667eea; font-size: 1rem; transition: transform 0.3s; }
+        .vocab-arrow.open { transform: rotate(180deg); }
+        .vocab-body { display: none; padding: 0 25px 20px; }
+        .vocab-body.open { display: block; }
+        .vocab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+        .vocab-item { background: #f0f0ff; padding: 10px 14px; border-radius: 8px; }
+        .vocab-word { font-weight: bold; color: #333; font-size: 0.95rem; }
+        .vocab-definition { color: #666; font-size: 0.82rem; margin-top: 2px; }
+        .progress-label { text-align: center; color: #667eea; font-size: 0.85rem; margin-bottom: 8px; font-weight: 600; }
+        .progress-bar-wrap { background: #e0e8ff; border-radius: 20px; height: 10px; margin-bottom: 20px; overflow: hidden; }
+        .progress-bar-fill { background: linear-gradient(90deg, #667eea, #764ba2); height: 100%; border-radius: 20px; transition: width 0.5s ease; }
+        .task-card { background: white; border-radius: 15px; padding: 28px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); display: none; }
+        .task-card.active { display: block; }
+        .task-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .task-number { background: linear-gradient(135deg, #667eea, #764ba2); color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; flex-shrink: 0; }
+        .task-title { font-size: 1.3rem; font-weight: bold; color: #333; }
+        .task-subtitle { color: #888; font-size: 0.9rem; margin-top: 2px; }
+        .pdf-links { display: flex; flex-direction: column; gap: 12px; margin: 15px 0; }
+        .pdf-link { display: flex; align-items: center; gap: 12px; background: #f0f0ff; padding: 15px 20px; border-radius: 10px; text-decoration: none; color: #333; font-weight: 600; border: 2px solid #c5ceff; transition: all 0.3s; }
+        .pdf-link:hover { background: #667eea; color: white; border-color: #667eea; transform: translateX(5px); }
+        .pdf-icon { font-size: 1.5rem; }
+        .html-link-btn { display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 15px 30px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 1rem; transition: all 0.3s; margin: 10px 0; }
+        .html-link-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(102,126,234,0.4); }
+        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; margin: 15px 0; }
+        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .video-fallback { background: #f0f0ff; padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align: center; }
+        .video-fallback a { color: #667eea; font-weight: bold; }
+        .passage-text { background: #fafbff; border: 1px solid #c5ceff; border-radius: 10px; padding: 25px; margin: 15px 0; line-height: 1.8; font-size: 0.97rem; color: #333; }
+        .passage-text h3 { color: #667eea; margin-bottom: 15px; font-size: 1.2rem; }
+        .passage-text p { margin-bottom: 14px; }
+        .highlight { font-style: italic; color: #764ba2; font-weight: 600; }
+        .question-block { margin-bottom: 20px; padding: 18px; background: #f8f9fa; border-radius: 10px; }
+        .question-text { font-weight: 600; margin-bottom: 12px; color: #333; line-height: 1.5; }
+        .options label { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: background 0.2s; margin-bottom: 5px; }
+        .options label:hover { background: #e8eaff; }
+        .options input[type="radio"] { margin-top: 3px; flex-shrink: 0; }
+        .answer-feedback { margin-top: 8px; font-weight: bold; font-size: 0.9rem; }
+        .answer-feedback.correct { color: #28a745; }
+        .answer-feedback.incorrect { color: #dc3545; }
+        .gap-fill-section { margin-top: 20px; }
+        .gap-sentence { margin-bottom: 14px; line-height: 2; font-size: 1rem; }
+        .gap-input { border: none; border-bottom: 2px solid #667eea; padding: 4px 8px; font-size: 0.95rem; width: 200px; background: transparent; outline: none; color: #333; }
+        .gap-input.correct { border-bottom-color: #28a745; background: #d4edda33; }
+        .gap-input.incorrect { border-bottom-color: #dc3545; background: #f8d7da33; }
+        .word-box { background: #f0f0ff; border: 2px solid #c5ceff; border-radius: 10px; padding: 12px 18px; margin-bottom: 15px; }
+        .word-box strong { color: #667eea; }
+        .matching-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .matching-table th { background: #667eea; color: white; padding: 10px 14px; text-align: left; }
+        .matching-table td { padding: 10px 14px; border-bottom: 1px solid #eee; }
+        .matching-table tr:nth-child(even) td { background: #f0f0ff; }
+        .match-select { border: 2px solid #c5ceff; border-radius: 6px; padding: 5px 8px; font-size: 0.88rem; background: white; width: 100%; max-width: 380px; }
+        .match-select.correct { border-color: #28a745; }
+        .match-select.incorrect { border-color: #dc3545; }
+        .collocation-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        .collocation-table th { background: #667eea; color: white; padding: 10px 14px; text-align: center; }
+        .collocation-table td { padding: 10px 14px; border-bottom: 1px solid #eee; text-align: center; }
+        .collocation-table tr:nth-child(even) td { background: #f0f0ff; }
+        .col-select { border: 2px solid #c5ceff; border-radius: 6px; padding: 5px 8px; font-size: 0.9rem; background: white; width: 180px; }
+        .col-select.correct { border-color: #28a745; }
+        .col-select.incorrect { border-color: #dc3545; }
+        .discussion-box { background: #f0f0ff; border: 2px solid #c5ceff; border-radius: 12px; padding: 20px; margin: 20px 0; }
+        .discussion-box h4 { color: #667eea; margin-bottom: 12px; }
+        .discussion-box ol { padding-left: 20px; }
+        .discussion-box li { margin-bottom: 8px; color: #555; line-height: 1.6; }
+        .btn-row { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+        .check-btn { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .check-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(102,126,234,0.4); }
+        .check-btn:disabled { background: #ccc; cursor: not-allowed; transform: none !important; box-shadow: none; }
+        .next-btn { background: #28a745; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .next-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .next-btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(40,167,69,0.4); }
+        .prev-btn { background: #6c757d; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .prev-btn:hover { background: #5a6268; }
+        .show-answers-btn { background: #ffc107; color: #333; border: none; padding: 10px 22px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.88rem; display: none; }
+        .show-answers-btn:hover { background: #e0a800; }
+        .answers-panel { display: none; background: #fffbea; border: 2px solid #ffc107; border-radius: 10px; padding: 15px; margin-top: 12px; }
+        .answers-panel p { margin-bottom: 6px; font-size: 0.9rem; }
+        .completion-screen { text-align: center; padding: 60px 20px; display: none; }
+        .completion-screen .icon { font-size: 5rem; margin-bottom: 20px; }
+        .completion-screen h2 { font-size: 2.2rem; color: #667eea; margin-bottom: 10px; }
+        .completion-screen p { color: #666; font-size: 1rem; margin-bottom: 30px; }
+        .dashboard-btn { background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 16px 40px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 1.1rem; display: inline-block; transition: all 0.3s; }
+        .dashboard-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(102,126,234,0.4); }
+        .save-indicator { position: fixed; bottom: 20px; right: 20px; background: #667eea; color: white; padding: 10px 18px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; opacity: 0; transition: opacity 0.4s; z-index: 9000; pointer-events: none; }
+        .save-indicator.show { opacity: 1; }
+    </style>
+</head>
+<body>
+<div id="splash-screen">
+    <h1>💻 WEEK 3</h1>
+    <h2>DAY 5</h2>
+    <p>Topic: Technology</p>
+    <button class="splash-btn" onclick="startDay()">LET'S GO!</button>
+</div>
+<div class="save-indicator" id="saveIndicator">✓ Progress saved</div>
+<div class="main-container" id="main-content" style="display:none;">
+    <div class="day-header">
+        <div><h1>💻 Week 3 — Day 5</h1><div class="topic">Topic: Technology</div></div>
+        <a href="/student-dashboard.html" class="back-btn">← Dashboard</a>
+    </div>
+    <div class="progress-label" id="progress-label">Task 0 of 7</div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-bar" style="width:0%"></div></div>
+
+    <!-- VOCAB -->
+    <div class="vocab-section">
+        <button class="vocab-toggle" onclick="toggleVocab()">
+            <div class="vocab-toggle-left"><h3>📖 Today's Vocabulary</h3><span class="vocab-count">50 words</span></div>
+            <span class="vocab-arrow" id="vocab-arrow">▼</span>
+        </button>
+        <div class="vocab-body" id="vocab-body"><div class="vocab-grid" id="vocab-grid"></div></div>
+    </div>
+
+    <!-- ══ TASK 1 ══ -->
+    <div class="task-card active" id="task1">
+        <div class="task-header">
+            <div class="task-number">1</div>
+            <div><div class="task-title">Mini Reading</div><div class="task-subtitle">Read and answer — NO MORE THAN THREE WORDS from the passage</div></div>
+        </div>
+        <div class="passage-text">
+            <h3>Cybersecurity in the Digital Age</h3>
+            <p>As society becomes increasingly dependent on digital infrastructure, the threat posed by cybercrime has grown from a niche technical concern into a <span class="highlight">(1) mainstream</span> security challenge affecting governments, corporations and ordinary individuals alike. The scale of the problem is striking: according to industry estimates, cybercrime costs the global economy trillions of dollars annually, making it one of the most significant threats to economic stability in the modern era.</p>
+            <p>At the heart of most cyberattacks lies a fundamental <span class="highlight">(2) vulnerability</span> — the human element. While organisations invest heavily in technical defences such as firewalls and encryption, research consistently shows that the majority of successful breaches exploit not system weaknesses but human <span class="highlight">(3) error</span>. Phishing emails, for example, deceive employees into revealing sensitive credentials by impersonating trusted sources, a technique that remains remarkably effective despite widespread awareness campaigns.</p>
+            <p>The challenge is compounded by the <span class="highlight">(4) asymmetry</span> of the threat landscape. Attackers need only find one weakness to succeed, whereas defenders must simultaneously protect every possible entry point. This imbalance has driven many organisations to adopt a <span class="highlight">(5) proactive</span> rather than reactive approach, investing in threat intelligence, regular penetration testing and continuous employee training.</p>
+            <p>Governments are increasingly recognising that cybersecurity is not merely a corporate responsibility but a matter of national <span class="highlight">(6) security</span>. Critical infrastructure such as power grids, water treatment facilities and financial systems represent attractive targets for state-sponsored actors seeking to cause maximum disruption. Several high-profile incidents in recent years have demonstrated the potentially <span class="highlight">(7) catastrophic</span> consequences of successful attacks on such systems, prompting urgent calls for international cooperation and stronger regulatory <span class="highlight">(8) frameworks</span>.</p>
+        </div>
+        <h4 style="color:#667eea; margin:20px 0 12px;">Answer — NO MORE THAN THREE WORDS from the passage:</h4>
+        <div class="gap-fill-section">
+            <div class="gap-sentence">1. What has cybercrime grown into, beyond a technical concern?<br><input class="gap-input" id="t1q1" placeholder="___" style="width:280px; margin-top:8px;"></div>
+            <div class="gap-sentence">2. What do most successful breaches exploit rather than system weaknesses?<br><input class="gap-input" id="t1q2" placeholder="___" style="width:280px; margin-top:8px;"></div>
+            <div class="gap-sentence">3. What technique do phishing emails use to deceive employees?<br><input class="gap-input" id="t1q3" placeholder="___" style="width:280px; margin-top:8px;"></div>
+            <div class="gap-sentence">4. What approach have many organisations adopted to deal with the imbalance?<br><input class="gap-input" id="t1q4" placeholder="___" style="width:280px; margin-top:8px;"></div>
+            <div class="gap-sentence">5. What type of infrastructure represents attractive targets for state-sponsored actors?<br><input class="gap-input" id="t1q5" placeholder="___" style="width:280px; margin-top:8px;"></div>
+            <div class="gap-sentence">6. What do recent incidents demonstrate about successful attacks?<br><input class="gap-input" id="t1q6" placeholder="___" style="width:280px; margin-top:8px;"></div>
+            <div class="gap-sentence">7. What are governments calling for to address the cybersecurity threat?<br><input class="gap-input" id="t1q7" placeholder="___" style="width:280px; margin-top:8px;"></div>
+        </div>
+        <div class="btn-row">
+            <button class="check-btn" id="check1" onclick="checkTask1()" disabled>Check Answers</button>
+            <button class="next-btn" id="next1" disabled onclick="goToTask(2)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns1" onclick="toggleAnswers('ans1')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans1">
+            <p><strong>Answers:</strong> 1-mainstream security challenge, 2-human error, 3-impersonating trusted sources, 4-proactive (approach), 5-critical infrastructure, 6-catastrophic consequences, 7-international cooperation/regulatory frameworks</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 2 ══ -->
+    <div class="task-card" id="task2">
+        <div class="task-header">
+            <div class="task-number">2</div>
+            <div><div class="task-title">Article Reading</div><div class="task-subtitle">Read the articles and study the vocabulary</div></div>
+        </div>
+        <div class="pdf-links">
+            <a class="pdf-link" href="pilotsai.pdf" target="_blank"><span class="pdf-icon">📄</span> Pilots & AI — Article</a>
+            <a class="pdf-link" href="pilotsaiv.pdf" target="_blank"><span class="pdf-icon">📘</span> Pilots & AI — Vocabulary</a>
+        </div>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(1)">← Previous</button>
+            <button class="next-btn" onclick="goToTask(3)">Next Task →</button>
+        </div>
+    </div>
+
+    <!-- ══ TASK 3 ══ -->
+    <div class="task-card" id="task3">
+        <div class="task-header">
+            <div class="task-number">3</div>
+            <div><div class="task-title">Practice Reading</div><div class="task-subtitle">IELTS-style reading test</div></div>
+        </div>
+        <a class="html-link-btn" href="Reading (8).html" target="_blank">📖 Open Practice Reading</a>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(2)">← Previous</button>
+            <button class="next-btn" onclick="goToTask(4)">Next Task →</button>
+        </div>
+    </div>
+
+    <!-- ══ TASK 4 — Vocab Task ══ -->
+    <div class="task-card" id="task4">
+        <div class="task-header">
+            <div class="task-number">4</div>
+            <div><div class="task-title">Vocabulary Challenge</div><div class="task-subtitle">Technology collocations</div></div>
+        </div>
+        <h4 style="color:#667eea; margin-bottom:15px;">Part 1 — Match the verbs with the correct nouns:</h4>
+        <table class="collocation-table">
+            <thead><tr><th>#</th><th>Verb</th><th>Match the correct noun</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td><strong>launch</strong></td><td><select class="col-select" id="c1"><option value="">— select noun —</option><option value="A">a. a password</option><option value="B">b. a cyberattack</option><option value="C">c. an app</option><option value="D">d. a software update</option><option value="E">e. a virus</option><option value="F">f. into a system</option><option value="G">g. data</option><option value="H">h. security</option><option value="I">i. a file</option><option value="J">j. a program</option></select></td></tr>
+                <tr><td>2</td><td><strong>install</strong></td><td><select class="col-select" id="c2"><option value="">— select noun —</option><option value="A">a. a password</option><option value="B">b. a cyberattack</option><option value="C">c. an app</option><option value="D">d. a software update</option><option value="E">e. a virus</option><option value="F">f. into a system</option><option value="G">g. data</option><option value="H">h. security</option><option value="I">i. a file</option><option value="J">j. a program</option></select></td></tr>
+                <tr><td>3</td><td><strong>encrypt</strong></td><td><select class="col-select" id="c3"><option value="">— select noun —</option><option value="A">a. a password</option><option value="B">b. a cyberattack</option><option value="C">c. an app</option><option value="D">d. a software update</option><option value="E">e. a virus</option><option value="F">f. into a system</option><option value="G">g. data</option><option value="H">h. security</option><option value="I">i. a file</option><option value="J">j. a program</option></select></td></tr>
+                <tr><td>4</td><td><strong>detect</strong></td><td><select class="col-select" id="c4"><option value="">— select noun —</option><option value="A">a. a password</option><option value="B">b. a cyberattack</option><option value="C">c. an app</option><option value="D">d. a software update</option><option value="E">e. a virus</option><option value="F">f. into a system</option><option value="G">g. data</option><option value="H">h. security</option><option value="I">i. a file</option><option value="J">j. a program</option></select></td></tr>
+                <tr><td>5</td><td><strong>hack</strong></td><td><select class="col-select" id="c5"><option value="">— select noun —</option><option value="A">a. a password</option><option value="B">b. a cyberattack</option><option value="C">c. an app</option><option value="D">d. a software update</option><option value="E">e. a virus</option><option value="F">f. into a system</option><option value="G">g. data</option><option value="H">h. security</option><option value="I">i. a file</option><option value="J">j. a program</option></select></td></tr>
+                <tr><td>6</td><td><strong>breach</strong></td><td><select class="col-select" id="c6"><option value="">— select noun —</option><option value="A">a. a password</option><option value="B">b. a cyberattack</option><option value="C">c. an app</option><option value="D">d. a software update</option><option value="E">e. a virus</option><option value="F">f. into a system</option><option value="G">g. data</option><option value="H">h. security</option><option value="I">i. a file</option><option value="J">j. a program</option></select></td></tr>
+                <tr><td>7</td><td><strong>download</strong></td><td><select class="col-select" id="c7"><option value="">— select noun —</option><option value="A">a. a password</option><option value="B">b. a cyberattack</option><option value="C">c. an app</option><option value="D">d. a software update</option><option value="E">e. a virus</option><option value="F">f. into a system</option><option value="G">g. data</option><option value="H">h. security</option><option value="I">i. a file</option><option value="J">j. a program</option></select></td></tr>
+                <tr><td>8</td><td><strong>run</strong></td><td><select class="col-select" id="c8"><option value="">— select noun —</option><option value="A">a. a password</option><option value="B">b. a cyberattack</option><option value="C">c. an app</option><option value="D">d. a software update</option><option value="E">e. a virus</option><option value="F">f. into a system</option><option value="G">g. data</option><option value="H">h. security</option><option value="I">i. a file</option><option value="J">j. a program</option></select></td></tr>
+                <tr><td>9</td><td><strong>back up</strong></td><td><select class="col-select" id="c9"><option value="">— select noun —</option><option value="A">a. a password</option><option value="B">b. a cyberattack</option><option value="C">c. an app</option><option value="D">d. a software update</option><option value="E">e. a virus</option><option value="F">f. into a system</option><option value="G">g. data</option><option value="H">h. security</option><option value="I">i. a file</option><option value="J">j. a program</option></select></td></tr>
+                <tr><td>10</td><td><strong>bypass</strong></td><td><select class="col-select" id="c10"><option value="">— select noun —</option><option value="A">a. a password</option><option value="B">b. a cyberattack</option><option value="C">c. an app</option><option value="D">d. a software update</option><option value="E">e. a virus</option><option value="F">f. into a system</option><option value="G">g. data</option><option value="H">h. security</option><option value="I">i. a file</option><option value="J">j. a program</option></select></td></tr>
+            </tbody>
+        </table>
+
+        <h4 style="color:#667eea; margin:20px 0 12px;">Part 2 — Complete the sentences using collocations from Part 1:</h4>
+        <div class="gap-fill-section">
+            <div class="gap-sentence">1. You should always <input class="gap-input" id="vg1" placeholder="___" style="width:160px;"> your files in case your computer crashes.</div>
+            <div class="gap-sentence">2. The hacker managed to <input class="gap-input" id="vg2" placeholder="___" style="width:160px;"> the company's security systems.</div>
+            <div class="gap-sentence">3. The IT team worked overnight to <input class="gap-input" id="vg3" placeholder="___" style="width:160px;"> the latest security patch.</div>
+            <div class="gap-sentence">4. The antivirus software failed to <input class="gap-input" id="vg4" placeholder="___" style="width:160px;"> the malware in time.</div>
+            <div class="gap-sentence">5. It is essential to <input class="gap-input" id="vg5" placeholder="___" style="width:160px;"> sensitive data before sending it online.</div>
+        </div>
+
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(3)">← Previous</button>
+            <button class="check-btn" id="check4" onclick="checkTask4()" disabled>Check Answers</button>
+            <button class="next-btn" id="next4" disabled onclick="goToTask(5)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns4" onclick="toggleAnswers('ans4')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans4">
+            <p><strong>Part 1:</strong> 1-C, 2-D, 3-A, 4-E, 5-F, 6-H, 7-I, 8-J, 9-G, 10-B</p>
+            <p><strong>Part 2:</strong> 1-back up, 2-bypass, 3-install, 4-detect, 5-encrypt</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 5 ══ -->
+    <div class="task-card" id="task5">
+        <div class="task-header">
+            <div class="task-number">5</div>
+            <div><div class="task-title">Video Watching Task</div><div class="task-subtitle">Watch and answer questions</div></div>
+        </div>
+        <div class="video-fallback">
+            <p>▶ <a href="https://www.youtube.com/watch?v=zb7grp0N7Ek" target="_blank">Click here to open the video in a new tab</a> if it doesn't play below.</p>
+        </div>
+        <div class="video-container">
+            <iframe src="https://www.youtube.com/embed/zb7grp0N7Ek" frameborder="0" allowfullscreen></iframe>
+        </div>
+
+        <h4 style="color:#667eea; margin:20px 0 12px;">Part 1 — Multiple Choice Questions</h4>
+        <div class="question-block">
+            <div class="question-text">1. According to the video, why is AI making online safety more challenging?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q1" value="A"> A. It makes the internet slower</label>
+                <label><input type="radio" name="t5q1" value="B"> B. It makes fake content and scams harder to detect</label>
+                <label><input type="radio" name="t5q1" value="C"> C. It prevents people from communicating</label>
+                <label><input type="radio" name="t5q1" value="D"> D. It blocks access to websites</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q1"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">2. What is a deepfake?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q2" value="A"> A. A virus that damages computers</label>
+                <label><input type="radio" name="t5q2" value="B"> B. A fake social media account</label>
+                <label><input type="radio" name="t5q2" value="C"> C. AI-generated content designed to imitate a real person</label>
+                <label><input type="radio" name="t5q2" value="D"> D. An online shopping scam</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q2"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">3. What did the scammer pretend had happened to the victim's friend?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q3" value="A"> A. He had won a lottery</label>
+                <label><input type="radio" name="t5q3" value="B"> B. He had lost his passport and missed a flight</label>
+                <label><input type="radio" name="t5q3" value="C"> C. He was stuck overseas and needed money urgently</label>
+                <label><input type="radio" name="t5q3" value="D"> D. He had started a new business</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q3"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">4. What was one common clue found in older AI-generated images?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q4" value="A"> A. Poor spelling</label>
+                <label><input type="radio" name="t5q4" value="B"> B. Strange facial movements and unusual lighting</label>
+                <label><input type="radio" name="t5q4" value="C"> C. Missing backgrounds</label>
+                <label><input type="radio" name="t5q4" value="D"> D. Low-quality colours</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q4"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">5. Why might someone on a dating app seem suspicious?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q5" value="A"> A. They never use punctuation</label>
+                <label><input type="radio" name="t5q5" value="B"> B. They send messages that are unusually polished or unnatural</label>
+                <label><input type="radio" name="t5q5" value="C"> C. They reply too slowly</label>
+                <label><input type="radio" name="t5q5" value="D"> D. They dislike social media</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q5"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">6. How can AI be used in rental scams?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q6" value="A"> A. By creating fake properties and virtual tours</label>
+                <label><input type="radio" name="t5q6" value="B"> B. By deleting rental websites</label>
+                <label><input type="radio" name="t5q6" value="C"> C. By changing house prices automatically</label>
+                <label><input type="radio" name="t5q6" value="D"> D. By blocking property advertisements</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q6"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">7. Why are emotional reactions important when evaluating online content?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q7" value="A"> A. Emotional content is always true</label>
+                <label><input type="radio" name="t5q7" value="B"> B. Scammers often use strong emotions to manipulate people</label>
+                <label><input type="radio" name="t5q7" value="C"> C. Emotional content cannot be created by AI</label>
+                <label><input type="radio" name="t5q7" value="D"> D. News organisations avoid emotional stories</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q7"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">8. What should you do if a sensational story appears online?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q8" value="A"> A. Share it immediately</label>
+                <label><input type="radio" name="t5q8" value="B"> B. Ignore it completely</label>
+                <label><input type="radio" name="t5q8" value="C"> C. Check trusted news sources and fact-checking websites</label>
+                <label><input type="radio" name="t5q8" value="D"> D. Assume it is true</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q8"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">9. Which may indicate AI-generated video content?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q9" value="A"> A. Natural pauses and gestures</label>
+                <label><input type="radio" name="t5q9" value="B"> B. Clear and detailed backgrounds</label>
+                <label><input type="radio" name="t5q9" value="C"> C. Odd eyes, strange lighting, or overly smooth skin</label>
+                <label><input type="radio" name="t5q9" value="D"> D. Professional camera equipment</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q9"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">10. What is described as your best defence against AI scams?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q10" value="A"> A. Expensive software</label>
+                <label><input type="radio" name="t5q10" value="B"> B. Social media experience</label>
+                <label><input type="radio" name="t5q10" value="C"> C. Critical thinking</label>
+                <label><input type="radio" name="t5q10" value="D"> D. Artificial intelligence</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q10"></div>
+        </div>
+
+        <h4 style="color:#667eea; margin:20px 0 12px;">Part 2 — Gap Filling</h4>
+        <div class="word-box">
+            <strong>Word Box:</strong> manipulation &nbsp;|&nbsp; investigate &nbsp;|&nbsp; cloned &nbsp;|&nbsp; context &nbsp;|&nbsp; deposit &nbsp;|&nbsp; awareness &nbsp;|&nbsp; sensational
+        </div>
+        <div class="gap-fill-section">
+            <div class="gap-sentence">11. A deepfake voice may be created by using AI to copy or <input class="gap-input" id="t5g11" placeholder="___"> someone's voice.</div>
+            <div class="gap-sentence">12. When evaluating information online, <input class="gap-input" id="t5g12" placeholder="___"> is important because the situation can affect how content should be interpreted.</div>
+            <div class="gap-sentence">13. Some rental scams persuade victims to send a <input class="gap-input" id="t5g13" placeholder="___"> for a property that does not exist.</div>
+            <div class="gap-sentence">14. If a story sounds shocking or extremely dramatic, it may be a <input class="gap-input" id="t5g14" placeholder="___"> piece of content.</div>
+            <div class="gap-sentence">15. The video encourages people to pause, question, and <input class="gap-input" id="t5g15" placeholder="___"> suspicious information.</div>
+        </div>
+
+        <h4 style="color:#667eea; margin:20px 0 12px;">Part 3 — Vocabulary Matching</h4>
+        <p style="color:#666; font-size:0.88rem; margin-bottom:12px;">Match each word with the correct definition.</p>
+        <table class="matching-table">
+            <thead><tr><th>#</th><th>Word</th><th>Definition</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td><strong>deepfake</strong></td><td><select class="match-select" id="t5m1"><option value="">— select —</option><option value="A">A. an attempt to trick people for money or information</option><option value="B">B. awareness and understanding of surrounding circumstances</option><option value="C">C. AI-generated content that imitates a real person</option><option value="D">D. carefully examine or research something</option><option value="E">E. to influence or control someone unfairly</option><option value="F">F. trustworthy and dependable</option><option value="G">G. verify whether information is accurate</option><option value="H">H. knowledge of a situation or issue</option><option value="I">I. something that causes a strong emotional reaction</option><option value="J">J. causing doubt or mistrust</option></select></td></tr>
+                <tr><td>2</td><td><strong>scam</strong></td><td><select class="match-select" id="t5m2"><option value="">— select —</option><option value="A">A. an attempt to trick people for money or information</option><option value="B">B. awareness and understanding of surrounding circumstances</option><option value="C">C. AI-generated content that imitates a real person</option><option value="D">D. carefully examine or research something</option><option value="E">E. to influence or control someone unfairly</option><option value="F">F. trustworthy and dependable</option><option value="G">G. verify whether information is accurate</option><option value="H">H. knowledge of a situation or issue</option><option value="I">I. something that causes a strong emotional reaction</option><option value="J">J. causing doubt or mistrust</option></select></td></tr>
+                <tr><td>3</td><td><strong>manipulate</strong></td><td><select class="match-select" id="t5m3"><option value="">— select —</option><option value="A">A. an attempt to trick people for money or information</option><option value="B">B. awareness and understanding of surrounding circumstances</option><option value="C">C. AI-generated content that imitates a real person</option><option value="D">D. carefully examine or research something</option><option value="E">E. to influence or control someone unfairly</option><option value="F">F. trustworthy and dependable</option><option value="G">G. verify whether information is accurate</option><option value="H">H. knowledge of a situation or issue</option><option value="I">I. something that causes a strong emotional reaction</option><option value="J">J. causing doubt or mistrust</option></select></td></tr>
+                <tr><td>4</td><td><strong>context</strong></td><td><select class="match-select" id="t5m4"><option value="">— select —</option><option value="A">A. an attempt to trick people for money or information</option><option value="B">B. awareness and understanding of surrounding circumstances</option><option value="C">C. AI-generated content that imitates a real person</option><option value="D">D. carefully examine or research something</option><option value="E">E. to influence or control someone unfairly</option><option value="F">F. trustworthy and dependable</option><option value="G">G. verify whether information is accurate</option><option value="H">H. knowledge of a situation or issue</option><option value="I">I. something that causes a strong emotional reaction</option><option value="J">J. causing doubt or mistrust</option></select></td></tr>
+                <tr><td>5</td><td><strong>reliable</strong></td><td><select class="match-select" id="t5m5"><option value="">— select —</option><option value="A">A. an attempt to trick people for money or information</option><option value="B">B. awareness and understanding of surrounding circumstances</option><option value="C">C. AI-generated content that imitates a real person</option><option value="D">D. carefully examine or research something</option><option value="E">E. to influence or control someone unfairly</option><option value="F">F. trustworthy and dependable</option><option value="G">G. verify whether information is accurate</option><option value="H">H. knowledge of a situation or issue</option><option value="I">I. something that causes a strong emotional reaction</option><option value="J">J. causing doubt or mistrust</option></select></td></tr>
+                <tr><td>6</td><td><strong>fact-check</strong></td><td><select class="match-select" id="t5m6"><option value="">— select —</option><option value="A">A. an attempt to trick people for money or information</option><option value="B">B. awareness and understanding of surrounding circumstances</option><option value="C">C. AI-generated content that imitates a real person</option><option value="D">D. carefully examine or research something</option><option value="E">E. to influence or control someone unfairly</option><option value="F">F. trustworthy and dependable</option><option value="G">G. verify whether information is accurate</option><option value="H">H. knowledge of a situation or issue</option><option value="I">I. something that causes a strong emotional reaction</option><option value="J">J. causing doubt or mistrust</option></select></td></tr>
+                <tr><td>7</td><td><strong>investigate</strong></td><td><select class="match-select" id="t5m7"><option value="">— select —</option><option value="A">A. an attempt to trick people for money or information</option><option value="B">B. awareness and understanding of surrounding circumstances</option><option value="C">C. AI-generated content that imitates a real person</option><option value="D">D. carefully examine or research something</option><option value="E">E. to influence or control someone unfairly</option><option value="F">F. trustworthy and dependable</option><option value="G">G. verify whether information is accurate</option><option value="H">H. knowledge of a situation or issue</option><option value="I">I. something that causes a strong emotional reaction</option><option value="J">J. causing doubt or mistrust</option></select></td></tr>
+                <tr><td>8</td><td><strong>awareness</strong></td><td><select class="match-select" id="t5m8"><option value="">— select —</option><option value="A">A. an attempt to trick people for money or information</option><option value="B">B. awareness and understanding of surrounding circumstances</option><option value="C">C. AI-generated content that imitates a real person</option><option value="D">D. carefully examine or research something</option><option value="E">E. to influence or control someone unfairly</option><option value="F">F. trustworthy and dependable</option><option value="G">G. verify whether information is accurate</option><option value="H">H. knowledge of a situation or issue</option><option value="I">I. something that causes a strong emotional reaction</option><option value="J">J. causing doubt or mistrust</option></select></td></tr>
+                <tr><td>9</td><td><strong>emotional trigger</strong></td><td><select class="match-select" id="t5m9"><option value="">— select —</option><option value="A">A. an attempt to trick people for money or information</option><option value="B">B. awareness and understanding of surrounding circumstances</option><option value="C">C. AI-generated content that imitates a real person</option><option value="D">D. carefully examine or research something</option><option value="E">E. to influence or control someone unfairly</option><option value="F">F. trustworthy and dependable</option><option value="G">G. verify whether information is accurate</option><option value="H">H. knowledge of a situation or issue</option><option value="I">I. something that causes a strong emotional reaction</option><option value="J">J. causing doubt or mistrust</option></select></td></tr>
+                <tr><td>10</td><td><strong>suspicious</strong></td><td><select class="match-select" id="t5m10"><option value="">— select —</option><option value="A">A. an attempt to trick people for money or information</option><option value="B">B. awareness and understanding of surrounding circumstances</option><option value="C">C. AI-generated content that imitates a real person</option><option value="D">D. carefully examine or research something</option><option value="E">E. to influence or control someone unfairly</option><option value="F">F. trustworthy and dependable</option><option value="G">G. verify whether information is accurate</option><option value="H">H. knowledge of a situation or issue</option><option value="I">I. something that causes a strong emotional reaction</option><option value="J">J. causing doubt or mistrust</option></select></td></tr>
+            </tbody>
+        </table>
+
+        <h4 style="color:#667eea; margin:20px 0 12px;">💬 Discussion Questions</h4>
+        <div class="discussion-box">
+            <h4>Talk about these questions with your class:</h4>
+            <ol>
+                <li>Have you ever seen a deepfake video or image online?</li>
+                <li>Do you think AI-generated content will become impossible to distinguish from real content in the future?</li>
+                <li>Why do scammers often use fear, shock, or urgency in their messages?</li>
+                <li>What would you do if a friend suddenly asked you for money online?</li>
+                <li>How can people protect themselves from AI-powered scams?</li>
+                <li>Should social media companies do more to identify and remove deepfakes?</li>
+                <li>What are some positive uses of deepfake or AI technology?</li>
+                <li>Do you agree that critical thinking is becoming more important in the age of AI? Why or why not?</li>
+            </ol>
+        </div>
+
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(4)">← Previous</button>
+            <button class="check-btn" id="check5" onclick="checkTask5()" disabled>Check Answers</button>
+            <button class="next-btn" id="next5" disabled onclick="goToTask(6)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns5" onclick="toggleAnswers('ans5')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans5">
+            <p><strong>MCQ:</strong> 1-B, 2-C, 3-C, 4-B, 5-B, 6-A, 7-B, 8-C, 9-C, 10-C</p>
+            <p><strong>Gap Fill:</strong> 11-cloned, 12-context, 13-deposit, 14-sensational, 15-investigate</p>
+            <p><strong>Matching:</strong> 1-C, 2-A, 3-E, 4-B, 5-F, 6-G, 7-D, 8-H, 9-I, 10-J</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 6 ══ -->
+    <div class="task-card" id="task6">
+        <div class="task-header">
+            <div class="task-number">6</div>
+            <div><div class="task-title">Dictation Task</div><div class="task-subtitle">Listen and write ONE WORD ONLY in each gap</div></div>
+        </div>
+        <div class="audio-player">
+            <p>🎧 AI and Crime Investigation — BBC Learning English</p>
+            <audio controls src="aicrime.mp3"></audio>
+        </div>
+        <div class="gap-fill-section" id="dictation-gaps"></div>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(5)">← Previous</button>
+            <button class="check-btn" id="check6" onclick="checkTask6()" disabled>Check Answers</button>
+            <button class="next-btn" id="next6" disabled onclick="goToTask(7)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns6" onclick="toggleAnswers('ans6')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans6">
+            <p>1-murder, 2-evidence, 3-coming, 4-investigation, 5-perspective, 6-experience, 7-improve, 8-patterns, 9-renaissance, 10-favour, 11-database, 12-footwear, 13-appealing, 14-insight, 15-happening, 16-quickly, 17-information, 18-reasons, 19-robot, 20-Sherlock, 21-perspective, 22-experience, 23-improve, 24-activity, 25-appealing, 26-real-time, 27-website</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 7 ══ -->
+    <div class="task-card" id="task7">
+        <div class="task-header">
+            <div class="task-number">7</div>
+            <div><div class="task-title">Practice Listening</div><div class="task-subtitle">Full IELTS-style listening test</div></div>
+        </div>
+        <a class="html-link-btn" href="Listening (7).html" target="_blank">🎧 Open Practice Listening</a>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(6)">← Previous</button>
+            <button class="next-btn" onclick="finishDay()">Finish Day 5 ✓</button>
+        </div>
+    </div>
+
+    <!-- COMPLETION -->
+    <div class="completion-screen" id="completion-screen">
+        <div class="icon">🎉</div>
+        <h2>Day 5 Complete!</h2>
+        <p>Excellent work! You've completed all tasks for Week 3, Day 5.<br>Week 3: Technology is now complete! 💻</p>
+        <div style="margin:30px 0; text-align:left;">
+            <h3 style="color:#667eea; border-bottom:2px solid #667eea; padding-bottom:10px; margin-bottom:15px;">📋 Review Your Work</h3>
+            <p style="color:#888; margin-bottom:20px; font-size:0.9rem;">Click any task below to go back and review it.</p>
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:15px;">
+                <div onclick="reviewTask(1)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#667eea;font-size:1.1rem;margin-bottom:5px;">Task 1</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Mini Reading</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(2)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#667eea;font-size:1.1rem;margin-bottom:5px;">Task 2</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Article Reading</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(3)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#667eea;font-size:1.1rem;margin-bottom:5px;">Task 3</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Reading</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(4)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#667eea;font-size:1.1rem;margin-bottom:5px;">Task 4</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Vocab Challenge</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(5)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#667eea;font-size:1.1rem;margin-bottom:5px;">Task 5</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Video + Vocab</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(6)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#667eea;font-size:1.1rem;margin-bottom:5px;">Task 6</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Dictation</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(7)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#667eea;font-size:1.1rem;margin-bottom:5px;">Task 7</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Listening</div><div style="font-size:1.4rem;">✅</div></div>
+            </div>
+        </div>
+        <a href="/student-dashboard.html" class="dashboard-btn">← Back to Dashboard</a>
+    </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://nbfceuhuauizyucugejr.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_0mFIGJkA_DKZfUiDAWFdrA_nXt0hF6H';
+const dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const WEEK = 3, DAY = 5, TOTAL_TASKS = 7;
+let studentId = null, studentGroup = null, currentTask = 1;
+let taskStartTime = Date.now(), saveTimeout = null;
+
+const dictationAnswers = ['murder','evidence','coming','investigation','perspective','experience','improve','patterns','renaissance','favour','database','footwear','appealing','insight','happening','quickly','information','reasons','robot','Sherlock','perspective','experience','improve','activity','appealing','real-time','website'];
+
+const dictationScripts = [
+    "These programmes are called <input class='gap-input' id='d1' placeholder='(1)'> mysteries and tell the story of a detective solving a crime.",
+    "Solving crimes involves collecting and reviewing lots of <input class='gap-input' id='d2' placeholder='(2)'>, like DNA, fingerprints, or CCTV.",
+    "Tell us a little bit more about yourself and where you're <input class='gap-input' id='d3' placeholder='(3)'> from?",
+    "My background is with <input class='gap-input' id='d4' placeholder='(4)'>.",
+    "Alex asks Alastair to explain his <input class='gap-input' id='d5' placeholder='(5)'> or point of view.",
+    "most of your previous work or <input class='gap-input' id='d6' placeholder='(6)'> was related to something.",
+    "'What can it do for me?' means 'How can artificial intelligence help or <input class='gap-input' id='d7' placeholder='(7)'> something?'",
+    "it can be difficult to know what's important and find <input class='gap-input' id='d8' placeholder='(8)'> which might be relevant to the crime.",
+    "I think we're seeing a <input class='gap-input' id='d9' placeholder='(9)'> in the pattern-recognition forms of evidence.",
+    "This kind of evidence went a little bit out of <input class='gap-input' id='d10' placeholder='(10)'>.",
+    "you can take a photo of a mark with your phone, compare that mark to the <input class='gap-input' id='d11' placeholder='(11)'> and get real-time insight.",
+    "Ruth says there is a renaissance in looking at patterns in evidence, such as finger marks or <input class='gap-input' id='d12' placeholder='(12)'> marks.",
+    "If something is out of favour, it is less popular or <input class='gap-input' id='d13' placeholder='(13)'>.",
+    "AI can be used to compare a picture of a mark with a database and get real-time <input class='gap-input' id='d14' placeholder='(14)'>.",
+    "real-time means the information is presented at the same time that it's <input class='gap-input' id='d15' placeholder='(15)'>.",
+    "AI can compare lots of information very <input class='gap-input' id='d16' placeholder='(16)'>, which makes finding patterns easier.",
+    "lots of private <input class='gap-input' id='d17' placeholder='(17)'> would need to be collected.",
+    "police usually have to give clear <input class='gap-input' id='d18' placeholder='(18)'> why they need access to certain information.",
+    "It's unlikely an AI-powered <input class='gap-input' id='d19' placeholder='(19)'> would ever replace a detective!",
+    "I said that <input class='gap-input' id='d20' placeholder='(20)'> Holmes was maybe the most popular detective.",
+    "where you're coming from means your opinion or <input class='gap-input' id='d21' placeholder='(21)'> on something.",
+    "Your background is the area that you have the most work <input class='gap-input' id='d22' placeholder='(22)'> in.",
+    "'What can this do for me?' means 'How can this help or <input class='gap-input' id='d23' placeholder='(23)'> things?'",
+    "Renaissance means new interest or <input class='gap-input' id='d24' placeholder='(24)'> in something.",
+    "If something is out of favour, it has become less popular or <input class='gap-input' id='d25' placeholder='(25)'>.",
+    "the adjective <input class='gap-input' id='d26' placeholder='(26)'> means information is presented as it is happening.",
+    "Head to our <input class='gap-input' id='d27' placeholder='(27)'> to find more episodes of 6 Minute English.",
+];
+
+const vocab = [
+    {word:"1. Cybercrime (n)", def:"Criminal activity carried out using computers"},
+    {word:"2. Vulnerability (n)", def:"A weakness that can be exploited by attackers"},
+    {word:"3. Firewall (n)", def:"Software that blocks unauthorised network access"},
+    {word:"4. Encryption (n)", def:"Converting data into a coded form for security"},
+    {word:"5. Phishing (n)", def:"Fraudulent emails that trick users into revealing data"},
+    {word:"6. Breach (n)", def:"An unauthorised access to a system or data"},
+    {word:"7. Proactive (adj)", def:"Acting in advance to prevent problems"},
+    {word:"8. Asymmetry (n)", def:"Lack of equality between two sides"},
+    {word:"9. Penetration testing (n)", def:"Simulated cyberattack to find weaknesses"},
+    {word:"10. Critical infrastructure (n)", def:"Essential systems like power grids and water supply"},
+    {word:"11. State-sponsored (adj)", def:"Funded or supported by a government"},
+    {word:"12. Regulatory framework (n)", def:"A system of rules and laws governing an area"},
+    {word:"13. Deepfake (n)", def:"AI-generated content imitating a real person"},
+    {word:"14. Scam (n)", def:"An attempt to trick people for money or information"},
+    {word:"15. Manipulate (v)", def:"To influence or control someone unfairly"},
+    {word:"16. Context (n)", def:"Background information helping to understand something"},
+    {word:"17. Reliable (adj)", def:"Trustworthy and dependable"},
+    {word:"18. Fact-check (v)", def:"To verify whether information is accurate"},
+    {word:"19. Investigate (v)", def:"To carefully examine or research something"},
+    {word:"20. Awareness (n)", def:"Knowledge of a situation or issue"},
+    {word:"21. Emotional trigger (n)", def:"Something that causes a strong emotional reaction"},
+    {word:"22. Suspicious (adj)", def:"Causing doubt or mistrust"},
+    {word:"23. Cloned (adj)", def:"Copied or duplicated exactly using technology"},
+    {word:"24. Sensational (adj)", def:"Extremely shocking or dramatic"},
+    {word:"25. Deposit (n)", def:"An amount of money paid in advance as security"},
+    {word:"26. Murder mystery (n)", def:"A story about investigating a killing"},
+    {word:"27. Evidence (n)", def:"Information used to prove facts in a case"},
+    {word:"28. Renaissance (n)", def:"A new interest or revival in something"},
+    {word:"29. Database (n)", def:"A large organised collection of digital data"},
+    {word:"30. Insight (n)", def:"A deep understanding of something"},
+    {word:"31. Real-time (adj)", def:"Information presented as it is happening"},
+    {word:"32. Fingerprint (n)", def:"A unique mark left by a person's finger"},
+    {word:"33. Pattern recognition (n)", def:"Identifying recurring arrangements in data"},
+    {word:"34. Penetration (n)", def:"The action of breaking into a system"},
+    {word:"35. Mainstream (adj)", def:"Normal and conventional; widely accepted"},
+    {word:"36. Credential (n)", def:"A username and password used to log in"},
+    {word:"37. Impersonate (v)", def:"To pretend to be another person"},
+    {word:"38. Threat intelligence (n)", def:"Information about potential cyber threats"},
+    {word:"39. Catastrophic (adj)", def:"Causing sudden great damage or suffering"},
+    {word:"40. Cooperation (n)", def:"Working together towards a common goal"},
+    {word:"41. Back up (v)", def:"To make a copy of data for safety"},
+    {word:"42. Bypass (v)", def:"To go around an obstacle or security measure"},
+    {word:"43. Install (v)", def:"To set up software on a computer"},
+    {word:"44. Detect (v)", def:"To discover or identify something"},
+    {word:"45. Collocation (n)", def:"Words that are commonly used together"},
+    {word:"46. Perspective (n)", def:"A particular way of viewing something"},
+    {word:"47. Background (n)", def:"Previous experience or knowledge in a field"},
+    {word:"48. Forensic (adj)", def:"Relating to crime investigation using science"},
+    {word:"49. Imbalance (n)", def:"A situation where things are not equal"},
+    {word:"50. Simultaneously (adv)", def:"At the same time"},
+];
+
+async function initStudent() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('teacher') === 'true') { studentId = 'teacher-preview'; studentGroup = 'preview'; return; }
+    try {
+        const userStr = localStorage.getItem('user');
+        if (!userStr) { window.location.href = '/login.html'; return; }
+        const user = JSON.parse(userStr);
+        const { data, error } = await dbClient.from('students').select('*').eq('username', user.username).single();
+        if (error || !data) return;
+        studentId = data.id; studentGroup = data.student_group;
+    } catch(e) { console.log('Auth error:', e); }
+}
+
+function buildVocab() {
+    document.getElementById('vocab-grid').innerHTML = vocab.map(v =>
+        `<div class="vocab-item"><div class="vocab-word">${v.word}</div><div class="vocab-definition">${v.def}</div></div>`).join('');
+}
+
+function buildDictation() {
+    document.getElementById('dictation-gaps').innerHTML = dictationScripts.map((s, i) =>
+        `<div class="gap-sentence"><strong>${i+1}.</strong> …${s}</div>`).join('');
+}
+
+async function startDay() {
+    document.getElementById('splash-screen').style.display = 'none';
+    document.getElementById('main-content').style.display = 'block';
+    buildVocab(); buildDictation();
+    await initStudent();
+    await restoreProgress();
+    setupLiveValidation();
+}
+
+function goToTask(num) {
+    document.getElementById('task' + currentTask).classList.remove('active');
+    currentTask = num;
+    document.getElementById('task' + num).classList.add('active');
+    document.getElementById('task' + num).scrollIntoView({behavior:'smooth', block:'start'});
+    updateProgress(num); taskStartTime = Date.now(); saveResume(num);
+}
+
+function updateProgress(taskNum) {
+    document.getElementById('progress-bar').style.width = Math.round(((taskNum-1)/TOTAL_TASKS)*100) + '%';
+    document.getElementById('progress-label').textContent = `Task ${taskNum} of ${TOTAL_TASKS}`;
+}
+
+function showSaveIndicator() {
+    const el = document.getElementById('saveIndicator');
+    el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+async function saveResume(taskNum) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try { await dbClient.from('student_resume').upsert({student_id:studentId, week:WEEK, day:DAY, last_task:taskNum, updated_at:new Date().toISOString()}, {onConflict:'student_id'}); } catch(e) {}
+}
+
+function scheduleSave() {
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+        localStorage.setItem(`w${WEEK}d${DAY}_answers`, JSON.stringify(gatherAllAnswers()));
+        showSaveIndicator();
+    }, 800);
+}
+
+function gatherAllAnswers() {
+    const data = {};
+    document.querySelectorAll('.gap-input').forEach(el => { if (el.id) data[el.id] = el.value; });
+    ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10'].forEach(name => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`); if (sel) data[name] = sel.value;
+    });
+    document.querySelectorAll('select').forEach(el => { if (el.id) data[el.id] = el.value; });
+    return data;
+}
+
+async function restoreProgress() {
+    try {
+        const saved = localStorage.getItem(`w${WEEK}d${DAY}_answers`);
+        if (saved) {
+            const data = JSON.parse(saved);
+            Object.entries(data).forEach(([id, val]) => { const el = document.getElementById(id); if (el && el.tagName === 'INPUT') el.value = val; });
+            Object.entries(data).forEach(([name, val]) => { if (name.startsWith('t5q')) { const r = document.querySelector(`input[name="${name}"][value="${val}"]`); if (r) r.checked = true; } });
+            Object.entries(data).forEach(([id, val]) => { const el = document.getElementById(id); if (el && el.tagName === 'SELECT') el.value = val; });
+        }
+        if (studentId && studentId !== 'teacher-preview') {
+            const { data: taskData } = await dbClient.from('task_progress').select('task_number,status').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY);
+            const completedCount = taskData ? taskData.filter(t => t.status === 'completed').length : 0;
+            if (completedCount >= TOTAL_TASKS) {
+                await restoreAnswersFromSupabase();
+                document.getElementById('task1').classList.remove('active');
+                document.getElementById('completion-screen').style.display = 'block';
+                updateProgress(TOTAL_TASKS); validateAll(); makeReadOnly(); return;
+            }
+            const { data: resume } = await dbClient.from('student_resume').select('last_task').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY).single();
+            if (resume && resume.last_task > 1) {
+                document.getElementById('task1').classList.remove('active');
+                currentTask = resume.last_task;
+                document.getElementById('task' + currentTask).classList.add('active');
+                updateProgress(currentTask);
+            }
+        }
+        validateAll();
+    } catch(e) { console.log('Restore error:', e); }
+}
+
+async function restoreAnswersFromSupabase() {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        const { data: answers } = await dbClient.from('student_answers').select('*').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY);
+        if (!answers || answers.length === 0) return;
+        answers.forEach(a => {
+            const { question_id, student_answer, question_type, is_correct, correct_answer } = a;
+            if (question_type === 'mcq') {
+                const radio = document.querySelector(`input[name="${question_id}"][value="${student_answer}"]`);
+                if (radio) radio.checked = true;
+                const fb = document.getElementById('fb_' + question_id);
+                if (fb) { fb.textContent = is_correct ? '✅ Correct!' : `❌ Incorrect — correct answer: ${correct_answer}`; fb.className = 'answer-feedback ' + (is_correct ? 'correct' : 'incorrect'); }
+            } else if (question_type === 'gap_fill') {
+                const inp = document.getElementById(question_id);
+                if (inp) { inp.value = student_answer || ''; inp.classList.toggle('correct', is_correct); inp.classList.toggle('incorrect', !is_correct); }
+            } else if (question_type === 'matching') {
+                const sel = document.getElementById(question_id);
+                if (sel) { sel.value = student_answer || ''; sel.classList.toggle('correct', is_correct); sel.classList.toggle('incorrect', !is_correct); }
+            }
+        });
+        document.querySelectorAll('.show-answers-btn').forEach(btn => btn.style.display = 'inline-block');
+        document.querySelectorAll('.next-btn').forEach(btn => btn.disabled = false);
+    } catch(e) { console.error('Restore answers error:', e); }
+}
+
+function makeReadOnly() {
+    document.querySelectorAll('.gap-input').forEach(el => { el.disabled = true; el.style.opacity = '0.85'; });
+    document.querySelectorAll('input[type="radio"]').forEach(el => el.disabled = true);
+    document.querySelectorAll('select').forEach(el => { el.disabled = true; });
+    document.querySelectorAll('.check-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.next-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.prev-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.show-answers-btn').forEach(el => el.style.display = 'inline-block');
+}
+
+function setupLiveValidation() {
+    ['t1q1','t1q2','t1q3','t1q4','t1q5','t1q6','t1q7'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', () => { validateTask1Check(); scheduleSave(); }); });
+    ['c1','c2','c3','c4','c5','c6','c7','c8','c9','c10'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('change', () => { validateTask4Check(); scheduleSave(); }); });
+    ['vg1','vg2','vg3','vg4','vg5'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', () => { validateTask4Check(); scheduleSave(); }); });
+    ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10'].forEach(name => { document.querySelectorAll(`input[name="${name}"]`).forEach(el => el.addEventListener('change', () => { validateTask5Check(); scheduleSave(); })); });
+    ['t5g11','t5g12','t5g13','t5g14','t5g15'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', () => { validateTask5Check(); scheduleSave(); }); });
+    ['t5m1','t5m2','t5m3','t5m4','t5m5','t5m6','t5m7','t5m8','t5m9','t5m10'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('change', () => { validateTask5Check(); scheduleSave(); }); });
+    for (let i = 1; i <= 27; i++) { const el = document.getElementById('d' + i); if (el) el.addEventListener('input', () => { validateTask6Check(); scheduleSave(); }); }
+}
+
+function validateAll() { validateTask1Check(); validateTask4Check(); validateTask5Check(); validateTask6Check(); }
+function validateTask1Check() { document.getElementById('check1').disabled = !['t1q1','t1q2','t1q3','t1q4','t1q5','t1q6','t1q7'].every(id => document.getElementById(id)?.value.trim()); }
+function validateTask4Check() {
+    const p1 = ['c1','c2','c3','c4','c5','c6','c7','c8','c9','c10'].every(id => document.getElementById(id)?.value);
+    const p2 = ['vg1','vg2','vg3','vg4','vg5'].every(id => document.getElementById(id)?.value.trim());
+    document.getElementById('check4').disabled = !(p1 && p2);
+}
+function validateTask5Check() {
+    const allMcq = ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10'].every(name => document.querySelector(`input[name="${name}"]:checked`));
+    const allGaps = ['t5g11','t5g12','t5g13','t5g14','t5g15'].every(id => document.getElementById(id)?.value.trim());
+    const allMatch = ['t5m1','t5m2','t5m3','t5m4','t5m5','t5m6','t5m7','t5m8','t5m9','t5m10'].every(id => document.getElementById(id)?.value);
+    document.getElementById('check5').disabled = !(allMcq && allGaps && allMatch);
+}
+function validateTask6Check() { let all = true; for (let i=1;i<=27;i++) { if (!document.getElementById('d'+i)?.value.trim()) { all=false; break; } } document.getElementById('check6').disabled = !all; }
+
+const t1Accepted = {
+    t1q1: ['mainstream security challenge','security challenge'],
+    t1q2: ['human error'],
+    t1q3: ['impersonating trusted sources','trusted sources'],
+    t1q4: ['proactive','proactive approach'],
+    t1q5: ['critical infrastructure'],
+    t1q6: ['catastrophic consequences'],
+    t1q7: ['international cooperation','regulatory frameworks','stronger regulatory frameworks']
+};
+const t4ColAnswers = {c1:'C',c2:'D',c3:'A',c4:'E',c5:'F',c6:'H',c7:'I',c8:'J',c9:'G',c10:'B'};
+const t4GapAnswers = {vg1:'back up',vg2:'bypass',vg3:'install',vg4:'detect',vg5:'encrypt'};
+const t5McqAnswers = {t5q1:'B',t5q2:'C',t5q3:'C',t5q4:'B',t5q5:'B',t5q6:'A',t5q7:'B',t5q8:'C',t5q9:'C',t5q10:'C'};
+const t5GapAnswers = {t5g11:'cloned',t5g12:'context',t5g13:'deposit',t5g14:'sensational',t5g15:'investigate'};
+const t5MatchAnswers = {t5m1:'C',t5m2:'A',t5m3:'E',t5m4:'B',t5m5:'F',t5m6:'G',t5m7:'D',t5m8:'H',t5m9:'I',t5m10:'J'};
+
+function checkTask1() {
+    const answers = [];
+    Object.entries(t1Accepted).forEach(([id, opts]) => {
+        const inp = document.getElementById(id);
+        const val = inp.value.trim().toLowerCase();
+        const ok = opts.some(o => val.includes(o.toLowerCase()));
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:opts[0], is_correct:ok});
+    });
+    document.getElementById('showAns1').style.display = 'inline-block';
+    document.getElementById('next1').disabled = false;
+    saveAnswers(1, answers); saveTaskProgress(1);
+}
+
+function checkTask4() {
+    const answers = [];
+    Object.entries(t4ColAnswers).forEach(([id, correct]) => {
+        const sel = document.getElementById(id);
+        const ok = sel.value === correct;
+        sel.classList.toggle('correct', ok); sel.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'matching', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    Object.entries(t4GapAnswers).forEach(([id, correct]) => {
+        const inp = document.getElementById(id);
+        const val = inp.value.trim().toLowerCase();
+        const ok = val === correct.toLowerCase();
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:correct, is_correct:ok});
+    });
+    document.getElementById('showAns4').style.display = 'inline-block';
+    document.getElementById('next4').disabled = false;
+    saveAnswers(4, answers); saveTaskProgress(4);
+}
+
+function checkTask5() {
+    const answers = [];
+    Object.entries(t5McqAnswers).forEach(([name, correct]) => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`);
+        const fb = document.getElementById('fb_' + name);
+        if (!sel) return;
+        const ok = sel.value === correct;
+        fb.textContent = ok ? '✅ Correct!' : `❌ Incorrect — correct answer: ${correct}`;
+        fb.className = 'answer-feedback ' + (ok ? 'correct' : 'incorrect');
+        answers.push({question_id:name, question_type:'mcq', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    Object.entries(t5GapAnswers).forEach(([id, correct]) => {
+        const inp = document.getElementById(id);
+        const val = inp.value.trim().toLowerCase();
+        const ok = val === correct.toLowerCase();
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:correct, is_correct:ok});
+    });
+    Object.entries(t5MatchAnswers).forEach(([id, correct]) => {
+        const sel = document.getElementById(id);
+        const ok = sel.value === correct;
+        sel.classList.toggle('correct', ok); sel.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'matching', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    document.getElementById('showAns5').style.display = 'inline-block';
+    document.getElementById('next5').disabled = false;
+    saveAnswers(5, answers); saveTaskProgress(5);
+}
+
+function checkTask6() {
+    const answers = [];
+    for (let i = 1; i <= 27; i++) {
+        const inp = document.getElementById('d' + i);
+        const val = inp.value.trim().toLowerCase();
+        const correct = dictationAnswers[i-1];
+        const ok = val === correct.toLowerCase();
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:'d'+i, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:correct, is_correct:ok});
+    }
+    document.getElementById('showAns6').style.display = 'inline-block';
+    document.getElementById('next6').disabled = false;
+    saveAnswers(6, answers); saveTaskProgress(6);
+}
+
+async function saveAnswers(taskNum, answers) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        const rows = answers.map(a => ({student_id:studentId, week:WEEK, day:DAY, task_number:taskNum, question_id:a.question_id, question_type:a.question_type, student_answer:a.student_answer, correct_answer:a.correct_answer, is_correct:a.is_correct, answered_at:new Date().toISOString()}));
+        await dbClient.from('student_answers').upsert(rows, {onConflict:'student_id,week,day,task_number,question_id'});
+    } catch(e) { console.error('Answer save error:', e); }
+}
+
+async function saveTaskProgress(taskNum) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        await dbClient.from('task_progress').upsert({student_id:studentId, week:WEEK, day:DAY, task_number:taskNum, status:'completed', time_completed:new Date().toISOString(), time_spent_seconds:Math.round((Date.now()-taskStartTime)/1000)}, {onConflict:'student_id,week,day,task_number'});
+    } catch(e) { console.error('Progress save error:', e); }
+}
+
+async function finishDay() {
+    document.getElementById('task7').classList.remove('active');
+    document.getElementById('completion-screen').style.display = 'block';
+    document.getElementById('completion-screen').scrollIntoView({behavior:'smooth'});
+    localStorage.removeItem(`w${WEEK}d${DAY}_answers`);
+    for (let i = 1; i <= TOTAL_TASKS; i++) await saveTaskProgress(i);
+    if (studentId && studentId !== 'teacher-preview') await dbClient.from('student_resume').delete().eq('student_id', studentId);
+    makeReadOnly();
+}
+
+function reviewTask(num) {
+    document.getElementById('completion-screen').style.display = 'none';
+    currentTask = num;
+    document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active'));
+    document.getElementById('task' + num).classList.add('active');
+    document.getElementById('task' + num).scrollIntoView({behavior:'smooth', block:'start'});
+    const existing = document.getElementById('back-to-results');
+    if (!existing) {
+        const btn = document.createElement('button');
+        btn.id = 'back-to-results';
+        btn.textContent = '🏆 Back to Results';
+        btn.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#667eea;color:white;border:none;padding:12px 22px;border-radius:50px;cursor:pointer;font-weight:bold;font-size:0.95rem;box-shadow:0 4px 15px rgba(102,126,234,0.4);z-index:9998;';
+        btn.onclick = () => { btn.remove(); document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active')); document.getElementById('completion-screen').style.display = 'block'; document.getElementById('completion-screen').scrollIntoView({behavior:'smooth'}); };
+        document.body.appendChild(btn);
+    }
+}
+
+function toggleVocab() { document.getElementById('vocab-body').classList.toggle('open'); document.getElementById('vocab-arrow').classList.toggle('open'); }
+function toggleAnswers(id) {
+    const div = document.getElementById(id);
+    const btn = div.previousElementSibling;
+    div.style.display = div.style.display === 'block' ? 'none' : 'block';
+    btn.textContent = div.style.display === 'block' ? '▲ Hide Answers' : '▼ Show Answers';
+}
+</script>
+</body>
+</html>
