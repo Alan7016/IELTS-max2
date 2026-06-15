@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEEK 4 - DAY 3 (Environment)</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0fff4; color: #333; }
+        #splash-screen { position: fixed; inset: 0; background: linear-gradient(135deg, #38a169 0%, #2f855a 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; color: white; text-align: center; padding: 20px; }
+        #splash-screen h1 { font-size: 3rem; margin-bottom: 10px; }
+        #splash-screen h2 { font-size: 2rem; margin-bottom: 10px; opacity: 0.9; }
+        #splash-screen p { font-size: 1.2rem; margin-bottom: 40px; opacity: 0.8; }
+        .splash-btn { background: white; color: #38a169; border: none; padding: 18px 60px; font-size: 1.4rem; font-weight: bold; border-radius: 50px; cursor: pointer; box-shadow: 0 8px 25px rgba(0,0,0,0.2); transition: all 0.3s; }
+        .splash-btn:hover { transform: translateY(-3px); }
+        .main-container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        .day-header { background: linear-gradient(135deg, #38a169 0%, #2f855a 100%); color: white; padding: 25px 30px; border-radius: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; }
+        .day-header h1 { font-size: 1.6rem; }
+        .day-header .topic { opacity: 0.85; font-size: 1rem; margin-top: 4px; }
+        .back-btn { background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; text-decoration: none; font-size: 0.9rem; transition: all 0.3s; }
+        .back-btn:hover { background: white; color: #38a169; }
+        .vocab-section { background: white; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-left: 5px solid #38a169; overflow: hidden; }
+        .vocab-toggle { width: 100%; background: none; border: none; cursor: pointer; padding: 18px 25px; display: flex; align-items: center; justify-content: space-between; text-align: left; }
+        .vocab-toggle:hover { background: #f0fff4; }
+        .vocab-toggle-left { display: flex; align-items: center; gap: 10px; }
+        .vocab-toggle h3 { color: #38a169; font-size: 1.1rem; margin: 0; }
+        .vocab-count { background: #38a169; color: white; font-size: 0.75rem; font-weight: bold; padding: 3px 10px; border-radius: 20px; }
+        .vocab-arrow { color: #38a169; font-size: 1rem; transition: transform 0.3s; }
+        .vocab-arrow.open { transform: rotate(180deg); }
+        .vocab-body { display: none; padding: 0 25px 20px; }
+        .vocab-body.open { display: block; }
+        .vocab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+        .vocab-item { background: #f0fff4; padding: 10px 14px; border-radius: 8px; }
+        .vocab-word { font-weight: bold; color: #333; font-size: 0.95rem; }
+        .vocab-definition { color: #666; font-size: 0.82rem; margin-top: 2px; }
+        .progress-label { text-align: center; color: #38a169; font-size: 0.85rem; margin-bottom: 8px; font-weight: 600; }
+        .progress-bar-wrap { background: #c6f6d5; border-radius: 20px; height: 10px; margin-bottom: 20px; overflow: hidden; }
+        .progress-bar-fill { background: linear-gradient(90deg, #38a169, #2f855a); height: 100%; border-radius: 20px; transition: width 0.5s ease; }
+        .task-card { background: white; border-radius: 15px; padding: 28px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); display: none; }
+        .task-card.active { display: block; }
+        .task-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .task-number { background: linear-gradient(135deg, #38a169, #2f855a); color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; flex-shrink: 0; }
+        .task-title { font-size: 1.3rem; font-weight: bold; color: #333; }
+        .task-subtitle { color: #888; font-size: 0.9rem; margin-top: 2px; }
+        .pdf-links { display: flex; flex-direction: column; gap: 12px; margin: 15px 0; }
+        .pdf-link { display: flex; align-items: center; gap: 12px; background: #f0fff4; padding: 15px 20px; border-radius: 10px; text-decoration: none; color: #333; font-weight: 600; border: 2px solid #9ae6b4; transition: all 0.3s; }
+        .pdf-link:hover { background: #38a169; color: white; border-color: #38a169; transform: translateX(5px); }
+        .pdf-icon { font-size: 1.5rem; }
+        .html-link-btn { display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #38a169, #2f855a); color: white; padding: 15px 30px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 1rem; transition: all 0.3s; margin: 10px 0; }
+        .html-link-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(56,161,105,0.4); }
+        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; margin: 15px 0; }
+        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .video-fallback { background: #f0fff4; padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align: center; }
+        .video-fallback a { color: #38a169; font-weight: bold; }
+        .audio-player { background: #f0fff4; border: 2px solid #9ae6b4; border-radius: 12px; padding: 20px; margin: 15px 0; }
+        .audio-player p { color: #555; margin-bottom: 10px; font-weight: 600; }
+        .audio-player audio { width: 100%; }
+        .passage-text { background: #fafffe; border: 1px solid #9ae6b4; border-radius: 10px; padding: 25px; margin: 15px 0; line-height: 1.8; font-size: 0.97rem; color: #333; }
+        .passage-text h3 { color: #38a169; margin-bottom: 15px; font-size: 1.2rem; }
+        .passage-text p { margin-bottom: 14px; }
+        .highlight { font-style: italic; color: #2f855a; font-weight: 600; }
+        .question-block { margin-bottom: 20px; padding: 18px; background: #f8f9fa; border-radius: 10px; }
+        .question-text { font-weight: 600; margin-bottom: 12px; color: #333; line-height: 1.5; }
+        .options label { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: background 0.2s; margin-bottom: 5px; }
+        .options label:hover { background: #e8f5e9; }
+        .options input[type="radio"] { margin-top: 3px; flex-shrink: 0; }
+        .answer-feedback { margin-top: 8px; font-weight: bold; font-size: 0.9rem; }
+        .answer-feedback.correct { color: #28a745; }
+        .answer-feedback.incorrect { color: #dc3545; }
+        .gap-fill-section { margin-top: 20px; }
+        .gap-sentence { margin-bottom: 14px; line-height: 2; font-size: 1rem; }
+        .gap-input { border: none; border-bottom: 2px solid #38a169; padding: 4px 8px; font-size: 0.95rem; width: 200px; background: transparent; outline: none; color: #333; }
+        .gap-input.correct { border-bottom-color: #28a745; background: #d4edda33; }
+        .gap-input.incorrect { border-bottom-color: #dc3545; background: #f8d7da33; }
+        .open-input { border-bottom-color: #38a169 !important; background: #f0fff4 !important; }
+        .word-box { background: #f0fff4; border: 2px solid #9ae6b4; border-radius: 10px; padding: 12px 18px; margin-bottom: 15px; }
+        .word-box strong { color: #38a169; }
+        .matching-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .matching-table th { background: #38a169; color: white; padding: 10px 14px; text-align: left; }
+        .matching-table td { padding: 10px 14px; border-bottom: 1px solid #eee; }
+        .matching-table tr:nth-child(even) td { background: #f0fff4; }
+        .match-select { border: 2px solid #9ae6b4; border-radius: 6px; padding: 5px 8px; font-size: 0.88rem; background: white; width: 100%; max-width: 380px; }
+        .match-select.correct { border-color: #28a745; }
+        .match-select.incorrect { border-color: #dc3545; }
+        .place-select { border: 2px solid #9ae6b4; border-radius: 6px; padding: 6px 10px; font-size: 0.9rem; background: white; width: 160px; }
+        .place-select.correct { border-color: #28a745; }
+        .place-select.incorrect { border-color: #dc3545; }
+        .speakers-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        .speakers-table th { background: #38a169; color: white; padding: 12px 16px; text-align: left; }
+        .speakers-table td { padding: 12px 16px; border-bottom: 1px solid #eee; vertical-align: top; }
+        .speakers-table tr:nth-child(even) td { background: #f0fff4; }
+        .btn-row { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+        .check-btn { background: linear-gradient(135deg, #38a169, #2f855a); color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .check-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(56,161,105,0.4); }
+        .check-btn:disabled { background: #ccc; cursor: not-allowed; transform: none !important; box-shadow: none; }
+        .next-btn { background: #28a745; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .next-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .next-btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(40,167,69,0.4); }
+        .prev-btn { background: #6c757d; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .prev-btn:hover { background: #5a6268; }
+        .show-answers-btn { background: #ffc107; color: #333; border: none; padding: 10px 22px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.88rem; display: none; }
+        .show-answers-btn:hover { background: #e0a800; }
+        .answers-panel { display: none; background: #fffbea; border: 2px solid #ffc107; border-radius: 10px; padding: 15px; margin-top: 12px; }
+        .answers-panel p { margin-bottom: 6px; font-size: 0.9rem; }
+        .completion-screen { text-align: center; padding: 60px 20px; display: none; }
+        .completion-screen .icon { font-size: 5rem; margin-bottom: 20px; }
+        .completion-screen h2 { font-size: 2.2rem; color: #38a169; margin-bottom: 10px; }
+        .completion-screen p { color: #666; font-size: 1rem; margin-bottom: 30px; }
+        .dashboard-btn { background: linear-gradient(135deg, #38a169, #2f855a); color: white; padding: 16px 40px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 1.1rem; display: inline-block; transition: all 0.3s; }
+        .dashboard-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(56,161,105,0.4); }
+        .save-indicator { position: fixed; bottom: 20px; right: 20px; background: #38a169; color: white; padding: 10px 18px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; opacity: 0; transition: opacity 0.4s; z-index: 9000; pointer-events: none; }
+        .save-indicator.show { opacity: 1; }
+    </style>
+</head>
+<body>
+<div id="splash-screen">
+    <h1>🌍 WEEK 4</h1>
+    <h2>DAY 3</h2>
+    <p>Topic: Environment</p>
+    <button class="splash-btn" onclick="startDay()">LET'S GO!</button>
+</div>
+<div class="save-indicator" id="saveIndicator">✓ Progress saved</div>
+<div class="main-container" id="main-content" style="display:none;">
+    <div class="day-header">
+        <div><h1>🌍 Week 4 — Day 3</h1><div class="topic">Topic: Environment</div></div>
+        <a href="/student-dashboard.html" class="back-btn">← Dashboard</a>
+    </div>
+    <div class="progress-label" id="progress-label">Task 0 of 7</div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-bar" style="width:0%"></div></div>
+
+    <!-- VOCAB -->
+    <div class="vocab-section">
+        <button class="vocab-toggle" onclick="toggleVocab()">
+            <div class="vocab-toggle-left"><h3>📖 Today's Vocabulary</h3><span class="vocab-count">50 words</span></div>
+            <span class="vocab-arrow" id="vocab-arrow">▼</span>
+        </button>
+        <div class="vocab-body" id="vocab-body"><div class="vocab-grid" id="vocab-grid"></div></div>
+    </div>
+
+    <!-- ══ TASK 1 ══ -->
+    <div class="task-card active" id="task1">
+        <div class="task-header">
+            <div class="task-number">1</div>
+            <div><div class="task-title">Mini Reading</div><div class="task-subtitle">Read and answer — NO MORE THAN THREE WORDS from the passage</div></div>
+        </div>
+        <div class="passage-text">
+            <h3>The Politics of Climate Action: Why Progress Remains Elusive</h3>
+            <p>Despite decades of scientific consensus regarding the severity of climate change, translating that knowledge into meaningful political action has proved extraordinarily <span class="highlight">(1) difficult</span>. The fundamental challenge lies in what economists describe as a collective action problem: the costs of reducing emissions must be borne by individual nations and industries in the present, while the benefits — a more stable climate — are distributed globally and accrue primarily to <span class="highlight">(2) future</span> generations. This misalignment of incentives creates powerful structural barriers to the kind of coordinated international response that the scale of the crisis demands.</p>
+            <p>The fossil fuel industry has historically played a significant role in <span class="highlight">(3) delaying</span> progress. Through lobbying, the funding of climate scepticism and the cultivation of political relationships, major energy corporations have succeeded in weakening environmental legislation and maintaining subsidies that critics argue amount to state <span class="highlight">(4) support</span> for one of the primary drivers of climate change. Governments in fossil fuel-dependent economies face particular pressure, as rapid decarbonisation risks unemployment and economic instability in <span class="highlight">(5) communities</span> that have relied on these industries for generations.</p>
+            <p>International climate negotiations have achieved notable milestones, most significantly the Paris Agreement of 2015, in which nations committed to limiting global temperature rises to well below <span class="highlight">(6) two</span> degrees Celsius above pre-industrial levels. However, these commitments are largely voluntary, and monitoring mechanisms remain insufficiently <span class="highlight">(7) robust</span>. Critics point to the widening gap between the pledges nations have made and the actual emissions <span class="highlight">(8) reductions</span> required to meet those targets.</p>
+            <p>Yet the picture is not uniformly bleak. The rapid decline in the cost of renewable energy technologies has begun to shift economic <span class="highlight">(9) incentives</span> in ways that political advocacy alone could not achieve. Solar and wind power are now frequently the cheapest sources of new electricity generation in many markets, suggesting that the <span class="highlight">(10) transition</span> to a low-carbon economy may ultimately be driven as much by commercial logic as by political will.</p>
+        </div>
+        <h4 style="color:#38a169; margin:20px 0 12px;">Answer — NO MORE THAN THREE WORDS from the passage:</h4>
+        <div class="gap-fill-section">
+            <div class="gap-sentence">1. What do economists call the problem where nations must bear costs now for future global benefits?<br><input class="gap-input" id="t1q1" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">2. What have fossil fuel companies used to weaken environmental legislation?<br><input class="gap-input" id="t1q2" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">3. What do critics say governments are providing to fossil fuel companies?<br><input class="gap-input" id="t1q3" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">4. What does rapid decarbonisation risk in fossil fuel-dependent communities?<br><input class="gap-input" id="t1q4" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">5. What was the most significant milestone of international climate negotiations?<br><input class="gap-input" id="t1q5" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">6. How are the Paris Agreement commitments described?<br><input class="gap-input" id="t1q6" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">7. What has declined rapidly to shift economic incentives toward renewables?<br><input class="gap-input" id="t1q7" placeholder="___" style="width:300px; margin-top:8px;"></div>
+        </div>
+        <div class="btn-row">
+            <button class="check-btn" id="check1" onclick="checkTask1()" disabled>Check Answers</button>
+            <button class="next-btn" id="next1" disabled onclick="goToTask(2)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns1" onclick="toggleAnswers('ans1')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans1">
+            <p><strong>Answers:</strong> 1-collective action problem, 2-lobbying/political relationships, 3-state support, 4-unemployment, 5-(the) Paris Agreement, 6-largely voluntary, 7-cost of renewable energy/renewable energy technologies</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 2 ══ -->
+    <div class="task-card" id="task2">
+        <div class="task-header">
+            <div class="task-number">2</div>
+            <div><div class="task-title">Article Reading</div><div class="task-subtitle">Read the article and study the vocabulary</div></div>
+        </div>
+        <div class="pdf-links">
+            <a class="pdf-link" href="DAY 1 Level A (tourism_article).pdf" target="_blank"><span class="pdf-icon">📄</span> Tourism — Article</a>
+            <a class="pdf-link" href="DAY 1 Level A (tourism_vocab).pdf" target="_blank"><span class="pdf-icon">📘</span> Tourism — Vocabulary</a>
+        </div>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(1)">← Previous</button>
+            <button class="next-btn" onclick="goToTask(3)">Next Task →</button>
+        </div>
+    </div>
+
+    <!-- ══ TASK 3 ══ -->
+    <div class="task-card" id="task3">
+        <div class="task-header">
+            <div class="task-number">3</div>
+            <div><div class="task-title">Practice Reading</div><div class="task-subtitle">IELTS-style reading test</div></div>
+        </div>
+        <a class="html-link-btn" href="Reading (11).html" target="_blank">📖 Open Practice Reading</a>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(2)">← Previous</button>
+            <button class="next-btn" onclick="goToTask(4)">Next Task →</button>
+        </div>
+    </div>
+
+    <!-- ══ TASK 4 ══ -->
+    <div class="task-card" id="task4">
+        <div class="task-header">
+            <div class="task-number">4</div>
+            <div><div class="task-title">Listening Mini Task</div><div class="task-subtitle">Listen and complete the table about where people live</div></div>
+        </div>
+        <div class="audio-player">
+            <p>🎧 Track 7A — Four People Describing Where They Live</p>
+            <audio controls src="track7a.mp3"></audio>
+        </div>
+        <p style="color:#555; margin-bottom:8px; font-weight:600;">Listen and complete the table. Choose the type of place from the box:</p>
+        <div class="word-box" style="margin-bottom:15px;">
+            <strong>Word Box:</strong> coastal &nbsp;|&nbsp; mountainous &nbsp;|&nbsp; rural &nbsp;|&nbsp; urban
+        </div>
+        <table class="speakers-table">
+            <thead>
+                <tr><th>Speaker</th><th>Type of place</th><th>Words that helped you decide</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>1</strong></td>
+                    <td><select class="place-select" id="t4p1"><option value="">— select —</option><option>coastal</option><option>mountainous</option><option>rural</option><option>urban</option></select></td>
+                    <td><input class="gap-input open-input" id="t4w1" placeholder="write key words..." style="width:100%;"></td>
+                </tr>
+                <tr>
+                    <td><strong>2</strong></td>
+                    <td><select class="place-select" id="t4p2"><option value="">— select —</option><option>coastal</option><option>mountainous</option><option>rural</option><option>urban</option></select></td>
+                    <td><input class="gap-input open-input" id="t4w2" placeholder="write key words..." style="width:100%;"></td>
+                </tr>
+                <tr>
+                    <td><strong>3</strong></td>
+                    <td><select class="place-select" id="t4p3"><option value="">— select —</option><option>coastal</option><option>mountainous</option><option>rural</option><option>urban</option></select></td>
+                    <td><input class="gap-input open-input" id="t4w3" placeholder="write key words..." style="width:100%;"></td>
+                </tr>
+                <tr>
+                    <td><strong>4</strong></td>
+                    <td><select class="place-select" id="t4p4"><option value="">— select —</option><option>coastal</option><option>mountainous</option><option>rural</option><option>urban</option></select></td>
+                    <td><input class="gap-input open-input" id="t4w4" placeholder="write key words..." style="width:100%;"></td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(3)">← Previous</button>
+            <button class="check-btn" id="check4" onclick="checkTask4()" disabled>Check Answers</button>
+            <button class="next-btn" id="next4" disabled onclick="goToTask(5)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns4" onclick="toggleAnswers('ans4')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans4">
+            <p><strong>Type of place:</strong> 1-rural, 2-coastal, 3-urban, 4-mountainous</p>
+            <p><strong>Key words:</strong> 1-(quaint, village, countryside, scenic, peaceful, fresh air), 2-(beach, sand, crystal clear, sea, surf, snorkelling), 3-(skyscrapers, shopping malls, cosmopolitan, traffic jams), 4-(above sea level, overlook, valley, picturesque, crisp air, breathtaking)</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 5 ══ -->
+    <div class="task-card" id="task5">
+        <div class="task-header">
+            <div class="task-number">5</div>
+            <div><div class="task-title">Video Watching Task</div><div class="task-subtitle">Watch and answer questions</div></div>
+        </div>
+        <div class="video-fallback">
+            <p>▶ <a href="https://www.youtube.com/watch?v=-zFTmyW2_tw" target="_blank">Click here to open the video in a new tab</a> if it doesn't play below.</p>
+        </div>
+        <div class="video-container">
+            <iframe src="https://www.youtube.com/embed/-zFTmyW2_tw" frameborder="0" allowfullscreen></iframe>
+        </div>
+
+        <h4 style="color:#38a169; margin:20px 0 12px;">Part 1 — Multiple Choice Questions</h4>
+        <div class="question-block">
+            <div class="question-text">1. Why does the speaker describe air conditioning as an example of the climate challenge?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q1" value="A"> A. Air conditioners are becoming cheaper every year</label>
+                <label><input type="radio" name="t5q1" value="B"> B. Air conditioning both solves and contributes to the problem of rising temperatures</label>
+                <label><input type="radio" name="t5q1" value="C"> C. Air conditioners no longer work effectively</label>
+                <label><input type="radio" name="t5q1" value="D"> D. Air conditioning is only used in wealthy countries</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q1"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">2. According to the video, how many air conditioners are currently in use worldwide?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q2" value="A"> A. Around 500 million</label>
+                <label><input type="radio" name="t5q2" value="B"> B. Around 1 billion</label>
+                <label><input type="radio" name="t5q2" value="C"> C. Around 1.6 billion</label>
+                <label><input type="radio" name="t5q2" value="D"> D. Around 3 billion</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q2"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">3. What is expected to happen to the number of air conditioners by 2050?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q3" value="A"> A. It will remain stable</label>
+                <label><input type="radio" name="t5q3" value="B"> B. It will double</label>
+                <label><input type="radio" name="t5q3" value="C"> C. It will triple</label>
+                <label><input type="radio" name="t5q3" value="D"> D. It will decrease</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q3"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">4. What is meant by the "feedback loop" of air conditioning?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q4" value="A"> A. Air conditioners require regular maintenance</label>
+                <label><input type="radio" name="t5q4" value="B"> B. Higher temperatures increase AC use, which in turn contributes to further warming</label>
+                <label><input type="radio" name="t5q4" value="C"> C. Air conditioners become less effective over time</label>
+                <label><input type="radio" name="t5q4" value="D"> D. More people are giving feedback on cooling technologies</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q4"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">5. Besides health risks, what economic consequence of extreme heat is mentioned?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q5" value="A"> A. Increased tourism</label>
+                <label><input type="radio" name="t5q5" value="B"> B. Higher salaries</label>
+                <label><input type="radio" name="t5q5" value="C"> C. Reduced working hours and unreliable infrastructure</label>
+                <label><input type="radio" name="t5q5" value="D"> D. Lower energy prices</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q5"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">6. What solution is proposed besides developing more efficient air conditioners?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q6" value="A"> A. Building larger power stations</label>
+                <label><input type="radio" name="t5q6" value="B"> B. Changing how we design buildings and think about cooling</label>
+                <label><input type="radio" name="t5q6" value="C"> C. Banning all air conditioners</label>
+                <label><input type="radio" name="t5q6" value="D"> D. Relocating cities to colder regions</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q6"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">7. Why are many villages in southern Spain painted white?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q7" value="A"> A. White paint is cheaper</label>
+                <label><input type="radio" name="t5q7" value="B"> B. It reflects sunlight and absorbs less heat</label>
+                <label><input type="radio" name="t5q7" value="C"> C. It is a cultural tradition with no practical purpose</label>
+                <label><input type="radio" name="t5q7" value="D"> D. It protects buildings from rain</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q7"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">8. What are wind-catchers?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q8" value="A"> A. Machines that generate electricity</label>
+                <label><input type="radio" name="t5q8" value="B"> B. Fans powered by solar energy</label>
+                <label><input type="radio" name="t5q8" value="C"> C. Traditional structures that direct cool air into buildings</label>
+                <label><input type="radio" name="t5q8" value="D"> D. Towers used to monitor weather conditions</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q8"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">9. What are passive cooling measures?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q9" value="A"> A. Cooling systems that consume large amounts of electricity</label>
+                <label><input type="radio" name="t5q9" value="B"> B. Cooling methods that do not require energy consumption</label>
+                <label><input type="radio" name="t5q9" value="C"> C. Emergency cooling systems used during heatwaves</label>
+                <label><input type="radio" name="t5q9" value="D"> D. Air conditioners powered by batteries</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q9"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">10. What conclusion does the speaker reach about air conditioning?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q10" value="A"> A. It should become the main solution to climate change</label>
+                <label><input type="radio" name="t5q10" value="B"> B. It should be banned globally</label>
+                <label><input type="radio" name="t5q10" value="C"> C. It should be used only as a last resort after other cooling methods</label>
+                <label><input type="radio" name="t5q10" value="D"> D. It is no longer necessary in modern society</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q10"></div>
+        </div>
+
+        <h4 style="color:#38a169; margin:20px 0 12px;">Part 2 — Gap Filling</h4>
+        <div class="word-box">
+            <strong>Word Box:</strong> emissions &nbsp;|&nbsp; courtyards &nbsp;|&nbsp; infrastructure &nbsp;|&nbsp; passive &nbsp;|&nbsp; heatwaves &nbsp;|&nbsp; efficient &nbsp;|&nbsp; resort
+        </div>
+        <div class="gap-fill-section">
+            <div class="gap-sentence">11. More air conditioning could lead to higher carbon <input class="gap-input" id="t5g11" placeholder="___"> in the future.</div>
+            <div class="gap-sentence">12. Ancient Mediterranean <input class="gap-input" id="t5g12" placeholder="___"> were designed to help keep nearby areas cool.</div>
+            <div class="gap-sentence">13. Extreme heat can affect roads, electricity networks, and other forms of <input class="gap-input" id="t5g13" placeholder="___">.</div>
+            <div class="gap-sentence">14. Cooling methods that do not consume energy are known as <input class="gap-input" id="t5g14" placeholder="___"> cooling measures.</div>
+            <div class="gap-sentence">15. The speaker argues that air conditioning should be treated as a last <input class="gap-input" id="t5g15" placeholder="___">.</div>
+        </div>
+
+        <h4 style="color:#38a169; margin:20px 0 12px;">Part 3 — Vocabulary Matching</h4>
+        <table class="matching-table">
+            <thead><tr><th>#</th><th>Word</th><th>Definition</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td><strong>heatwave</strong></td><td><select class="match-select" id="t5m1"><option value="">— select —</option><option value="A">A. producing little waste or using resources effectively</option><option value="B">B. a period of unusually hot weather</option><option value="C">C. an enclosed outdoor area surrounded by buildings</option><option value="D">D. slow-moving or lacking energy</option><option value="E">E. the release of gases or pollutants into the atmosphere</option><option value="F">F. systems and structures needed for society to function</option><option value="G">G. cooling methods that require little or no energy</option><option value="H">H. a traditional structure designed to direct cool air</option><option value="I">I. to change the arrangement or design of something</option><option value="J">J. a person's health, comfort, and happiness</option></select></td></tr>
+                <tr><td>2</td><td><strong>emission</strong></td><td><select class="match-select" id="t5m2"><option value="">— select —</option><option value="A">A. producing little waste or using resources effectively</option><option value="B">B. a period of unusually hot weather</option><option value="C">C. an enclosed outdoor area surrounded by buildings</option><option value="D">D. slow-moving or lacking energy</option><option value="E">E. the release of gases or pollutants into the atmosphere</option><option value="F">F. systems and structures needed for society to function</option><option value="G">G. cooling methods that require little or no energy</option><option value="H">H. a traditional structure designed to direct cool air</option><option value="I">I. to change the arrangement or design of something</option><option value="J">J. a person's health, comfort, and happiness</option></select></td></tr>
+                <tr><td>3</td><td><strong>sluggish</strong></td><td><select class="match-select" id="t5m3"><option value="">— select —</option><option value="A">A. producing little waste or using resources effectively</option><option value="B">B. a period of unusually hot weather</option><option value="C">C. an enclosed outdoor area surrounded by buildings</option><option value="D">D. slow-moving or lacking energy</option><option value="E">E. the release of gases or pollutants into the atmosphere</option><option value="F">F. systems and structures needed for society to function</option><option value="G">G. cooling methods that require little or no energy</option><option value="H">H. a traditional structure designed to direct cool air</option><option value="I">I. to change the arrangement or design of something</option><option value="J">J. a person's health, comfort, and happiness</option></select></td></tr>
+                <tr><td>4</td><td><strong>courtyard</strong></td><td><select class="match-select" id="t5m4"><option value="">— select —</option><option value="A">A. producing little waste or using resources effectively</option><option value="B">B. a period of unusually hot weather</option><option value="C">C. an enclosed outdoor area surrounded by buildings</option><option value="D">D. slow-moving or lacking energy</option><option value="E">E. the release of gases or pollutants into the atmosphere</option><option value="F">F. systems and structures needed for society to function</option><option value="G">G. cooling methods that require little or no energy</option><option value="H">H. a traditional structure designed to direct cool air</option><option value="I">I. to change the arrangement or design of something</option><option value="J">J. a person's health, comfort, and happiness</option></select></td></tr>
+                <tr><td>5</td><td><strong>infrastructure</strong></td><td><select class="match-select" id="t5m5"><option value="">— select —</option><option value="A">A. producing little waste or using resources effectively</option><option value="B">B. a period of unusually hot weather</option><option value="C">C. an enclosed outdoor area surrounded by buildings</option><option value="D">D. slow-moving or lacking energy</option><option value="E">E. the release of gases or pollutants into the atmosphere</option><option value="F">F. systems and structures needed for society to function</option><option value="G">G. cooling methods that require little or no energy</option><option value="H">H. a traditional structure designed to direct cool air</option><option value="I">I. to change the arrangement or design of something</option><option value="J">J. a person's health, comfort, and happiness</option></select></td></tr>
+                <tr><td>6</td><td><strong>efficient</strong></td><td><select class="match-select" id="t5m6"><option value="">— select —</option><option value="A">A. producing little waste or using resources effectively</option><option value="B">B. a period of unusually hot weather</option><option value="C">C. an enclosed outdoor area surrounded by buildings</option><option value="D">D. slow-moving or lacking energy</option><option value="E">E. the release of gases or pollutants into the atmosphere</option><option value="F">F. systems and structures needed for society to function</option><option value="G">G. cooling methods that require little or no energy</option><option value="H">H. a traditional structure designed to direct cool air</option><option value="I">I. to change the arrangement or design of something</option><option value="J">J. a person's health, comfort, and happiness</option></select></td></tr>
+                <tr><td>7</td><td><strong>passive cooling</strong></td><td><select class="match-select" id="t5m7"><option value="">— select —</option><option value="A">A. producing little waste or using resources effectively</option><option value="B">B. a period of unusually hot weather</option><option value="C">C. an enclosed outdoor area surrounded by buildings</option><option value="D">D. slow-moving or lacking energy</option><option value="E">E. the release of gases or pollutants into the atmosphere</option><option value="F">F. systems and structures needed for society to function</option><option value="G">G. cooling methods that require little or no energy</option><option value="H">H. a traditional structure designed to direct cool air</option><option value="I">I. to change the arrangement or design of something</option><option value="J">J. a person's health, comfort, and happiness</option></select></td></tr>
+                <tr><td>8</td><td><strong>wind-catcher</strong></td><td><select class="match-select" id="t5m8"><option value="">— select —</option><option value="A">A. producing little waste or using resources effectively</option><option value="B">B. a period of unusually hot weather</option><option value="C">C. an enclosed outdoor area surrounded by buildings</option><option value="D">D. slow-moving or lacking energy</option><option value="E">E. the release of gases or pollutants into the atmosphere</option><option value="F">F. systems and structures needed for society to function</option><option value="G">G. cooling methods that require little or no energy</option><option value="H">H. a traditional structure designed to direct cool air</option><option value="I">I. to change the arrangement or design of something</option><option value="J">J. a person's health, comfort, and happiness</option></select></td></tr>
+                <tr><td>9</td><td><strong>reconfigure</strong></td><td><select class="match-select" id="t5m9"><option value="">— select —</option><option value="A">A. producing little waste or using resources effectively</option><option value="B">B. a period of unusually hot weather</option><option value="C">C. an enclosed outdoor area surrounded by buildings</option><option value="D">D. slow-moving or lacking energy</option><option value="E">E. the release of gases or pollutants into the atmosphere</option><option value="F">F. systems and structures needed for society to function</option><option value="G">G. cooling methods that require little or no energy</option><option value="H">H. a traditional structure designed to direct cool air</option><option value="I">I. to change the arrangement or design of something</option><option value="J">J. a person's health, comfort, and happiness</option></select></td></tr>
+                <tr><td>10</td><td><strong>wellbeing</strong></td><td><select class="match-select" id="t5m10"><option value="">— select —</option><option value="A">A. producing little waste or using resources effectively</option><option value="B">B. a period of unusually hot weather</option><option value="C">C. an enclosed outdoor area surrounded by buildings</option><option value="D">D. slow-moving or lacking energy</option><option value="E">E. the release of gases or pollutants into the atmosphere</option><option value="F">F. systems and structures needed for society to function</option><option value="G">G. cooling methods that require little or no energy</option><option value="H">H. a traditional structure designed to direct cool air</option><option value="I">I. to change the arrangement or design of something</option><option value="J">J. a person's health, comfort, and happiness</option></select></td></tr>
+            </tbody>
+        </table>
+
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(4)">← Previous</button>
+            <button class="check-btn" id="check5" onclick="checkTask5()" disabled>Check Answers</button>
+            <button class="next-btn" id="next5" disabled onclick="goToTask(6)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns5" onclick="toggleAnswers('ans5')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans5">
+            <p><strong>MCQ:</strong> 1-B, 2-C, 3-C, 4-B, 5-C, 6-B, 7-B, 8-C, 9-B, 10-C</p>
+            <p><strong>Gap Fill:</strong> 11-emissions, 12-courtyards, 13-infrastructure, 14-passive, 15-resort</p>
+            <p><strong>Matching:</strong> 1-B, 2-E, 3-D, 4-C, 5-F, 6-A, 7-G, 8-H, 9-I, 10-J</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 6 ══ -->
+    <div class="task-card" id="task6">
+        <div class="task-header">
+            <div class="task-number">6</div>
+            <div><div class="task-title">Dictation + Comprehension</div><div class="task-subtitle">Listen, complete the gaps, then answer questions</div></div>
+        </div>
+        <div class="audio-player">
+            <p>🎧 Saving Water with Liquid Clay — BBC Learning English</p>
+            <audio controls src="watersave.mp3"></audio>
+        </div>
+        <h4 style="color:#38a169; margin-bottom:12px;">Part 1 — Dictation (ONE WORD ONLY)</h4>
+        <div class="gap-fill-section" id="dictation-gaps"></div>
+        <h4 style="color:#38a169; margin:20px 0 12px;">Part 2 — Comprehension Questions</h4>
+        <div class="question-block">
+            <div class="question-text">1. Why is water scarcity becoming a bigger problem for farmers?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q1" value="A"> A. Farmers are using too much machinery</label>
+                <label><input type="radio" name="t6q1" value="B"> B. Climate change is increasing droughts</label>
+                <label><input type="radio" name="t6q1" value="C"> C. Soil is becoming more fertile</label>
+                <label><input type="radio" name="t6q1" value="D"> D. People are eating less food</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q1"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">2. What is the main advantage of clay soil compared with sandy soil?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q2" value="A"> A. It is lighter</label>
+                <label><input type="radio" name="t6q2" value="B"> B. It contains more insects</label>
+                <label><input type="radio" name="t6q2" value="C"> C. It holds water more effectively</label>
+                <label><input type="radio" name="t6q2" value="D"> D. It heats up faster</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q2"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">3. According to Ole Sivertsen, what can liquid clay do?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q3" value="A"> A. Turn desert soil into a water-holding sponge</label>
+                <label><input type="radio" name="t6q3" value="B"> B. Create rainfall in dry areas</label>
+                <label><input type="radio" name="t6q3" value="C"> C. Remove salt from seawater</label>
+                <label><input type="radio" name="t6q3" value="D"> D. Replace fertilisers completely</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q3"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">4. What concern does Myra Anubi raise about liquid clay technology?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q4" value="A"> A. It may be too expensive for farmers</label>
+                <label><input type="radio" name="t6q4" value="B"> B. It may stop plants from growing</label>
+                <label><input type="radio" name="t6q4" value="C"> C. It could cause unforeseen problems in the future</label>
+                <label><input type="radio" name="t6q4" value="D"> D. It contains dangerous chemicals</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q4"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">5. What does the phrase "only time will tell" mean?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q5" value="A"> A. Scientists already know the answer</label>
+                <label><input type="radio" name="t6q5" value="B"> B. The result will become clear in the future</label>
+                <label><input type="radio" name="t6q5" value="C"> C. The technology has already failed</label>
+                <label><input type="radio" name="t6q5" value="D"> D. Time is the most important factor</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q5"></div>
+        </div>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(5)">← Previous</button>
+            <button class="check-btn" id="check6" onclick="checkTask6()" disabled>Check Answers</button>
+            <button class="next-btn" id="next6" disabled onclick="goToTask(7)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns6" onclick="toggleAnswers('ans6')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans6">
+            <p><strong>Dictation:</strong> 1-guaranteed, 2-change, 3-clay, 4-soil, 5-sticky, 6-faces, 7-supply, 8-Mexico, 9-pump, 10-sponge, 11-drains, 12-system, 13-cling, 14-evolve, 15-liquid, 16-tightly, 17-kick, 18-cheap, 19-halves, 20-years, 21-line, 22-effects, 23-chemicals, 24-skilfully, 25-future, 26-scarcity, 27-future, 28-face, 29-tightly, 30-quickly</p>
+            <p><strong>MCQ:</strong> 1-B, 2-C, 3-A, 4-C, 5-B</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 7 ══ -->
+    <div class="task-card" id="task7">
+        <div class="task-header">
+            <div class="task-number">7</div>
+            <div><div class="task-title">Practice Listening</div><div class="task-subtitle">Full IELTS-style listening test</div></div>
+        </div>
+        <a class="html-link-btn" href="Listening (10).html" target="_blank">🎧 Open Practice Listening</a>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(6)">← Previous</button>
+            <button class="next-btn" onclick="finishDay()">Finish Day 3 ✓</button>
+        </div>
+    </div>
+
+    <!-- COMPLETION -->
+    <div class="completion-screen" id="completion-screen">
+        <div class="icon">🎉</div>
+        <h2>Day 3 Complete!</h2>
+        <p>Excellent work! You've completed all tasks for Week 4, Day 3.</p>
+        <div style="margin:30px 0; text-align:left;">
+            <h3 style="color:#38a169; border-bottom:2px solid #38a169; padding-bottom:10px; margin-bottom:15px;">📋 Review Your Work</h3>
+            <p style="color:#888; margin-bottom:20px; font-size:0.9rem;">Click any task below to go back and review it.</p>
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:15px;">
+                <div onclick="reviewTask(1)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#38a169;font-size:1.1rem;margin-bottom:5px;">Task 1</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Mini Reading</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(2)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#38a169;font-size:1.1rem;margin-bottom:5px;">Task 2</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Article Reading</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(3)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#38a169;font-size:1.1rem;margin-bottom:5px;">Task 3</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Reading</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(4)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#38a169;font-size:1.1rem;margin-bottom:5px;">Task 4</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Place Listening</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(5)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#38a169;font-size:1.1rem;margin-bottom:5px;">Task 5</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Video + Vocab</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(6)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#38a169;font-size:1.1rem;margin-bottom:5px;">Task 6</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Dictation + MCQ</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(7)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#38a169;font-size:1.1rem;margin-bottom:5px;">Task 7</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Listening</div><div style="font-size:1.4rem;">✅</div></div>
+            </div>
+        </div>
+        <a href="/student-dashboard.html" class="dashboard-btn">← Back to Dashboard</a>
+    </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://nbfceuhuauizyucugejr.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_0mFIGJkA_DKZfUiDAWFdrA_nXt0hF6H';
+const dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const WEEK = 4, DAY = 3, TOTAL_TASKS = 7;
+let studentId = null, studentGroup = null, currentTask = 1;
+let taskStartTime = Date.now(), saveTimeout = null;
+
+const dictationAnswers = ['guaranteed','change','clay','soil','sticky','faces','supply','Mexico','pump','sponge','drains','system','cling','evolve','liquid','tightly','kick','cheap','halves','years','line','effects','chemicals','skilfully','future','scarcity','future','face','tightly','quickly'];
+
+const dictationScripts = [
+    "over two billion people live in water-stressed countries, where access to water for drinking, cooking, and washing is not <input class='gap-input' id='d1' placeholder='(1)'>.",
+    "water is also needed to grow food and that's getting harder due to droughts which are increasing with climate <input class='gap-input' id='d2' placeholder='(2)'>.",
+    "a new technology involving liquid <input class='gap-input' id='d3' placeholder='(3)'> is helping farmers grow fruit and vegetables in the desert.",
+    "Everyone knows that plants need sunlight and water to grow, but <input class='gap-input' id='d4' placeholder='(4)'> is just as important.",
+    "One of the most useful soils is clay, a dense, smooth soil which is very fertile but <input class='gap-input' id='d5' placeholder='(5)'>.",
+    "I think clay can be used to smooth the skin on people's <input class='gap-input' id='d6' placeholder='(6)'>.",
+    "Agriculture uses a massive 70% of the world's fresh water <input class='gap-input' id='d7' placeholder='(7)'>.",
+    "Desert Control works with date farmers in Yuma, an area on the border of California and <input class='gap-input' id='d8' placeholder='(8)'>.",
+    "Yuma has been experiencing its worst drought in 500 years, forcing farmers to <input class='gap-input' id='d9' placeholder='(9)'> water from rivers.",
+    "Ole's team have created a liquid that can turn the sandy desert soil into a <input class='gap-input' id='d10' placeholder='(10)'> which holds water and nutrients.",
+    "Sandy desert soil has a lot of gaps in it so water <input class='gap-input' id='d11' placeholder='(11)'> through it quickly.",
+    "making it hard for plants to establish the root <input class='gap-input' id='d12' placeholder='(12)'> in the ground.",
+    "clay soil is made up of much smaller particles that <input class='gap-input' id='d13' placeholder='(13)'> together and naturally stop water from escaping.",
+    "It creates the habitat for the soil microbiology to also start to develop and <input class='gap-input' id='d14' placeholder='(14)'>.",
+    "The problem with sandy soil is that it drains water. If you drain something, you remove the <input class='gap-input' id='d15' placeholder='(15)'> from it.",
+    "clay soil is made of smaller particles which cling, or stick together <input class='gap-input' id='d16' placeholder='(16)'>, and hold water.",
+    "Ole makes a liquid by mixing clay and water which <input class='gap-input' id='d17' placeholder='(17)'>-starts the growth of his trees.",
+    "costing around 2,000 dollars an acre, it's not <input class='gap-input' id='d18' placeholder='(18)'>.",
+    "Ole claims his technique <input class='gap-input' id='d19' placeholder='(19)'> the amount of water needed to grow fruit trees.",
+    "Most farmers will make back their investment within two <input class='gap-input' id='d20' placeholder='(20)'>.",
+    "when people do this, they could create problems down the <input class='gap-input' id='d21' placeholder='(21)'>.",
+    "Only time will tell what the long-term <input class='gap-input' id='d22' placeholder='(22)'> of that will be.",
+    "Ole did stress that their liquid clay does not use any <input class='gap-input' id='d23' placeholder='(23)'> – only clay, air and water.",
+    "Ole's liquid clay involves manipulating soil – using and controlling it <input class='gap-input' id='d24' placeholder='(24)'> to achieve some result.",
+    "they could create problems down the line – at some unspecified point in the <input class='gap-input' id='d25' placeholder='(25)'>.",
+    "only time will tell if liquid clay is a long-term solution to the problem of water <input class='gap-input' id='d26' placeholder='(26)'>.",
+    "the result of something happening now will not be known until the <input class='gap-input' id='d27' placeholder='(27)'>.",
+    "A clay mask, also called a mud pack, is used to smooth the skin on your <input class='gap-input' id='d28' placeholder='(28)'>.",
+    "To cling means to stick or hold <input class='gap-input' id='d29' placeholder='(29)'> onto something.",
+    "If you kick-start something, you make it start or develop more <input class='gap-input' id='d30' placeholder='(30)'>.",
+];
+
+const vocab = [
+    {word:"1. Collective action (n)", def:"Cooperation between groups to achieve a shared goal"},
+    {word:"2. Decarbonisation (n)", def:"Reducing carbon emissions from an economy"},
+    {word:"3. Lobbying (n)", def:"Attempting to influence political decisions"},
+    {word:"4. Subsidy (n)", def:"Financial support given by the government"},
+    {word:"5. Voluntary (adj)", def:"Done by choice, not required by law"},
+    {word:"6. Incentive (n)", def:"Something that encourages a particular action"},
+    {word:"7. Scepticism (n)", def:"Doubt about the truth of something"},
+    {word:"8. Legislation (n)", def:"Laws made by a government"},
+    {word:"9. Transition (n)", def:"The process of changing from one state to another"},
+    {word:"10. Milestone (n)", def:"An important event or achievement"},
+    {word:"11. Heatwave (n)", def:"A period of unusually hot weather"},
+    {word:"12. Emission (n)", def:"The release of gases or pollutants into the atmosphere"},
+    {word:"13. Sluggish (adj)", def:"Slow-moving or lacking energy"},
+    {word:"14. Courtyard (n)", def:"An enclosed outdoor area surrounded by buildings"},
+    {word:"15. Infrastructure (n)", def:"Systems and structures needed for society to function"},
+    {word:"16. Efficient (adj)", def:"Producing little waste or using resources effectively"},
+    {word:"17. Passive cooling (n)", def:"Cooling methods that require little or no energy"},
+    {word:"18. Wind-catcher (n)", def:"A traditional structure designed to direct cool air"},
+    {word:"19. Reconfigure (v)", def:"To change the arrangement or design of something"},
+    {word:"20. Wellbeing (n)", def:"A person's health, comfort, and happiness"},
+    {word:"21. Rural (adj)", def:"Relating to the countryside"},
+    {word:"22. Coastal (adj)", def:"Relating to the area near the sea"},
+    {word:"23. Urban (adj)", def:"Relating to a town or city"},
+    {word:"24. Mountainous (adj)", def:"Having many mountains; hilly"},
+    {word:"25. Scenic (adj)", def:"Having beautiful natural scenery"},
+    {word:"26. Cosmopolitan (adj)", def:"Familiar with and at ease in many places"},
+    {word:"27. Picturesque (adj)", def:"Visually attractive, like a picture"},
+    {word:"28. Water scarcity (n)", def:"Lack of sufficient available water resources"},
+    {word:"29. Drought (n)", def:"A long period of abnormally low rainfall"},
+    {word:"30. Soil (n)", def:"The upper layer of earth in which plants grow"},
+    {word:"31. Clay (n)", def:"A type of dense, smooth soil that holds water"},
+    {word:"32. Sandy soil (n)", def:"Loose soil with large particles that drains quickly"},
+    {word:"33. Sponge (n)", def:"A porous material that absorbs liquid"},
+    {word:"34. Cling (v)", def:"To stick or hold tightly onto something"},
+    {word:"35. Drain (v)", def:"To remove liquid from something"},
+    {word:"36. Manipulate (v)", def:"To control or use something skilfully"},
+    {word:"37. Fertile (adj)", def:"Able to produce abundant vegetation or crops"},
+    {word:"38. Nutrient (n)", def:"A substance that provides nourishment for growth"},
+    {word:"39. Investment (n)", def:"Money put into something to gain a return"},
+    {word:"40. Microbiology (n)", def:"The study of microscopic organisms"},
+    {word:"41. Feedback loop (n)", def:"A cycle where outputs become inputs, amplifying effects"},
+    {word:"42. Renewable energy (n)", def:"Energy from sources that naturally replenish"},
+    {word:"43. Solar power (n)", def:"Energy generated from sunlight"},
+    {word:"44. Wind power (n)", def:"Energy generated from wind"},
+    {word:"45. Decarbonise (v)", def:"To reduce or eliminate carbon emissions"},
+    {word:"46. Carbon neutral (adj)", def:"Not adding extra carbon dioxide to the atmosphere"},
+    {word:"47. Fossil fuel (n)", def:"Coal, oil, and gas formed from ancient organisms"},
+    {word:"48. Scarcity (n)", def:"Insufficient supply; shortage"},
+    {word:"49. Guaranteed (adj)", def:"Certain to happen; assured"},
+    {word:"50. Agriculture (n)", def:"The practice of farming and growing food"},
+];
+
+async function initStudent() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('teacher') === 'true') { studentId = 'teacher-preview'; studentGroup = 'preview'; return; }
+    try {
+        const userStr = localStorage.getItem('user');
+        if (!userStr) { window.location.href = '/login.html'; return; }
+        const user = JSON.parse(userStr);
+        const { data, error } = await dbClient.from('students').select('*').eq('username', user.username).single();
+        if (error || !data) return;
+        studentId = data.id; studentGroup = data.student_group;
+    } catch(e) { console.log('Auth error:', e); }
+}
+
+function buildVocab() {
+    document.getElementById('vocab-grid').innerHTML = vocab.map(v =>
+        `<div class="vocab-item"><div class="vocab-word">${v.word}</div><div class="vocab-definition">${v.def}</div></div>`).join('');
+}
+
+function buildDictation() {
+    document.getElementById('dictation-gaps').innerHTML = dictationScripts.map((s, i) =>
+        `<div class="gap-sentence"><strong>${i+1}.</strong> …${s}</div>`).join('');
+}
+
+async function startDay() {
+    document.getElementById('splash-screen').style.display = 'none';
+    document.getElementById('main-content').style.display = 'block';
+    buildVocab(); buildDictation();
+    await initStudent();
+    await restoreProgress();
+    setupLiveValidation();
+}
+
+function goToTask(num) {
+    document.getElementById('task' + currentTask).classList.remove('active');
+    currentTask = num;
+    document.getElementById('task' + num).classList.add('active');
+    document.getElementById('task' + num).scrollIntoView({behavior:'smooth', block:'start'});
+    updateProgress(num); taskStartTime = Date.now(); saveResume(num);
+}
+
+function updateProgress(taskNum) {
+    document.getElementById('progress-bar').style.width = Math.round(((taskNum-1)/TOTAL_TASKS)*100) + '%';
+    document.getElementById('progress-label').textContent = `Task ${taskNum} of ${TOTAL_TASKS}`;
+}
+
+function showSaveIndicator() {
+    const el = document.getElementById('saveIndicator');
+    el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+async function saveResume(taskNum) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try { await dbClient.from('student_resume').upsert({student_id:studentId, week:WEEK, day:DAY, last_task:taskNum, updated_at:new Date().toISOString()}, {onConflict:'student_id'}); } catch(e) {}
+}
+
+function scheduleSave() {
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+        localStorage.setItem(`w${WEEK}d${DAY}_answers`, JSON.stringify(gatherAllAnswers()));
+        showSaveIndicator();
+    }, 800);
+}
+
+function gatherAllAnswers() {
+    const data = {};
+    document.querySelectorAll('.gap-input').forEach(el => { if (el.id) data[el.id] = el.value; });
+    ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10','t6q1','t6q2','t6q3','t6q4','t6q5'].forEach(name => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`); if (sel) data[name] = sel.value;
+    });
+    document.querySelectorAll('select').forEach(el => { if (el.id) data[el.id] = el.value; });
+    return data;
+}
+
+async function restoreProgress() {
+    try {
+        const saved = localStorage.getItem(`w${WEEK}d${DAY}_answers`);
+        if (saved) {
+            const data = JSON.parse(saved);
+            Object.entries(data).forEach(([id, val]) => { const el = document.getElementById(id); if (el && el.tagName === 'INPUT') el.value = val; });
+            ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10','t6q1','t6q2','t6q3','t6q4','t6q5'].forEach(name => {
+                const val = data[name]; if (val) { const r = document.querySelector(`input[name="${name}"][value="${val}"]`); if (r) r.checked = true; }
+            });
+            Object.entries(data).forEach(([id, val]) => { const el = document.getElementById(id); if (el && el.tagName === 'SELECT') el.value = val; });
+        }
+        if (studentId && studentId !== 'teacher-preview') {
+            const { data: taskData } = await dbClient.from('task_progress').select('task_number,status').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY);
+            const completedCount = taskData ? taskData.filter(t => t.status === 'completed').length : 0;
+            if (completedCount >= TOTAL_TASKS) {
+                await restoreAnswersFromSupabase();
+                document.getElementById('task1').classList.remove('active');
+                document.getElementById('completion-screen').style.display = 'block';
+                updateProgress(TOTAL_TASKS); validateAll(); makeReadOnly(); return;
+            }
+            const { data: resume } = await dbClient.from('student_resume').select('last_task').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY).single();
+            if (resume && resume.last_task > 1) {
+                document.getElementById('task1').classList.remove('active');
+                currentTask = resume.last_task;
+                document.getElementById('task' + currentTask).classList.add('active');
+                updateProgress(currentTask);
+            }
+        }
+        validateAll();
+    } catch(e) { console.log('Restore error:', e); }
+}
+
+async function restoreAnswersFromSupabase() {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        const { data: answers } = await dbClient.from('student_answers').select('*').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY);
+        if (!answers || answers.length === 0) return;
+        answers.forEach(a => {
+            const { question_id, student_answer, question_type, is_correct, correct_answer } = a;
+            if (question_type === 'mcq') {
+                const radio = document.querySelector(`input[name="${question_id}"][value="${student_answer}"]`);
+                if (radio) radio.checked = true;
+                const fb = document.getElementById('fb_' + question_id);
+                if (fb) { fb.textContent = is_correct ? '✅ Correct!' : `❌ Incorrect — correct answer: ${correct_answer}`; fb.className = 'answer-feedback ' + (is_correct ? 'correct' : 'incorrect'); }
+            } else if (question_type === 'gap_fill') {
+                const inp = document.getElementById(question_id);
+                if (inp) { inp.value = student_answer || ''; inp.classList.toggle('correct', is_correct); inp.classList.toggle('incorrect', !is_correct); }
+            } else if (question_type === 'matching') {
+                const sel = document.getElementById(question_id);
+                if (sel) { sel.value = student_answer || ''; sel.classList.toggle('correct', is_correct); sel.classList.toggle('incorrect', !is_correct); }
+            }
+        });
+        document.querySelectorAll('.show-answers-btn').forEach(btn => btn.style.display = 'inline-block');
+        document.querySelectorAll('.next-btn').forEach(btn => btn.disabled = false);
+    } catch(e) { console.error('Restore answers error:', e); }
+}
+
+function makeReadOnly() {
+    document.querySelectorAll('.gap-input').forEach(el => { el.disabled = true; el.style.opacity = '0.85'; });
+    document.querySelectorAll('input[type="radio"]').forEach(el => el.disabled = true);
+    document.querySelectorAll('select').forEach(el => { el.disabled = true; });
+    document.querySelectorAll('.check-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.next-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.prev-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.show-answers-btn').forEach(el => el.style.display = 'inline-block');
+}
+
+function setupLiveValidation() {
+    ['t1q1','t1q2','t1q3','t1q4','t1q5','t1q6','t1q7'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', () => { validateTask1Check(); scheduleSave(); }); });
+    ['t4p1','t4p2','t4p3','t4p4'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('change', () => { validateTask4Check(); scheduleSave(); }); });
+    ['t4w1','t4w2','t4w3','t4w4'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', () => { validateTask4Check(); scheduleSave(); }); });
+    ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10'].forEach(name => { document.querySelectorAll(`input[name="${name}"]`).forEach(el => el.addEventListener('change', () => { validateTask5Check(); scheduleSave(); })); });
+    ['t5g11','t5g12','t5g13','t5g14','t5g15'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', () => { validateTask5Check(); scheduleSave(); }); });
+    ['t5m1','t5m2','t5m3','t5m4','t5m5','t5m6','t5m7','t5m8','t5m9','t5m10'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('change', () => { validateTask5Check(); scheduleSave(); }); });
+    ['t6q1','t6q2','t6q3','t6q4','t6q5'].forEach(name => { document.querySelectorAll(`input[name="${name}"]`).forEach(el => el.addEventListener('change', () => { validateTask6Check(); scheduleSave(); })); });
+    for (let i = 1; i <= 30; i++) { const el = document.getElementById('d' + i); if (el) el.addEventListener('input', () => { validateTask6Check(); scheduleSave(); }); }
+}
+
+function validateAll() { validateTask1Check(); validateTask4Check(); validateTask5Check(); validateTask6Check(); }
+function validateTask1Check() { document.getElementById('check1').disabled = !['t1q1','t1q2','t1q3','t1q4','t1q5','t1q6','t1q7'].every(id => document.getElementById(id)?.value.trim()); }
+function validateTask4Check() {
+    const places = ['t4p1','t4p2','t4p3','t4p4'].every(id => document.getElementById(id)?.value);
+    const words = ['t4w1','t4w2','t4w3','t4w4'].every(id => document.getElementById(id)?.value.trim());
+    document.getElementById('check4').disabled = !(places && words);
+}
+function validateTask5Check() {
+    const allMcq = ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10'].every(name => document.querySelector(`input[name="${name}"]:checked`));
+    const allGaps = ['t5g11','t5g12','t5g13','t5g14','t5g15'].every(id => document.getElementById(id)?.value.trim());
+    const allMatch = ['t5m1','t5m2','t5m3','t5m4','t5m5','t5m6','t5m7','t5m8','t5m9','t5m10'].every(id => document.getElementById(id)?.value);
+    document.getElementById('check5').disabled = !(allMcq && allGaps && allMatch);
+}
+function validateTask6Check() {
+    const allDict = Array.from({length:30}, (_,i) => document.getElementById('d'+(i+1))?.value.trim()).every(Boolean);
+    const allMcq = ['t6q1','t6q2','t6q3','t6q4','t6q5'].every(name => document.querySelector(`input[name="${name}"]:checked`));
+    document.getElementById('check6').disabled = !(allDict && allMcq);
+}
+
+const t1Accepted = {
+    t1q1:['collective action problem','a collective action'],
+    t1q2:['lobbying','political relationships'],
+    t1q3:['state support'],
+    t1q4:['unemployment','economic instability'],
+    t1q5:['paris agreement','the paris agreement'],
+    t1q6:['largely voluntary'],
+    t1q7:['cost of renewable','renewable energy technologies','renewable energy']
+};
+const t4Answers = {t4p1:'rural',t4p2:'coastal',t4p3:'urban',t4p4:'mountainous'};
+const t5McqAnswers = {t5q1:'B',t5q2:'C',t5q3:'C',t5q4:'B',t5q5:'C',t5q6:'B',t5q7:'B',t5q8:'C',t5q9:'B',t5q10:'C'};
+const t5GapAnswers = {t5g11:'emissions',t5g12:'courtyards',t5g13:'infrastructure',t5g14:'passive',t5g15:'resort'};
+const t5MatchAnswers = {t5m1:'B',t5m2:'E',t5m3:'D',t5m4:'C',t5m5:'F',t5m6:'A',t5m7:'G',t5m8:'H',t5m9:'I',t5m10:'J'};
+const t6McqAnswers = {t6q1:'B',t6q2:'C',t6q3:'A',t6q4:'C',t6q5:'B'};
+
+function checkTask1() {
+    const answers = [];
+    Object.entries(t1Accepted).forEach(([id, opts]) => {
+        const inp = document.getElementById(id);
+        const val = inp.value.trim().toLowerCase();
+        const ok = opts.some(o => val.includes(o.toLowerCase()));
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:opts[0], is_correct:ok});
+    });
+    document.getElementById('showAns1').style.display = 'inline-block';
+    document.getElementById('next1').disabled = false;
+    saveAnswers(1, answers); saveTaskProgress(1);
+}
+
+function checkTask4() {
+    const answers = [];
+    Object.entries(t4Answers).forEach(([id, correct]) => {
+        const sel = document.getElementById(id);
+        const ok = sel.value === correct;
+        sel.classList.toggle('correct', ok); sel.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'matching', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    // Save open-ended word answers as correct
+    ['t4w1','t4w2','t4w3','t4w4'].forEach(id => {
+        const inp = document.getElementById(id);
+        inp.classList.add('correct');
+        answers.push({question_id:id, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:'open', is_correct:true});
+    });
+    document.getElementById('showAns4').style.display = 'inline-block';
+    document.getElementById('next4').disabled = false;
+    saveAnswers(4, answers); saveTaskProgress(4);
+}
+
+function checkTask5() {
+    const answers = [];
+    Object.entries(t5McqAnswers).forEach(([name, correct]) => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`);
+        const fb = document.getElementById('fb_' + name);
+        if (!sel) return;
+        const ok = sel.value === correct;
+        fb.textContent = ok ? '✅ Correct!' : `❌ Incorrect — correct answer: ${correct}`;
+        fb.className = 'answer-feedback ' + (ok ? 'correct' : 'incorrect');
+        answers.push({question_id:name, question_type:'mcq', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    Object.entries(t5GapAnswers).forEach(([id, correct]) => {
+        const inp = document.getElementById(id);
+        const val = inp.value.trim().toLowerCase();
+        const ok = val === correct.toLowerCase();
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:correct, is_correct:ok});
+    });
+    Object.entries(t5MatchAnswers).forEach(([id, correct]) => {
+        const sel = document.getElementById(id);
+        const ok = sel.value === correct;
+        sel.classList.toggle('correct', ok); sel.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'matching', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    document.getElementById('showAns5').style.display = 'inline-block';
+    document.getElementById('next5').disabled = false;
+    saveAnswers(5, answers); saveTaskProgress(5);
+}
+
+function checkTask6() {
+    const answers = [];
+    for (let i = 1; i <= 30; i++) {
+        const inp = document.getElementById('d' + i);
+        const val = inp.value.trim().toLowerCase();
+        const correct = dictationAnswers[i-1];
+        const ok = val === correct.toLowerCase();
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:'d'+i, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:correct, is_correct:ok});
+    }
+    Object.entries(t6McqAnswers).forEach(([name, correct]) => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`);
+        const fb = document.getElementById('fb_' + name);
+        if (!sel) return;
+        const ok = sel.value === correct;
+        fb.textContent = ok ? '✅ Correct!' : `❌ Incorrect — correct answer: ${correct}`;
+        fb.className = 'answer-feedback ' + (ok ? 'correct' : 'incorrect');
+        answers.push({question_id:name, question_type:'mcq', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    document.getElementById('showAns6').style.display = 'inline-block';
+    document.getElementById('next6').disabled = false;
+    saveAnswers(6, answers); saveTaskProgress(6);
+}
+
+async function saveAnswers(taskNum, answers) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        const rows = answers.map(a => ({student_id:studentId, week:WEEK, day:DAY, task_number:taskNum, question_id:a.question_id, question_type:a.question_type, student_answer:a.student_answer, correct_answer:a.correct_answer, is_correct:a.is_correct, answered_at:new Date().toISOString()}));
+        await dbClient.from('student_answers').upsert(rows, {onConflict:'student_id,week,day,task_number,question_id'});
+    } catch(e) { console.error('Answer save error:', e); }
+}
+
+async function saveTaskProgress(taskNum) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        await dbClient.from('task_progress').upsert({student_id:studentId, week:WEEK, day:DAY, task_number:taskNum, status:'completed', time_completed:new Date().toISOString(), time_spent_seconds:Math.round((Date.now()-taskStartTime)/1000)}, {onConflict:'student_id,week,day,task_number'});
+    } catch(e) { console.error('Progress save error:', e); }
+}
+
+async function finishDay() {
+    document.getElementById('task7').classList.remove('active');
+    document.getElementById('completion-screen').style.display = 'block';
+    document.getElementById('completion-screen').scrollIntoView({behavior:'smooth'});
+    localStorage.removeItem(`w${WEEK}d${DAY}_answers`);
+    for (let i = 1; i <= TOTAL_TASKS; i++) await saveTaskProgress(i);
+    if (studentId && studentId !== 'teacher-preview') await dbClient.from('student_resume').delete().eq('student_id', studentId);
+    makeReadOnly();
+}
+
+function reviewTask(num) {
+    document.getElementById('completion-screen').style.display = 'none';
+    currentTask = num;
+    document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active'));
+    document.getElementById('task' + num).classList.add('active');
+    document.getElementById('task' + num).scrollIntoView({behavior:'smooth', block:'start'});
+    const existing = document.getElementById('back-to-results');
+    if (!existing) {
+        const btn = document.createElement('button');
+        btn.id = 'back-to-results';
+        btn.textContent = '🏆 Back to Results';
+        btn.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#38a169;color:white;border:none;padding:12px 22px;border-radius:50px;cursor:pointer;font-weight:bold;font-size:0.95rem;box-shadow:0 4px 15px rgba(56,161,105,0.4);z-index:9998;';
+        btn.onclick = () => { btn.remove(); document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active')); document.getElementById('completion-screen').style.display = 'block'; document.getElementById('completion-screen').scrollIntoView({behavior:'smooth'}); };
+        document.body.appendChild(btn);
+    }
+}
+
+function toggleVocab() { document.getElementById('vocab-body').classList.toggle('open'); document.getElementById('vocab-arrow').classList.toggle('open'); }
+function toggleAnswers(id) {
+    const div = document.getElementById(id);
+    const btn = div.previousElementSibling;
+    div.style.display = div.style.display === 'block' ? 'none' : 'block';
+    btn.textContent = div.style.display === 'block' ? '▲ Hide Answers' : '▼ Show Answers';
+}
+</script>
+</body>
+</html>
