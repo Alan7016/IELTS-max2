@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEEK 4 - DAY 4 (Environment)</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0fff4; color: #333; }
+        #splash-screen { position: fixed; inset: 0; background: linear-gradient(135deg, #38a169 0%, #2f855a 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; color: white; text-align: center; padding: 20px; }
+        #splash-screen h1 { font-size: 3rem; margin-bottom: 10px; }
+        #splash-screen h2 { font-size: 2rem; margin-bottom: 10px; opacity: 0.9; }
+        #splash-screen p { font-size: 1.2rem; margin-bottom: 40px; opacity: 0.8; }
+        .splash-btn { background: white; color: #38a169; border: none; padding: 18px 60px; font-size: 1.4rem; font-weight: bold; border-radius: 50px; cursor: pointer; box-shadow: 0 8px 25px rgba(0,0,0,0.2); transition: all 0.3s; }
+        .splash-btn:hover { transform: translateY(-3px); }
+        .main-container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        .day-header { background: linear-gradient(135deg, #38a169 0%, #2f855a 100%); color: white; padding: 25px 30px; border-radius: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; }
+        .day-header h1 { font-size: 1.6rem; }
+        .day-header .topic { opacity: 0.85; font-size: 1rem; margin-top: 4px; }
+        .back-btn { background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; text-decoration: none; font-size: 0.9rem; transition: all 0.3s; }
+        .back-btn:hover { background: white; color: #38a169; }
+        .vocab-section { background: white; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-left: 5px solid #38a169; overflow: hidden; }
+        .vocab-toggle { width: 100%; background: none; border: none; cursor: pointer; padding: 18px 25px; display: flex; align-items: center; justify-content: space-between; text-align: left; }
+        .vocab-toggle:hover { background: #f0fff4; }
+        .vocab-toggle-left { display: flex; align-items: center; gap: 10px; }
+        .vocab-toggle h3 { color: #38a169; font-size: 1.1rem; margin: 0; }
+        .vocab-count { background: #38a169; color: white; font-size: 0.75rem; font-weight: bold; padding: 3px 10px; border-radius: 20px; }
+        .vocab-arrow { color: #38a169; font-size: 1rem; transition: transform 0.3s; }
+        .vocab-arrow.open { transform: rotate(180deg); }
+        .vocab-body { display: none; padding: 0 25px 20px; }
+        .vocab-body.open { display: block; }
+        .vocab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+        .vocab-item { background: #f0fff4; padding: 10px 14px; border-radius: 8px; }
+        .vocab-word { font-weight: bold; color: #333; font-size: 0.95rem; }
+        .vocab-definition { color: #666; font-size: 0.82rem; margin-top: 2px; }
+        .progress-label { text-align: center; color: #38a169; font-size: 0.85rem; margin-bottom: 8px; font-weight: 600; }
+        .progress-bar-wrap { background: #c6f6d5; border-radius: 20px; height: 10px; margin-bottom: 20px; overflow: hidden; }
+        .progress-bar-fill { background: linear-gradient(90deg, #38a169, #2f855a); height: 100%; border-radius: 20px; transition: width 0.5s ease; }
+        .task-card { background: white; border-radius: 15px; padding: 28px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); display: none; }
+        .task-card.active { display: block; }
+        .task-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .task-number { background: linear-gradient(135deg, #38a169, #2f855a); color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; flex-shrink: 0; }
+        .task-title { font-size: 1.3rem; font-weight: bold; color: #333; }
+        .task-subtitle { color: #888; font-size: 0.9rem; margin-top: 2px; }
+        .pdf-links { display: flex; flex-direction: column; gap: 12px; margin: 15px 0; }
+        .pdf-link { display: flex; align-items: center; gap: 12px; background: #f0fff4; padding: 15px 20px; border-radius: 10px; text-decoration: none; color: #333; font-weight: 600; border: 2px solid #9ae6b4; transition: all 0.3s; }
+        .pdf-link:hover { background: #38a169; color: white; border-color: #38a169; transform: translateX(5px); }
+        .pdf-icon { font-size: 1.5rem; }
+        .html-link-btn { display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #38a169, #2f855a); color: white; padding: 15px 30px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 1rem; transition: all 0.3s; margin: 10px 0; }
+        .html-link-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(56,161,105,0.4); }
+        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; margin: 15px 0; }
+        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .video-fallback { background: #f0fff4; padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align: center; }
+        .video-fallback a { color: #38a169; font-weight: bold; }
+        .audio-player { background: #f0fff4; border: 2px solid #9ae6b4; border-radius: 12px; padding: 20px; margin: 15px 0; }
+        .audio-player p { color: #555; margin-bottom: 10px; font-weight: 600; }
+        .audio-player audio { width: 100%; }
+        .passage-text { background: #fafffe; border: 1px solid #9ae6b4; border-radius: 10px; padding: 25px; margin: 15px 0; line-height: 1.8; font-size: 0.97rem; color: #333; }
+        .passage-text h3 { color: #38a169; margin-bottom: 15px; font-size: 1.2rem; }
+        .passage-text p { margin-bottom: 14px; }
+        .highlight { font-style: italic; color: #2f855a; font-weight: 600; }
+        .question-block { margin-bottom: 20px; padding: 18px; background: #f8f9fa; border-radius: 10px; }
+        .question-text { font-weight: 600; margin-bottom: 12px; color: #333; line-height: 1.5; }
+        .options label { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: background 0.2s; margin-bottom: 5px; }
+        .options label:hover { background: #e8f5e9; }
+        .options input[type="radio"] { margin-top: 3px; flex-shrink: 0; }
+        .answer-feedback { margin-top: 8px; font-weight: bold; font-size: 0.9rem; }
+        .answer-feedback.correct { color: #28a745; }
+        .answer-feedback.incorrect { color: #dc3545; }
+        .gap-fill-section { margin-top: 20px; }
+        .gap-sentence { margin-bottom: 14px; line-height: 2; font-size: 1rem; }
+        .gap-input { border: none; border-bottom: 2px solid #38a169; padding: 4px 8px; font-size: 0.95rem; width: 200px; background: transparent; outline: none; color: #333; }
+        .gap-input.correct { border-bottom-color: #28a745; background: #d4edda33; }
+        .gap-input.incorrect { border-bottom-color: #dc3545; background: #f8d7da33; }
+        .word-box { background: #f0fff4; border: 2px solid #9ae6b4; border-radius: 10px; padding: 12px 18px; margin-bottom: 15px; }
+        .word-box strong { color: #38a169; }
+        .matching-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .matching-table th { background: #38a169; color: white; padding: 10px 14px; text-align: left; }
+        .matching-table td { padding: 10px 14px; border-bottom: 1px solid #eee; }
+        .matching-table tr:nth-child(even) td { background: #f0fff4; }
+        .match-select { border: 2px solid #9ae6b4; border-radius: 6px; padding: 5px 8px; font-size: 0.88rem; background: white; width: 100%; max-width: 380px; }
+        .match-select.correct { border-color: #28a745; }
+        .match-select.incorrect { border-color: #dc3545; }
+        .speakers-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        .speakers-table th { background: #38a169; color: white; padding: 12px 16px; text-align: left; }
+        .speakers-table td { padding: 12px 16px; border-bottom: 1px solid #eee; vertical-align: middle; }
+        .speakers-table tr:nth-child(even) td { background: #f0fff4; }
+        .spk-select { border: 2px solid #9ae6b4; border-radius: 6px; padding: 6px 10px; font-size: 0.9rem; background: white; width: 100%; }
+        .spk-select.correct { border-color: #28a745; }
+        .spk-select.incorrect { border-color: #dc3545; }
+        .btn-row { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+        .check-btn { background: linear-gradient(135deg, #38a169, #2f855a); color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .check-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(56,161,105,0.4); }
+        .check-btn:disabled { background: #ccc; cursor: not-allowed; transform: none !important; box-shadow: none; }
+        .next-btn { background: #28a745; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .next-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .next-btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(40,167,69,0.4); }
+        .prev-btn { background: #6c757d; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .prev-btn:hover { background: #5a6268; }
+        .show-answers-btn { background: #ffc107; color: #333; border: none; padding: 10px 22px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.88rem; display: none; }
+        .show-answers-btn:hover { background: #e0a800; }
+        .answers-panel { display: none; background: #fffbea; border: 2px solid #ffc107; border-radius: 10px; padding: 15px; margin-top: 12px; }
+        .answers-panel p { margin-bottom: 6px; font-size: 0.9rem; }
+        .questions-box { background: #f0fff4; border: 2px solid #9ae6b4; border-radius: 10px; padding: 15px 20px; margin-bottom: 15px; }
+        .questions-box ol { padding-left: 20px; }
+        .questions-box li { margin-bottom: 6px; color: #333; line-height: 1.6; }
+        .completion-screen { text-align: center; padding: 60px 20px; display: none; }
+        .completion-screen .icon { font-size: 5rem; margin-bottom: 20px; }
+        .completion-screen h2 { font-size: 2.2rem; color: #38a169; margin-bottom: 10px; }
+        .completion-screen p { color: #666; font-size: 1rem; margin-bottom: 30px; }
+        .dashboard-btn { background: linear-gradient(135deg, #38a169, #2f855a); color: white; padding: 16px 40px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 1.1rem; display: inline-block; transition: all 0.3s; }
+        .dashboard-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(56,161,105,0.4); }
+        .save-indicator { position: fixed; bottom: 20px; right: 20px; background: #38a169; color: white; padding: 10px 18px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; opacity: 0; transition: opacity 0.4s; z-index: 9000; pointer-events: none; }
+        .save-indicator.show { opacity: 1; }
+    </style>
+</head>
+<body>
+<div id="splash-screen">
+    <h1>🌍 WEEK 4</h1>
+    <h2>DAY 4</h2>
+    <p>Topic: Environment</p>
+    <button class="splash-btn" onclick="startDay()">LET'S GO!</button>
+</div>
+<div class="save-indicator" id="saveIndicator">✓ Progress saved</div>
+<div class="main-container" id="main-content" style="display:none;">
+    <div class="day-header">
+        <div><h1>🌍 Week 4 — Day 4</h1><div class="topic">Topic: Environment</div></div>
+        <a href="/student-dashboard.html" class="back-btn">← Dashboard</a>
+    </div>
+    <div class="progress-label" id="progress-label">Task 0 of 7</div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-bar" style="width:0%"></div></div>
+
+    <!-- VOCAB -->
+    <div class="vocab-section">
+        <button class="vocab-toggle" onclick="toggleVocab()">
+            <div class="vocab-toggle-left"><h3>📖 Today's Vocabulary</h3><span class="vocab-count">50 words</span></div>
+            <span class="vocab-arrow" id="vocab-arrow">▼</span>
+        </button>
+        <div class="vocab-body" id="vocab-body"><div class="vocab-grid" id="vocab-grid"></div></div>
+    </div>
+
+    <!-- ══ TASK 1 ══ -->
+    <div class="task-card active" id="task1">
+        <div class="task-header">
+            <div class="task-number">1</div>
+            <div><div class="task-title">Mini Reading</div><div class="task-subtitle">Read and answer — NO MORE THAN THREE WORDS from the passage</div></div>
+        </div>
+        <div class="passage-text">
+            <h3>Renewable Energy: Promise and Reality</h3>
+            <p>The global transition to renewable energy has accelerated dramatically over the past decade, driven by falling technology costs, growing environmental awareness and increasingly ambitious government targets. Solar photovoltaic capacity has grown at a rate that would have seemed <span class="highlight">(1) implausible</span> to most energy analysts just twenty years ago, and wind power now supplies a substantial proportion of electricity in several European nations. Yet despite these impressive gains, the fundamental challenge of <span class="highlight">(2) decarbonising</span> the entire global energy system remains formidable, and the pace of transition continues to fall short of what climate scientists say is necessary.</p>
+            <p>One of the most significant barriers to deeper renewable penetration is the problem of <span class="highlight">(3) intermittency</span>. Unlike conventional power stations, which can generate electricity on demand, solar panels produce power only during daylight hours and wind turbines depend entirely on meteorological conditions. Addressing this requires either massive investment in energy <span class="highlight">(4) storage</span> infrastructure — particularly batteries — or the development of sophisticated grid management systems capable of balancing supply and demand across vast geographical areas.</p>
+            <p>The social dimensions of the energy transition are equally <span class="highlight">(5) complex</span>. Communities whose economies have historically been built around coal mining, oil extraction or gas processing face profound disruption as these industries decline. Policymakers must navigate the tension between the urgency of climate action and the legitimate concerns of workers and communities who stand to lose their primary source of <span class="highlight">(6) livelihood</span>. Without carefully designed transition programmes, the shift to clean energy risks deepening existing social and regional <span class="highlight">(7) inequalities</span>.</p>
+            <p>Internationally, the picture is further complicated by questions of <span class="highlight">(8) equity</span>. Wealthy nations, which bear the greatest historical responsibility for cumulative greenhouse gas emissions, have repeatedly fallen short of their commitments to provide financial and technological support to developing countries seeking to build clean energy systems without relying on the fossil fuels that powered earlier industrialisation.</p>
+        </div>
+        <h4 style="color:#38a169; margin:20px 0 12px;">Answer — NO MORE THAN THREE WORDS from the passage:</h4>
+        <div class="gap-fill-section">
+            <div class="gap-sentence">1. What has driven the acceleration of the global energy transition?<br><input class="gap-input" id="t1q1" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">2. What would have seemed implausible to analysts twenty years ago?<br><input class="gap-input" id="t1q2" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">3. What is described as one of the most significant barriers to deeper renewable penetration?<br><input class="gap-input" id="t1q3" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">4. What do solar panels and wind turbines require to address their limitations?<br><input class="gap-input" id="t1q4" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">5. What do communities face as fossil fuel industries decline?<br><input class="gap-input" id="t1q5" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">6. What must policymakers navigate between climate urgency and worker concerns?<br><input class="gap-input" id="t1q6" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">7. What have wealthy nations repeatedly fallen short of?<br><input class="gap-input" id="t1q7" placeholder="___" style="width:300px; margin-top:8px;"></div>
+        </div>
+        <div class="btn-row">
+            <button class="check-btn" id="check1" onclick="checkTask1()" disabled>Check Answers</button>
+            <button class="next-btn" id="next1" disabled onclick="goToTask(2)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns1" onclick="toggleAnswers('ans1')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans1">
+            <p><strong>Answers:</strong> 1-falling technology costs/government targets, 2-solar photovoltaic capacity, 3-(the problem of) intermittency, 4-energy storage/grid management systems, 5-profound disruption, 6-(a) tension, 7-their commitments</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 2 ══ -->
+    <div class="task-card" id="task2">
+        <div class="task-header">
+            <div class="task-number">2</div>
+            <div><div class="task-title">Article Reading</div><div class="task-subtitle">Read the article and study the vocabulary</div></div>
+        </div>
+        <div class="pdf-links">
+            <a class="pdf-link" href="DAY 2 level A (space article).pdf" target="_blank"><span class="pdf-icon">📄</span> Space — Article</a>
+            <a class="pdf-link" href="DAY 2 level A (space vocab).pdf" target="_blank"><span class="pdf-icon">📘</span> Space — Vocabulary</a>
+        </div>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(1)">← Previous</button>
+            <button class="next-btn" onclick="goToTask(3)">Next Task →</button>
+        </div>
+    </div>
+
+    <!-- ══ TASK 3 ══ -->
+    <div class="task-card" id="task3">
+        <div class="task-header">
+            <div class="task-number">3</div>
+            <div><div class="task-title">Practice Reading</div><div class="task-subtitle">IELTS-style reading test</div></div>
+        </div>
+        <a class="html-link-btn" href="Reading (12).html" target="_blank">📖 Open Practice Reading</a>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(2)">← Previous</button>
+            <button class="next-btn" onclick="goToTask(4)">Next Task →</button>
+        </div>
+    </div>
+
+    <!-- ══ TASK 4 ══ -->
+    <div class="task-card" id="task4">
+        <div class="task-header">
+            <div class="task-number">4</div>
+            <div><div class="task-title">Listening Mini Task</div><div class="task-subtitle">Listen to three speakers and complete the table</div></div>
+        </div>
+        <div class="audio-player">
+            <p>🎧 Track 18 — Three Speakers on Animal Questions</p>
+            <audio controls src="track18.mp3"></audio>
+        </div>
+        <div class="questions-box">
+            <p style="font-weight:600; color:#38a169; margin-bottom:8px;">Questions list:</p>
+            <ol>
+                <li>Do people in your country keep animals in their home?</li>
+                <li>Do you think the way farm animals are kept is acceptable?</li>
+                <li>Do you think we do enough to protect wild animals?</li>
+                <li>Should animals be used in scientific experiments?</li>
+            </ol>
+        </div>
+        <p style="color:#555; margin-bottom:15px; font-weight:600;">Listen and decide which question each speaker is answering. Is their attitude positive or negative?</p>
+        <table class="speakers-table">
+            <thead>
+                <tr><th>Speaker</th><th>Question (1–4)</th><th>Attitude</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>1</strong></td>
+                    <td><select class="spk-select" id="t4q1"><option value="">— select —</option><option value="1">Question 1</option><option value="2">Question 2</option><option value="3">Question 3</option><option value="4">Question 4</option></select></td>
+                    <td><select class="spk-select" id="t4a1"><option value="">— select —</option><option value="positive">Positive</option><option value="negative">Negative</option><option value="neutral">Neutral</option></select></td>
+                </tr>
+                <tr>
+                    <td><strong>2</strong></td>
+                    <td><select class="spk-select" id="t4q2"><option value="">— select —</option><option value="1">Question 1</option><option value="2">Question 2</option><option value="3">Question 3</option><option value="4">Question 4</option></select></td>
+                    <td><select class="spk-select" id="t4a2"><option value="">— select —</option><option value="positive">Positive</option><option value="negative">Negative</option><option value="neutral">Neutral</option></select></td>
+                </tr>
+                <tr>
+                    <td><strong>3</strong></td>
+                    <td><select class="spk-select" id="t4q3"><option value="">— select —</option><option value="1">Question 1</option><option value="2">Question 2</option><option value="3">Question 3</option><option value="4">Question 4</option></select></td>
+                    <td><select class="spk-select" id="t4a3"><option value="">— select —</option><option value="positive">Positive</option><option value="negative">Negative</option><option value="neutral">Neutral</option></select></td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(3)">← Previous</button>
+            <button class="check-btn" id="check4" onclick="checkTask4()" disabled>Check Answers</button>
+            <button class="next-btn" id="next4" disabled onclick="goToTask(5)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns4" onclick="toggleAnswers('ans4')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans4">
+            <p><strong>Speaker 1:</strong> Question 4 — Negative</p>
+            <p><strong>Speaker 2:</strong> Question 3 — Negative</p>
+            <p><strong>Speaker 3:</strong> Question 2 — Neutral</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 5 ══ -->
+    <div class="task-card" id="task5">
+        <div class="task-header">
+            <div class="task-number">5</div>
+            <div><div class="task-title">Video Watching Task</div><div class="task-subtitle">Watch and answer questions</div></div>
+        </div>
+        <div class="video-fallback">
+            <p>▶ <a href="https://www.youtube.com/watch?v=1ikmEL-XQQI" target="_blank">Click here to open the video in a new tab</a> if it doesn't play below.</p>
+        </div>
+        <div class="video-container">
+            <iframe src="https://www.youtube.com/embed/1ikmEL-XQQI" frameborder="0" allowfullscreen></iframe>
+        </div>
+
+        <h4 style="color:#38a169; margin:20px 0 12px;">Part 1 — Multiple Choice Questions</h4>
+        <div class="question-block">
+            <div class="question-text">1. What is the main question explored in the video?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q1" value="A"> A. How humans could survive on another planet</label>
+                <label><input type="radio" name="t5q1" value="B"> B. How technology might develop in the future</label>
+                <label><input type="radio" name="t5q1" value="C"> C. What Earth would be like if humans suddenly disappeared</label>
+                <label><input type="radio" name="t5q1" value="D"> D. Why animals are becoming extinct</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q1"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">2. What happens to the electricity grid shortly after humans disappear?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q2" value="A"> A. It becomes more efficient</label>
+                <label><input type="radio" name="t5q2" value="B"> B. It continues operating normally</label>
+                <label><input type="radio" name="t5q2" value="C"> C. It fails because fuel supplies run out</label>
+                <label><input type="radio" name="t5q2" value="D"> D. It switches entirely to renewable energy</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q2"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">3. Why do underground transport tunnels flood?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q3" value="A"> A. Heavy rainfall increases</label>
+                <label><input type="radio" name="t5q3" value="B"> B. Dams collapse</label>
+                <label><input type="radio" name="t5q3" value="C"> C. Water is no longer pumped out by humans</label>
+                <label><input type="radio" name="t5q3" value="D"> D. Sea levels rise immediately</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q3"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">4. What happens to buildings within weeks?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q4" value="A"> A. They become stronger</label>
+                <label><input type="radio" name="t5q4" value="B"> B. Plants begin taking them over</label>
+                <label><input type="radio" name="t5q4" value="C"> C. Animals start rebuilding them</label>
+                <label><input type="radio" name="t5q4" value="D"> D. They disappear completely</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q4"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">5. Which may remain for a very long time?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q5" value="A"> A. Wooden furniture</label>
+                <label><input type="radio" name="t5q5" value="B"> B. Paper documents</label>
+                <label><input type="radio" name="t5q5" value="C"> C. Car tyres</label>
+                <label><input type="radio" name="t5q5" value="D"> D. Glass windows</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q5"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">6. What could happen when nuclear facilities deteriorate?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q6" value="A"> A. They become nature reserves</label>
+                <label><input type="radio" name="t5q6" value="B"> B. They may explode and release radiation</label>
+                <label><input type="radio" name="t5q6" value="C"> C. They disappear harmlessly</label>
+                <label><input type="radio" name="t5q6" value="D"> D. They turn into freshwater lakes</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q6"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">7. According to the video, why might mosquitoes thrive?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q7" value="A"> A. Humans continue feeding them</label>
+                <label><input type="radio" name="t5q7" value="B"> B. They become immune to disease</label>
+                <label><input type="radio" name="t5q7" value="C"> C. They adapt to living underwater</label>
+                <label><input type="radio" name="t5q7" value="D"> D. They can feed on other animals and pollinate plants</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q7"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">8. What happens to endangered animals in the absence of humans?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q8" value="A"> A. Their numbers continue to decline</label>
+                <label><input type="radio" name="t5q8" value="B"> B. They lose access to food</label>
+                <label><input type="radio" name="t5q8" value="C"> C. They have more opportunities to recover and expand</label>
+                <label><input type="radio" name="t5q8" value="D"> D. They evolve into new species immediately</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q8"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">9. How does the video suggest Earth begins to recover?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q9" value="A"> A. Atmospheric carbon dioxide increases</label>
+                <label><input type="radio" name="t5q9" value="B"> B. Vegetation absorbs carbon dioxide and ecosystems recover</label>
+                <label><input type="radio" name="t5q9" value="C"> C. Oceans disappear</label>
+                <label><input type="radio" name="t5q9" value="D"> D. Global temperatures continue rising</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q9"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">10. What is the overall conclusion of the video?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q10" value="A"> A. Earth depends completely on humans</label>
+                <label><input type="radio" name="t5q10" value="B"> B. Life on Earth would end without humans</label>
+                <label><input type="radio" name="t5q10" value="C"> C. The planet could survive and thrive without humans but would retain evidence of our existence</label>
+                <label><input type="radio" name="t5q10" value="D"> D. Technology would continue developing independently</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q10"></div>
+        </div>
+
+        <h4 style="color:#38a169; margin:20px 0 12px;">Part 2 — Gap Filling</h4>
+        <div class="word-box">
+            <strong>Word Box:</strong> degrades &nbsp;|&nbsp; mutations &nbsp;|&nbsp; vegetation &nbsp;|&nbsp; ecosystem &nbsp;|&nbsp; corrode &nbsp;|&nbsp; pollinating &nbsp;|&nbsp; irradiating
+        </div>
+        <div class="gap-fill-section">
+            <div class="gap-sentence">11. Many metals slowly <input class="gap-input" id="t5g11" placeholder="___"> when exposed to the environment over time.</div>
+            <div class="gap-sentence">12. Radiation may cause genetic <input class="gap-input" id="t5g12" placeholder="___"> in some animals.</div>
+            <div class="gap-sentence">13. Plants covering large areas of land are collectively known as <input class="gap-input" id="t5g13" placeholder="___">.</div>
+            <div class="gap-sentence">14. Radiation from damaged nuclear facilities could affect the local <input class="gap-input" id="t5g14" placeholder="___">.</div>
+            <div class="gap-sentence">15. Mosquitoes also help plants by <input class="gap-input" id="t5g15" placeholder="___"> flowers while feeding on nectar.</div>
+        </div>
+
+        <h4 style="color:#38a169; margin:20px 0 12px;">Part 3 — Vocabulary Matching</h4>
+        <table class="matching-table">
+            <thead><tr><th>#</th><th>Word</th><th>Definition</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td><strong>inundate</strong></td><td><select class="match-select" id="t5m1"><option value="">— select —</option><option value="A">A. the natural environment and the living things within it</option><option value="B">B. to spread over or flood an area</option><option value="C">C. low-growing vegetation consisting of bushes and small trees</option><option value="D">D. to grow or develop successfully</option><option value="E">E. to slowly destroy a material through chemical reactions</option><option value="F">F. a change in the genetic structure of an organism</option><option value="G">G. to expose something to radiation</option><option value="H">H. to break down or deteriorate gradually</option><option value="I">I. skill and creativity in solving problems</option><option value="J">J. to prosper and grow strongly</option></select></td></tr>
+                <tr><td>2</td><td><strong>flourish</strong></td><td><select class="match-select" id="t5m2"><option value="">— select —</option><option value="A">A. the natural environment and the living things within it</option><option value="B">B. to spread over or flood an area</option><option value="C">C. low-growing vegetation consisting of bushes and small trees</option><option value="D">D. to grow or develop successfully</option><option value="E">E. to slowly destroy a material through chemical reactions</option><option value="F">F. a change in the genetic structure of an organism</option><option value="G">G. to expose something to radiation</option><option value="H">H. to break down or deteriorate gradually</option><option value="I">I. skill and creativity in solving problems</option><option value="J">J. to prosper and grow strongly</option></select></td></tr>
+                <tr><td>3</td><td><strong>scrub</strong></td><td><select class="match-select" id="t5m3"><option value="">— select —</option><option value="A">A. the natural environment and the living things within it</option><option value="B">B. to spread over or flood an area</option><option value="C">C. low-growing vegetation consisting of bushes and small trees</option><option value="D">D. to grow or develop successfully</option><option value="E">E. to slowly destroy a material through chemical reactions</option><option value="F">F. a change in the genetic structure of an organism</option><option value="G">G. to expose something to radiation</option><option value="H">H. to break down or deteriorate gradually</option><option value="I">I. skill and creativity in solving problems</option><option value="J">J. to prosper and grow strongly</option></select></td></tr>
+                <tr><td>4</td><td><strong>corrode</strong></td><td><select class="match-select" id="t5m4"><option value="">— select —</option><option value="A">A. the natural environment and the living things within it</option><option value="B">B. to spread over or flood an area</option><option value="C">C. low-growing vegetation consisting of bushes and small trees</option><option value="D">D. to grow or develop successfully</option><option value="E">E. to slowly destroy a material through chemical reactions</option><option value="F">F. a change in the genetic structure of an organism</option><option value="G">G. to expose something to radiation</option><option value="H">H. to break down or deteriorate gradually</option><option value="I">I. skill and creativity in solving problems</option><option value="J">J. to prosper and grow strongly</option></select></td></tr>
+                <tr><td>5</td><td><strong>ecosystem</strong></td><td><select class="match-select" id="t5m5"><option value="">— select —</option><option value="A">A. the natural environment and the living things within it</option><option value="B">B. to spread over or flood an area</option><option value="C">C. low-growing vegetation consisting of bushes and small trees</option><option value="D">D. to grow or develop successfully</option><option value="E">E. to slowly destroy a material through chemical reactions</option><option value="F">F. a change in the genetic structure of an organism</option><option value="G">G. to expose something to radiation</option><option value="H">H. to break down or deteriorate gradually</option><option value="I">I. skill and creativity in solving problems</option><option value="J">J. to prosper and grow strongly</option></select></td></tr>
+                <tr><td>6</td><td><strong>mutation</strong></td><td><select class="match-select" id="t5m6"><option value="">— select —</option><option value="A">A. the natural environment and the living things within it</option><option value="B">B. to spread over or flood an area</option><option value="C">C. low-growing vegetation consisting of bushes and small trees</option><option value="D">D. to grow or develop successfully</option><option value="E">E. to slowly destroy a material through chemical reactions</option><option value="F">F. a change in the genetic structure of an organism</option><option value="G">G. to expose something to radiation</option><option value="H">H. to break down or deteriorate gradually</option><option value="I">I. skill and creativity in solving problems</option><option value="J">J. to prosper and grow strongly</option></select></td></tr>
+                <tr><td>7</td><td><strong>irradiate</strong></td><td><select class="match-select" id="t5m7"><option value="">— select —</option><option value="A">A. the natural environment and the living things within it</option><option value="B">B. to spread over or flood an area</option><option value="C">C. low-growing vegetation consisting of bushes and small trees</option><option value="D">D. to grow or develop successfully</option><option value="E">E. to slowly destroy a material through chemical reactions</option><option value="F">F. a change in the genetic structure of an organism</option><option value="G">G. to expose something to radiation</option><option value="H">H. to break down or deteriorate gradually</option><option value="I">I. skill and creativity in solving problems</option><option value="J">J. to prosper and grow strongly</option></select></td></tr>
+                <tr><td>8</td><td><strong>degrade</strong></td><td><select class="match-select" id="t5m8"><option value="">— select —</option><option value="A">A. the natural environment and the living things within it</option><option value="B">B. to spread over or flood an area</option><option value="C">C. low-growing vegetation consisting of bushes and small trees</option><option value="D">D. to grow or develop successfully</option><option value="E">E. to slowly destroy a material through chemical reactions</option><option value="F">F. a change in the genetic structure of an organism</option><option value="G">G. to expose something to radiation</option><option value="H">H. to break down or deteriorate gradually</option><option value="I">I. skill and creativity in solving problems</option><option value="J">J. to prosper and grow strongly</option></select></td></tr>
+                <tr><td>9</td><td><strong>ingenuity</strong></td><td><select class="match-select" id="t5m9"><option value="">— select —</option><option value="A">A. the natural environment and the living things within it</option><option value="B">B. to spread over or flood an area</option><option value="C">C. low-growing vegetation consisting of bushes and small trees</option><option value="D">D. to grow or develop successfully</option><option value="E">E. to slowly destroy a material through chemical reactions</option><option value="F">F. a change in the genetic structure of an organism</option><option value="G">G. to expose something to radiation</option><option value="H">H. to break down or deteriorate gradually</option><option value="I">I. skill and creativity in solving problems</option><option value="J">J. to prosper and grow strongly</option></select></td></tr>
+                <tr><td>10</td><td><strong>thrive</strong></td><td><select class="match-select" id="t5m10"><option value="">— select —</option><option value="A">A. the natural environment and the living things within it</option><option value="B">B. to spread over or flood an area</option><option value="C">C. low-growing vegetation consisting of bushes and small trees</option><option value="D">D. to grow or develop successfully</option><option value="E">E. to slowly destroy a material through chemical reactions</option><option value="F">F. a change in the genetic structure of an organism</option><option value="G">G. to expose something to radiation</option><option value="H">H. to break down or deteriorate gradually</option><option value="I">I. skill and creativity in solving problems</option><option value="J">J. to prosper and grow strongly</option></select></td></tr>
+            </tbody>
+        </table>
+
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(4)">← Previous</button>
+            <button class="check-btn" id="check5" onclick="checkTask5()" disabled>Check Answers</button>
+            <button class="next-btn" id="next5" disabled onclick="goToTask(6)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns5" onclick="toggleAnswers('ans5')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans5">
+            <p><strong>MCQ:</strong> 1-C, 2-C, 3-C, 4-B, 5-C, 6-B, 7-D, 8-C, 9-B, 10-C</p>
+            <p><strong>Gap Fill:</strong> 11-corrode, 12-mutations, 13-vegetation, 14-ecosystem, 15-pollinating</p>
+            <p><strong>Matching:</strong> 1-B, 2-D, 3-C, 4-E, 5-A, 6-F, 7-G, 8-H, 9-I, 10-J</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 6 ══ -->
+    <div class="task-card" id="task6">
+        <div class="task-header">
+            <div class="task-number">6</div>
+            <div><div class="task-title">Dictation + Comprehension</div><div class="task-subtitle">Listen, complete the gaps, then answer questions</div></div>
+        </div>
+        <div class="audio-player">
+            <p>🎧 Kids and Climate Anxiety — BBC Learning English</p>
+            <audio controls src="kidsclimate.mp3"></audio>
+        </div>
+        <h4 style="color:#38a169; margin-bottom:12px;">Part 1 — Dictation (ONE WORD ONLY)</h4>
+        <div class="gap-fill-section" id="dictation-gaps"></div>
+        <h4 style="color:#38a169; margin:20px 0 12px;">Part 2 — Comprehension Questions</h4>
+        <div class="question-block">
+            <div class="question-text">1. Why do many young people experience climate anxiety?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q1" value="A"> A. They dislike science lessons</label>
+                <label><input type="radio" name="t6q1" value="B"> B. They believe governments are doing too much</label>
+                <label><input type="radio" name="t6q1" value="C"> C. They are worried about the future and climate change</label>
+                <label><input type="radio" name="t6q1" value="D"> D. They want to become activists</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q1"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">2. What does Immie compare climate change to?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q2" value="A"> A. A wildfire</label>
+                <label><input type="radio" name="t6q2" value="B"> B. A storm</label>
+                <label><input type="radio" name="t6q2" value="C"> C. A parasite</label>
+                <label><input type="radio" name="t6q2" value="D"> D. A machine</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q2"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">3. According to Caroline Hickman, what should adults do?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q3" value="A"> A. Avoid discussing climate change with children</label>
+                <label><input type="radio" name="t6q3" value="B"> B. Talk about climate change regularly and honestly</label>
+                <label><input type="radio" name="t6q3" value="C"> C. Let schools deal with the issue</label>
+                <label><input type="radio" name="t6q3" value="D"> D. Wait until children ask questions</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q3"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">4. What does the phrase "put it off" mean?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q4" value="A"> A. Ignore something forever</label>
+                <label><input type="radio" name="t6q4" value="B"> B. Make something worse</label>
+                <label><input type="radio" name="t6q4" value="C"> C. Delay doing something until later</label>
+                <label><input type="radio" name="t6q4" value="D"> D. Discuss something openly</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q4"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">5. How did Greta Thunberg's climate activism begin?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q5" value="A"> A. By planting trees at school</label>
+                <label><input type="radio" name="t6q5" value="B"> B. By organising recycling projects</label>
+                <label><input type="radio" name="t6q5" value="C"> C. By writing letters to politicians</label>
+                <label><input type="radio" name="t6q5" value="D"> D. By skipping school on Fridays</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q5"></div>
+        </div>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(5)">← Previous</button>
+            <button class="check-btn" id="check6" onclick="checkTask6()" disabled>Check Answers</button>
+            <button class="next-btn" id="next6" disabled onclick="goToTask(7)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns6" onclick="toggleAnswers('ans6')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans6">
+            <p><strong>Dictation:</strong> 1-betrayed, 2-doomed, 3-cooperation, 4-divisions, 5-Stockholm, 6-Fridays, 7-parasite, 8-freaks, 9-one, 10-feeds, 11-confused, 12-Earth, 13-rare, 14-100,000, 15-off, 16-regularly, 17-answers, 18-together, 19-delay, 20-ignore, 21-out, 22-August, 23-1.6, 24-anxiety, 25-off, 26-freaks, 27-unlikely, 28-delay, 29-ignore, 30-vocabulary</p>
+            <p><strong>MCQ:</strong> 1-C, 2-C, 3-B, 4-C, 5-D</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 7 ══ -->
+    <div class="task-card" id="task7">
+        <div class="task-header">
+            <div class="task-number">7</div>
+            <div><div class="task-title">Practice Listening</div><div class="task-subtitle">Full IELTS-style listening test</div></div>
+        </div>
+        <a class="html-link-btn" href="Listening (11).html" target="_blank">🎧 Open Practice Listening</a>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(6)">← Previous</button>
+            <button class="next-btn" onclick="finishDay()">Finish Day 4 ✓</button>
+        </div>
+    </div>
+
+    <!-- COMPLETION -->
+    <div class="completion-screen" id="completion-screen">
+        <div class="icon">🎉</div>
+        <h2>Day 4 Complete!</h2>
+        <p>Excellent work! You've completed all tasks for Week 4, Day 4.</p>
+        <div style="margin:30px 0; text-align:left;">
+            <h3 style="color:#38a169; border-bottom:2px solid #38a169; padding-bottom:10px; margin-bottom:15px;">📋 Review Your Work</h3>
+            <p style="color:#888; margin-bottom:20px; font-size:0.9rem;">Click any task below to go back and review it.</p>
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:15px;">
+                <div onclick="reviewTask(1)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#38a169;font-size:1.1rem;margin-bottom:5px;">Task 1</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Mini Reading</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(2)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#38a169;font-size:1.1rem;margin-bottom:5px;">Task 2</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Article Reading</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(3)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#38a169;font-size:1.1rem;margin-bottom:5px;">Task 3</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Reading</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(4)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#38a169;font-size:1.1rem;margin-bottom:5px;">Task 4</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Animal Questions</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(5)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#38a169;font-size:1.1rem;margin-bottom:5px;">Task 5</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Video + Vocab</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(6)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#38a169;font-size:1.1rem;margin-bottom:5px;">Task 6</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Dictation + MCQ</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(7)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#38a169;font-size:1.1rem;margin-bottom:5px;">Task 7</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Listening</div><div style="font-size:1.4rem;">✅</div></div>
+            </div>
+        </div>
+        <a href="/student-dashboard.html" class="dashboard-btn">← Back to Dashboard</a>
+    </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://nbfceuhuauizyucugejr.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_0mFIGJkA_DKZfUiDAWFdrA_nXt0hF6H';
+const dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const WEEK = 4, DAY = 4, TOTAL_TASKS = 7;
+let studentId = null, studentGroup = null, currentTask = 1;
+let taskStartTime = Date.now(), saveTimeout = null;
+
+const dictationAnswers = ['betrayed','doomed','cooperation','divisions','Stockholm','Fridays','parasite','freaks','one','feeds','confused','Earth','rare','100,000','off','regularly','answers','together','delay','ignore','out','August','1.6','anxiety','off','freaks','unlikely','delay','ignore','vocabulary'];
+
+const dictationScripts = [
+    "Many of those leading the fight against climate change are young people who feel <input class='gap-input' id='d1' placeholder='(1)'> by politicians and adults.",
+    "children report feeling that they have no future, that humanity is <input class='gap-input' id='d2' placeholder='(2)'>, and that governments are failing to act.",
+    "a solution to the climate emergency needs the <input class='gap-input' id='d3' placeholder='(3)'> of everyone, both old and young.",
+    "can talking honestly about the climate help mend the <input class='gap-input' id='d4' placeholder='(4)'> between generations?",
+    "her protests started much smaller, in her hometown, <input class='gap-input' id='d5' placeholder='(5)'>.",
+    "Did she: a) plant trees in her school garden? b) skip school on <input class='gap-input' id='d6' placeholder='(6)'>? or, c) recycle her school's plastic waste?",
+    "I think it'd be some sort of <input class='gap-input' id='d7' placeholder='(7)'>, because it's the only thing that's actually growing and getting bigger.",
+    "the fact that lots of people aren't doing much about it, just sort of <input class='gap-input' id='d8' placeholder='(8)'> me out.",
+    "It's a very <input class='gap-input' id='d9' placeholder='(9)'> in a million, sort of, planet.",
+    "In the natural world, a parasite is an animal or plant that lives on another living thing and <input class='gap-input' id='d10' placeholder='(10)'> from it.",
+    "If something freaks you out, it makes you become very emotional, upset or <input class='gap-input' id='d11' placeholder='(11)'>.",
+    "humankind only has one home, planet <input class='gap-input' id='d12' placeholder='(12)'>.",
+    "Millie calls Earth one in a million, meaning very special or <input class='gap-input' id='d13' placeholder='(13)'>.",
+    "talking to over <input class='gap-input' id='d14' placeholder='(14)'> teenagers about their climate fears.",
+    "My advice to adults, parents, teachers, is do not put it <input class='gap-input' id='d15' placeholder='(15)'>, don't push it away.",
+    "Talk about it <input class='gap-input' id='d16' placeholder='(16)'>. That's crucial.",
+    "It's OK for you to say to your children, 'I don't have all the <input class='gap-input' id='d17' placeholder='(17)'>.'",
+    "We're not sure exactly how to deal with all of this. But let's find out <input class='gap-input' id='d18' placeholder='(18)'>.",
+    "Caroline's top tip is to discuss the climate crisis regularly… and not <input class='gap-input' id='d19' placeholder='(19)'> talking about it until later.",
+    "Caroline also advises parents not to push it away, to choose to forget about or <input class='gap-input' id='d20' placeholder='(20)'> the subject.",
+    "by sharing ideas we can work things <input class='gap-input' id='d21' placeholder='(21)'> together.",
+    "Greta started her 'school strike for climate' in <input class='gap-input' id='d22' placeholder='(22)'> 2018.",
+    "before it was taken up by over <input class='gap-input' id='d23' placeholder='(23)'> million school children from 125 countries.",
+    "starting with climate <input class='gap-input' id='d24' placeholder='(24)'>, feeling worried, afraid or depressed because of climate change.",
+    "A parasite is an animal or plant that feeds <input class='gap-input' id='d25' placeholder='(25)'> another living thing.",
+    "If something makes you feel very emotional or upset, you might say, it <input class='gap-input' id='d26' placeholder='(26)'> me out!",
+    "The idiom one in a million describes something which is extremely special, rare or <input class='gap-input' id='d27' placeholder='(27)'>.",
+    "To put something off means to <input class='gap-input' id='d28' placeholder='(28)'> doing it until later.",
+    "To push something away means to decide to forget about or <input class='gap-input' id='d29' placeholder='(29)'> it.",
+    "Remember to join us again soon for more trending topics and useful <input class='gap-input' id='d30' placeholder='(30)'>.",
+];
+
+const vocab = [
+    {word:"1. Intermittency (n)", def:"The quality of not being constant or regular"},
+    {word:"2. Decarbonise (v)", def:"To reduce or eliminate carbon emissions"},
+    {word:"3. Photovoltaic (adj)", def:"Relating to the conversion of light into electricity"},
+    {word:"4. Implausible (adj)", def:"Not seeming reasonable or probable"},
+    {word:"5. Formidable (adj)", def:"Inspiring fear or respect through being impressively large"},
+    {word:"6. Penetration (n)", def:"The extent to which a product/idea has spread"},
+    {word:"7. Meteorological (adj)", def:"Relating to weather and atmosphere"},
+    {word:"8. Livelihood (n)", def:"A means of earning money to live"},
+    {word:"9. Inequalities (n)", def:"Differences in opportunity and status between people"},
+    {word:"10. Equity (n)", def:"Fairness and justice in the way people are treated"},
+    {word:"11. Cumulative (adj)", def:"Increasing by successive additions"},
+    {word:"12. Industrialisation (n)", def:"The development of industries in a region"},
+    {word:"13. Inundate (v)", def:"To spread over or flood an area"},
+    {word:"14. Flourish (v)", def:"To grow or develop successfully"},
+    {word:"15. Scrub (n)", def:"Low-growing vegetation of bushes and small trees"},
+    {word:"16. Corrode (v)", def:"To slowly destroy material through chemical reactions"},
+    {word:"17. Ecosystem (n)", def:"The natural environment and living things within it"},
+    {word:"18. Mutation (n)", def:"A change in the genetic structure of an organism"},
+    {word:"19. Irradiate (v)", def:"To expose something to radiation"},
+    {word:"20. Degrade (v)", def:"To break down or deteriorate gradually"},
+    {word:"21. Ingenuity (n)", def:"Skill and creativity in solving problems"},
+    {word:"22. Thrive (v)", def:"To prosper and grow strongly"},
+    {word:"23. Vegetation (n)", def:"Plants covering an area of land"},
+    {word:"24. Pollinate (v)", def:"To transfer pollen to fertilise a plant"},
+    {word:"25. Betrayed (adj)", def:"Feeling let down by someone you trusted"},
+    {word:"26. Doomed (adj)", def:"Certain to fail or suffer a bad fate"},
+    {word:"27. Cooperation (n)", def:"Working together towards a common goal"},
+    {word:"28. Division (n)", def:"A disagreement or difference between groups"},
+    {word:"29. Parasite (n)", def:"An organism that lives off another organism"},
+    {word:"30. Climate anxiety (n)", def:"Worry or fear caused by climate change"},
+    {word:"31. Activist (n)", def:"A person who campaigns for political or social change"},
+    {word:"32. Psychotherapist (n)", def:"A person who treats mental health through therapy"},
+    {word:"33. Renewable energy (n)", def:"Energy from sources that naturally replenish"},
+    {word:"34. Grid (n)", def:"A network for distributing electricity"},
+    {word:"35. Storage (n)", def:"The action of storing something for future use"},
+    {word:"36. Battery (n)", def:"A device that stores electrical energy"},
+    {word:"37. Transition (n)", def:"The process of changing from one state to another"},
+    {word:"38. Disruption (n)", def:"Disturbance that interrupts an existing system"},
+    {word:"39. Policymaker (n)", def:"A person responsible for making government decisions"},
+    {word:"40. Awareness (n)", def:"Knowledge or perception of a situation or fact"},
+    {word:"41. Nuclear (adj)", def:"Relating to atomic energy"},
+    {word:"42. Radiation (n)", def:"Energy emitted as waves from nuclear material"},
+    {word:"43. Endangered (adj)", def:"At risk of extinction"},
+    {word:"44. Biodiversity (n)", def:"The variety of life in a particular habitat"},
+    {word:"45. Carbon dioxide (n)", def:"A greenhouse gas produced by burning fossil fuels"},
+    {word:"46. Fossil fuel (n)", def:"Coal, oil, and gas formed from ancient organisms"},
+    {word:"47. Infrastructure (n)", def:"Basic systems needed for society to function"},
+    {word:"48. Commitment (n)", def:"A promise to do something"},
+    {word:"49. Financial (adj)", def:"Relating to money and finances"},
+    {word:"50. Technological (adj)", def:"Relating to technology and its development"},
+];
+
+async function initStudent() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('teacher') === 'true') { studentId = 'teacher-preview'; studentGroup = 'preview'; return; }
+    try {
+        const userStr = localStorage.getItem('user');
+        if (!userStr) { window.location.href = '/login.html'; return; }
+        const user = JSON.parse(userStr);
+        const { data, error } = await dbClient.from('students').select('*').eq('username', user.username).single();
+        if (error || !data) return;
+        studentId = data.id; studentGroup = data.student_group;
+    } catch(e) { console.log('Auth error:', e); }
+}
+
+function buildVocab() {
+    document.getElementById('vocab-grid').innerHTML = vocab.map(v =>
+        `<div class="vocab-item"><div class="vocab-word">${v.word}</div><div class="vocab-definition">${v.def}</div></div>`).join('');
+}
+
+function buildDictation() {
+    document.getElementById('dictation-gaps').innerHTML = dictationScripts.map((s, i) =>
+        `<div class="gap-sentence"><strong>${i+1}.</strong> …${s}</div>`).join('');
+}
+
+async function startDay() {
+    document.getElementById('splash-screen').style.display = 'none';
+    document.getElementById('main-content').style.display = 'block';
+    buildVocab(); buildDictation();
+    await initStudent();
+    await restoreProgress();
+    setupLiveValidation();
+}
+
+function goToTask(num) {
+    document.getElementById('task' + currentTask).classList.remove('active');
+    currentTask = num;
+    document.getElementById('task' + num).classList.add('active');
+    document.getElementById('task' + num).scrollIntoView({behavior:'smooth', block:'start'});
+    updateProgress(num); taskStartTime = Date.now(); saveResume(num);
+}
+
+function updateProgress(taskNum) {
+    document.getElementById('progress-bar').style.width = Math.round(((taskNum-1)/TOTAL_TASKS)*100) + '%';
+    document.getElementById('progress-label').textContent = `Task ${taskNum} of ${TOTAL_TASKS}`;
+}
+
+function showSaveIndicator() {
+    const el = document.getElementById('saveIndicator');
+    el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+async function saveResume(taskNum) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try { await dbClient.from('student_resume').upsert({student_id:studentId, week:WEEK, day:DAY, last_task:taskNum, updated_at:new Date().toISOString()}, {onConflict:'student_id'}); } catch(e) {}
+}
+
+function scheduleSave() {
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+        localStorage.setItem(`w${WEEK}d${DAY}_answers`, JSON.stringify(gatherAllAnswers()));
+        showSaveIndicator();
+    }, 800);
+}
+
+function gatherAllAnswers() {
+    const data = {};
+    document.querySelectorAll('.gap-input').forEach(el => { if (el.id) data[el.id] = el.value; });
+    ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10','t6q1','t6q2','t6q3','t6q4','t6q5'].forEach(name => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`); if (sel) data[name] = sel.value;
+    });
+    document.querySelectorAll('select').forEach(el => { if (el.id) data[el.id] = el.value; });
+    return data;
+}
+
+async function restoreProgress() {
+    try {
+        const saved = localStorage.getItem(`w${WEEK}d${DAY}_answers`);
+        if (saved) {
+            const data = JSON.parse(saved);
+            Object.entries(data).forEach(([id, val]) => { const el = document.getElementById(id); if (el && el.tagName === 'INPUT') el.value = val; });
+            ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10','t6q1','t6q2','t6q3','t6q4','t6q5'].forEach(name => {
+                const val = data[name]; if (val) { const r = document.querySelector(`input[name="${name}"][value="${val}"]`); if (r) r.checked = true; }
+            });
+            Object.entries(data).forEach(([id, val]) => { const el = document.getElementById(id); if (el && el.tagName === 'SELECT') el.value = val; });
+        }
+        if (studentId && studentId !== 'teacher-preview') {
+            const { data: taskData } = await dbClient.from('task_progress').select('task_number,status').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY);
+            const completedCount = taskData ? taskData.filter(t => t.status === 'completed').length : 0;
+            if (completedCount >= TOTAL_TASKS) {
+                await restoreAnswersFromSupabase();
+                document.getElementById('task1').classList.remove('active');
+                document.getElementById('completion-screen').style.display = 'block';
+                updateProgress(TOTAL_TASKS); validateAll(); makeReadOnly(); return;
+            }
+            const { data: resume } = await dbClient.from('student_resume').select('last_task').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY).single();
+            if (resume && resume.last_task > 1) {
+                document.getElementById('task1').classList.remove('active');
+                currentTask = resume.last_task;
+                document.getElementById('task' + currentTask).classList.add('active');
+                updateProgress(currentTask);
+            }
+        }
+        validateAll();
+    } catch(e) { console.log('Restore error:', e); }
+}
+
+async function restoreAnswersFromSupabase() {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        const { data: answers } = await dbClient.from('student_answers').select('*').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY);
+        if (!answers || answers.length === 0) return;
+        answers.forEach(a => {
+            const { question_id, student_answer, question_type, is_correct, correct_answer } = a;
+            if (question_type === 'mcq') {
+                const radio = document.querySelector(`input[name="${question_id}"][value="${student_answer}"]`);
+                if (radio) radio.checked = true;
+                const fb = document.getElementById('fb_' + question_id);
+                if (fb) { fb.textContent = is_correct ? '✅ Correct!' : `❌ Incorrect — correct answer: ${correct_answer}`; fb.className = 'answer-feedback ' + (is_correct ? 'correct' : 'incorrect'); }
+            } else if (question_type === 'gap_fill') {
+                const inp = document.getElementById(question_id);
+                if (inp) { inp.value = student_answer || ''; inp.classList.toggle('correct', is_correct); inp.classList.toggle('incorrect', !is_correct); }
+            } else if (question_type === 'matching') {
+                const sel = document.getElementById(question_id);
+                if (sel) { sel.value = student_answer || ''; sel.classList.toggle('correct', is_correct); sel.classList.toggle('incorrect', !is_correct); }
+            }
+        });
+        document.querySelectorAll('.show-answers-btn').forEach(btn => btn.style.display = 'inline-block');
+        document.querySelectorAll('.next-btn').forEach(btn => btn.disabled = false);
+    } catch(e) { console.error('Restore answers error:', e); }
+}
+
+function makeReadOnly() {
+    document.querySelectorAll('.gap-input').forEach(el => { el.disabled = true; el.style.opacity = '0.85'; });
+    document.querySelectorAll('input[type="radio"]').forEach(el => el.disabled = true);
+    document.querySelectorAll('select').forEach(el => { el.disabled = true; });
+    document.querySelectorAll('.check-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.next-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.prev-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.show-answers-btn').forEach(el => el.style.display = 'inline-block');
+}
+
+function setupLiveValidation() {
+    ['t1q1','t1q2','t1q3','t1q4','t1q5','t1q6','t1q7'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', () => { validateTask1Check(); scheduleSave(); }); });
+    ['t4q1','t4q2','t4q3','t4a1','t4a2','t4a3'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('change', () => { validateTask4Check(); scheduleSave(); }); });
+    ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10'].forEach(name => { document.querySelectorAll(`input[name="${name}"]`).forEach(el => el.addEventListener('change', () => { validateTask5Check(); scheduleSave(); })); });
+    ['t5g11','t5g12','t5g13','t5g14','t5g15'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', () => { validateTask5Check(); scheduleSave(); }); });
+    ['t5m1','t5m2','t5m3','t5m4','t5m5','t5m6','t5m7','t5m8','t5m9','t5m10'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('change', () => { validateTask5Check(); scheduleSave(); }); });
+    ['t6q1','t6q2','t6q3','t6q4','t6q5'].forEach(name => { document.querySelectorAll(`input[name="${name}"]`).forEach(el => el.addEventListener('change', () => { validateTask6Check(); scheduleSave(); })); });
+    for (let i = 1; i <= 30; i++) { const el = document.getElementById('d' + i); if (el) el.addEventListener('input', () => { validateTask6Check(); scheduleSave(); }); }
+}
+
+function validateAll() { validateTask1Check(); validateTask4Check(); validateTask5Check(); validateTask6Check(); }
+function validateTask1Check() { document.getElementById('check1').disabled = !['t1q1','t1q2','t1q3','t1q4','t1q5','t1q6','t1q7'].every(id => document.getElementById(id)?.value.trim()); }
+function validateTask4Check() { document.getElementById('check4').disabled = !['t4q1','t4q2','t4q3','t4a1','t4a2','t4a3'].every(id => document.getElementById(id)?.value); }
+function validateTask5Check() {
+    const allMcq = ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10'].every(name => document.querySelector(`input[name="${name}"]:checked`));
+    const allGaps = ['t5g11','t5g12','t5g13','t5g14','t5g15'].every(id => document.getElementById(id)?.value.trim());
+    const allMatch = ['t5m1','t5m2','t5m3','t5m4','t5m5','t5m6','t5m7','t5m8','t5m9','t5m10'].every(id => document.getElementById(id)?.value);
+    document.getElementById('check5').disabled = !(allMcq && allGaps && allMatch);
+}
+function validateTask6Check() {
+    const allDict = Array.from({length:30}, (_,i) => document.getElementById('d'+(i+1))?.value.trim()).every(Boolean);
+    const allMcq = ['t6q1','t6q2','t6q3','t6q4','t6q5'].every(name => document.querySelector(`input[name="${name}"]:checked`));
+    document.getElementById('check6').disabled = !(allDict && allMcq);
+}
+
+const t1Accepted = {
+    t1q1:['falling technology costs','government targets','environmental awareness'],
+    t1q2:['solar photovoltaic capacity','the growth rate'],
+    t1q3:['intermittency','the problem of intermittency'],
+    t1q4:['energy storage','grid management systems'],
+    t1q5:['profound disruption'],
+    t1q6:['tension','a tension'],
+    t1q7:['their commitments']
+};
+const t4QAnswers = {t4q1:'4', t4q2:'3', t4q3:'2'};
+const t4AAnswers = {t4a1:'negative', t4a2:'negative', t4a3:'neutral'};
+const t5McqAnswers = {t5q1:'C',t5q2:'C',t5q3:'C',t5q4:'B',t5q5:'C',t5q6:'B',t5q7:'D',t5q8:'C',t5q9:'B',t5q10:'C'};
+const t5GapAnswers = {t5g11:'corrode',t5g12:'mutations',t5g13:'vegetation',t5g14:'ecosystem',t5g15:'pollinating'};
+const t5MatchAnswers = {t5m1:'B',t5m2:'D',t5m3:'C',t5m4:'E',t5m5:'A',t5m6:'F',t5m7:'G',t5m8:'H',t5m9:'I',t5m10:'J'};
+const t6McqAnswers = {t6q1:'C',t6q2:'C',t6q3:'B',t6q4:'C',t6q5:'D'};
+
+function checkTask1() {
+    const answers = [];
+    Object.entries(t1Accepted).forEach(([id, opts]) => {
+        const inp = document.getElementById(id);
+        const val = inp.value.trim().toLowerCase();
+        const ok = opts.some(o => val.includes(o.toLowerCase()));
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:opts[0], is_correct:ok});
+    });
+    document.getElementById('showAns1').style.display = 'inline-block';
+    document.getElementById('next1').disabled = false;
+    saveAnswers(1, answers); saveTaskProgress(1);
+}
+
+function checkTask4() {
+    const answers = [];
+    Object.entries(t4QAnswers).forEach(([id, correct]) => {
+        const sel = document.getElementById(id);
+        const ok = sel.value === correct;
+        sel.classList.toggle('correct', ok); sel.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'matching', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    Object.entries(t4AAnswers).forEach(([id, correct]) => {
+        const sel = document.getElementById(id);
+        const ok = sel.value === correct;
+        sel.classList.toggle('correct', ok); sel.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'matching', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    document.getElementById('showAns4').style.display = 'inline-block';
+    document.getElementById('next4').disabled = false;
+    saveAnswers(4, answers); saveTaskProgress(4);
+}
+
+function checkTask5() {
+    const answers = [];
+    Object.entries(t5McqAnswers).forEach(([name, correct]) => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`);
+        const fb = document.getElementById('fb_' + name);
+        if (!sel) return;
+        const ok = sel.value === correct;
+        fb.textContent = ok ? '✅ Correct!' : `❌ Incorrect — correct answer: ${correct}`;
+        fb.className = 'answer-feedback ' + (ok ? 'correct' : 'incorrect');
+        answers.push({question_id:name, question_type:'mcq', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    Object.entries(t5GapAnswers).forEach(([id, correct]) => {
+        const inp = document.getElementById(id);
+        const val = inp.value.trim().toLowerCase();
+        const ok = val === correct.toLowerCase();
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:correct, is_correct:ok});
+    });
+    Object.entries(t5MatchAnswers).forEach(([id, correct]) => {
+        const sel = document.getElementById(id);
+        const ok = sel.value === correct;
+        sel.classList.toggle('correct', ok); sel.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'matching', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    document.getElementById('showAns5').style.display = 'inline-block';
+    document.getElementById('next5').disabled = false;
+    saveAnswers(5, answers); saveTaskProgress(5);
+}
+
+function checkTask6() {
+    const answers = [];
+    for (let i = 1; i <= 30; i++) {
+        const inp = document.getElementById('d' + i);
+        const val = inp.value.trim().toLowerCase();
+        const correct = dictationAnswers[i-1];
+        const ok = val === correct.toLowerCase();
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:'d'+i, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:correct, is_correct:ok});
+    }
+    Object.entries(t6McqAnswers).forEach(([name, correct]) => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`);
+        const fb = document.getElementById('fb_' + name);
+        if (!sel) return;
+        const ok = sel.value === correct;
+        fb.textContent = ok ? '✅ Correct!' : `❌ Incorrect — correct answer: ${correct}`;
+        fb.className = 'answer-feedback ' + (ok ? 'correct' : 'incorrect');
+        answers.push({question_id:name, question_type:'mcq', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    document.getElementById('showAns6').style.display = 'inline-block';
+    document.getElementById('next6').disabled = false;
+    saveAnswers(6, answers); saveTaskProgress(6);
+}
+
+async function saveAnswers(taskNum, answers) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        const rows = answers.map(a => ({student_id:studentId, week:WEEK, day:DAY, task_number:taskNum, question_id:a.question_id, question_type:a.question_type, student_answer:a.student_answer, correct_answer:a.correct_answer, is_correct:a.is_correct, answered_at:new Date().toISOString()}));
+        await dbClient.from('student_answers').upsert(rows, {onConflict:'student_id,week,day,task_number,question_id'});
+    } catch(e) { console.error('Answer save error:', e); }
+}
+
+async function saveTaskProgress(taskNum) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        await dbClient.from('task_progress').upsert({student_id:studentId, week:WEEK, day:DAY, task_number:taskNum, status:'completed', time_completed:new Date().toISOString(), time_spent_seconds:Math.round((Date.now()-taskStartTime)/1000)}, {onConflict:'student_id,week,day,task_number'});
+    } catch(e) { console.error('Progress save error:', e); }
+}
+
+async function finishDay() {
+    document.getElementById('task7').classList.remove('active');
+    document.getElementById('completion-screen').style.display = 'block';
+    document.getElementById('completion-screen').scrollIntoView({behavior:'smooth'});
+    localStorage.removeItem(`w${WEEK}d${DAY}_answers`);
+    for (let i = 1; i <= TOTAL_TASKS; i++) await saveTaskProgress(i);
+    if (studentId && studentId !== 'teacher-preview') await dbClient.from('student_resume').delete().eq('student_id', studentId);
+    makeReadOnly();
+}
+
+function reviewTask(num) {
+    document.getElementById('completion-screen').style.display = 'none';
+    currentTask = num;
+    document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active'));
+    document.getElementById('task' + num).classList.add('active');
+    document.getElementById('task' + num).scrollIntoView({behavior:'smooth', block:'start'});
+    const existing = document.getElementById('back-to-results');
+    if (!existing) {
+        const btn = document.createElement('button');
+        btn.id = 'back-to-results';
+        btn.textContent = '🏆 Back to Results';
+        btn.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#38a169;color:white;border:none;padding:12px 22px;border-radius:50px;cursor:pointer;font-weight:bold;font-size:0.95rem;box-shadow:0 4px 15px rgba(56,161,105,0.4);z-index:9998;';
+        btn.onclick = () => { btn.remove(); document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active')); document.getElementById('completion-screen').style.display = 'block'; document.getElementById('completion-screen').scrollIntoView({behavior:'smooth'}); };
+        document.body.appendChild(btn);
+    }
+}
+
+function toggleVocab() { document.getElementById('vocab-body').classList.toggle('open'); document.getElementById('vocab-arrow').classList.toggle('open'); }
+function toggleAnswers(id) {
+    const div = document.getElementById(id);
+    const btn = div.previousElementSibling;
+    div.style.display = div.style.display === 'block' ? 'none' : 'block';
+    btn.textContent = div.style.display === 'block' ? '▲ Hide Answers' : '▼ Show Answers';
+}
+</script>
+</body>
+</html>
