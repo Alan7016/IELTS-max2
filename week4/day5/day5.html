@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEEK 4 - DAY 5 (Environment)</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0fff4; color: #333; }
+        #splash-screen { position: fixed; inset: 0; background: linear-gradient(135deg, #38a169 0%, #2f855a 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; color: white; text-align: center; padding: 20px; }
+        #splash-screen h1 { font-size: 3rem; margin-bottom: 10px; }
+        #splash-screen h2 { font-size: 2rem; margin-bottom: 10px; opacity: 0.9; }
+        #splash-screen p { font-size: 1.2rem; margin-bottom: 40px; opacity: 0.8; }
+        .splash-btn { background: white; color: #38a169; border: none; padding: 18px 60px; font-size: 1.4rem; font-weight: bold; border-radius: 50px; cursor: pointer; box-shadow: 0 8px 25px rgba(0,0,0,0.2); transition: all 0.3s; }
+        .splash-btn:hover { transform: translateY(-3px); }
+        .main-container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        .day-header { background: linear-gradient(135deg, #38a169 0%, #2f855a 100%); color: white; padding: 25px 30px; border-radius: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; }
+        .day-header h1 { font-size: 1.6rem; }
+        .day-header .topic { opacity: 0.85; font-size: 1rem; margin-top: 4px; }
+        .back-btn { background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; text-decoration: none; font-size: 0.9rem; transition: all 0.3s; }
+        .back-btn:hover { background: white; color: #38a169; }
+        .vocab-section { background: white; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-left: 5px solid #38a169; overflow: hidden; }
+        .vocab-toggle { width: 100%; background: none; border: none; cursor: pointer; padding: 18px 25px; display: flex; align-items: center; justify-content: space-between; text-align: left; }
+        .vocab-toggle:hover { background: #f0fff4; }
+        .vocab-toggle-left { display: flex; align-items: center; gap: 10px; }
+        .vocab-toggle h3 { color: #38a169; font-size: 1.1rem; margin: 0; }
+        .vocab-count { background: #38a169; color: white; font-size: 0.75rem; font-weight: bold; padding: 3px 10px; border-radius: 20px; }
+        .vocab-arrow { color: #38a169; font-size: 1rem; transition: transform 0.3s; }
+        .vocab-arrow.open { transform: rotate(180deg); }
+        .vocab-body { display: none; padding: 0 25px 20px; }
+        .vocab-body.open { display: block; }
+        .vocab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+        .vocab-item { background: #f0fff4; padding: 10px 14px; border-radius: 8px; }
+        .vocab-word { font-weight: bold; color: #333; font-size: 0.95rem; }
+        .vocab-definition { color: #666; font-size: 0.82rem; margin-top: 2px; }
+        .progress-label { text-align: center; color: #38a169; font-size: 0.85rem; margin-bottom: 8px; font-weight: 600; }
+        .progress-bar-wrap { background: #c6f6d5; border-radius: 20px; height: 10px; margin-bottom: 20px; overflow: hidden; }
+        .progress-bar-fill { background: linear-gradient(90deg, #38a169, #2f855a); height: 100%; border-radius: 20px; transition: width 0.5s ease; }
+        .task-card { background: white; border-radius: 15px; padding: 28px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); display: none; }
+        .task-card.active { display: block; }
+        .task-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .task-number { background: linear-gradient(135deg, #38a169, #2f855a); color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; flex-shrink: 0; }
+        .task-title { font-size: 1.3rem; font-weight: bold; color: #333; }
+        .task-subtitle { color: #888; font-size: 0.9rem; margin-top: 2px; }
+        .pdf-links { display: flex; flex-direction: column; gap: 12px; margin: 15px 0; }
+        .pdf-link { display: flex; align-items: center; gap: 12px; background: #f0fff4; padding: 15px 20px; border-radius: 10px; text-decoration: none; color: #333; font-weight: 600; border: 2px solid #9ae6b4; transition: all 0.3s; }
+        .pdf-link:hover { background: #38a169; color: white; border-color: #38a169; transform: translateX(5px); }
+        .pdf-icon { font-size: 1.5rem; }
+        .html-link-btn { display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #38a169, #2f855a); color: white; padding: 15px 30px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 1rem; transition: all 0.3s; margin: 10px 0; }
+        .html-link-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(56,161,105,0.4); }
+        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; margin: 15px 0; }
+        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .video-fallback { background: #f0fff4; padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align: center; }
+        .video-fallback a { color: #38a169; font-weight: bold; }
+        .audio-player { background: #f0fff4; border: 2px solid #9ae6b4; border-radius: 12px; padding: 20px; margin: 15px 0; }
+        .audio-player p { color: #555; margin-bottom: 10px; font-weight: 600; }
+        .audio-player audio { width: 100%; }
+        .passage-text { background: #fafffe; border: 1px solid #9ae6b4; border-radius: 10px; padding: 25px; margin: 15px 0; line-height: 1.8; font-size: 0.97rem; color: #333; }
+        .passage-text h3 { color: #38a169; margin-bottom: 15px; font-size: 1.2rem; }
+        .passage-text p { margin-bottom: 14px; }
+        .question-block { margin-bottom: 20px; padding: 18px; background: #f8f9fa; border-radius: 10px; }
+        .question-text { font-weight: 600; margin-bottom: 12px; color: #333; line-height: 1.5; }
+        .options label { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: background 0.2s; margin-bottom: 5px; }
+        .options label:hover { background: #e8f5e9; }
+        .options input[type="radio"] { margin-top: 3px; flex-shrink: 0; }
+        .answer-feedback { margin-top: 8px; font-weight: bold; font-size: 0.9rem; }
+        .answer-feedback.correct { color: #28a745; }
+        .answer-feedback.incorrect { color: #dc3545; }
+        .tf-block { margin-bottom: 14px; padding: 14px 18px; background: #f8f9fa; border-radius: 10px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+        .tf-statement { font-size: 0.97rem; color: #333; flex: 1; min-width: 200px; }
+        .tf-options { display: flex; gap: 10px; }
+        .tf-options label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 600; padding: 6px 14px; border-radius: 20px; border: 2px solid #9ae6b4; transition: all 0.2s; }
+        .tf-options label:hover { background: #e8f5e9; }
+        .tf-options input[type="radio"] { display: none; }
+        .tf-options input[type="radio"]:checked + span { font-weight: 800; }
+        .tf-options label.selected-true { background: #d4edda; border-color: #28a745; color: #155724; }
+        .tf-options label.selected-false { background: #f8d7da; border-color: #dc3545; color: #721c24; }
+        .tf-feedback { font-size: 0.85rem; font-weight: bold; margin-top: 6px; width: 100%; }
+        .tf-feedback.correct { color: #28a745; }
+        .tf-feedback.incorrect { color: #dc3545; }
+        .gap-fill-section { margin-top: 20px; }
+        .gap-sentence { margin-bottom: 14px; line-height: 2; font-size: 1rem; }
+        .gap-input { border: none; border-bottom: 2px solid #38a169; padding: 4px 8px; font-size: 0.95rem; width: 200px; background: transparent; outline: none; color: #333; }
+        .gap-input.correct { border-bottom-color: #28a745; background: #d4edda33; }
+        .gap-input.incorrect { border-bottom-color: #dc3545; background: #f8d7da33; }
+        .word-box { background: #f0fff4; border: 2px solid #9ae6b4; border-radius: 10px; padding: 12px 18px; margin-bottom: 15px; }
+        .word-box strong { color: #38a169; }
+        .matching-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .matching-table th { background: #38a169; color: white; padding: 10px 14px; text-align: left; }
+        .matching-table td { padding: 10px 14px; border-bottom: 1px solid #eee; }
+        .matching-table tr:nth-child(even) td { background: #f0fff4; }
+        .match-select { border: 2px solid #9ae6b4; border-radius: 6px; padding: 5px 8px; font-size: 0.88rem; background: white; width: 100%; max-width: 380px; }
+        .match-select.correct { border-color: #28a745; }
+        .match-select.incorrect { border-color: #dc3545; }
+        .adj-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        .adj-table th { background: #38a169; color: white; padding: 12px 16px; text-align: left; }
+        .adj-table td { padding: 12px 16px; border-bottom: 1px solid #eee; vertical-align: middle; }
+        .adj-table tr:nth-child(even) td { background: #f0fff4; }
+        .adj-input { border: none; border-bottom: 2px solid #38a169; padding: 4px 8px; font-size: 0.9rem; width: 100%; background: transparent; outline: none; }
+        .adj-input.correct { border-bottom-color: #28a745; background: #d4edda33; }
+        .adj-input.incorrect { border-bottom-color: #dc3545; background: #f8d7da33; }
+        .btn-row { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+        .check-btn { background: linear-gradient(135deg, #38a169, #2f855a); color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .check-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(56,161,105,0.4); }
+        .check-btn:disabled { background: #ccc; cursor: not-allowed; transform: none !important; box-shadow: none; }
+        .next-btn { background: #28a745; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .next-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .next-btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(40,167,69,0.4); }
+        .prev-btn { background: #6c757d; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .prev-btn:hover { background: #5a6268; }
+        .show-answers-btn { background: #ffc107; color: #333; border: none; padding: 10px 22px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.88rem; display: none; }
+        .show-answers-btn:hover { background: #e0a800; }
+        .answers-panel { display: none; background: #fffbea; border: 2px solid #ffc107; border-radius: 10px; padding: 15px; margin-top: 12px; }
+        .answers-panel p { margin-bottom: 6px; font-size: 0.9rem; }
+        .completion-screen { text-align: center; padding: 60px 20px; display: none; }
+        .completion-screen .icon { font-size: 5rem; margin-bottom: 20px; }
+        .completion-screen h2 { font-size: 2.2rem; color: #38a169; margin-bottom: 10px; }
+        .completion-screen p { color: #666; font-size: 1rem; margin-bottom: 30px; }
+        .dashboard-btn { background: linear-gradient(135deg, #38a169, #2f855a); color: white; padding: 16px 40px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 1.1rem; display: inline-block; transition: all 0.3s; }
+        .dashboard-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(56,161,105,0.4); }
+        .save-indicator { position: fixed; bottom: 20px; right: 20px; background: #38a169; color: white; padding: 10px 18px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; opacity: 0; transition: opacity 0.4s; z-index: 9000; pointer-events: none; }
+        .save-indicator.show { opacity: 1; }
+    </style>
+</head>
+<body>
+<div id="splash-screen">
+    <h1>🌍 WEEK 4</h1>
+    <h2>DAY 5</h2>
+    <p>Topic: Environment</p>
+    <button class="splash-btn" onclick="startDay()">LET'S GO!</button>
+</div>
+<div class="save-indicator" id="saveIndicator">✓ Progress saved</div>
+<div class="main-container" id="main-content" style="display:none;">
+    <div class="day-header">
+        <div><h1>🌍 Week 4 — Day 5</h1><div class="topic">Topic: Environment</div></div>
+        <a href="/student-dashboard.html" class="back-btn">← Dashboard</a>
+    </div>
+    <div class="progress-label" id="progress-label">Task 0 of 7</div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-bar" style="width:0%"></div></div>
+
+    <!-- VOCAB -->
+    <div class="vocab-section">
+        <button class="vocab-toggle" onclick="toggleVocab()">
+            <div class="vocab-toggle-left"><h3>📖 Today's Vocabulary</h3><span class="vocab-count">50 words</span></div>
+            <span class="vocab-arrow" id="vocab-arrow">▼</span>
+        </button>
+        <div class="vocab-body" id="vocab-body"><div class="vocab-grid" id="vocab-grid"></div></div>
+    </div>
+
+    <!-- ══ TASK 1 ══ -->
+    <div class="task-card active" id="task1">
+        <div class="task-header">
+            <div class="task-number">1</div>
+            <div><div class="task-title">Mini Reading</div><div class="task-subtitle">Read the passage then decide TRUE or FALSE</div></div>
+        </div>
+        <div class="passage-text">
+            <h3>The Pygmy Shrew</h3>
+            <p>Having evolved 45 million years ago and remaining virtually unchanged in North America for at least ten million years, shrews are some of the world's most ancient and widespread mammals. Their speed of life defies imagination – they have the fastest heartbeat (1,200 per minute) and shortest lifespans (11 to 13 months) of any mammal. They don't sleep for more than a few minutes at a time and never hibernate. Instead, their brief life is spent foraging. To stay alive, the pygmy shrew has to eat three times its body weight daily, which means capturing a prey every 15 to 30 minutes, day and night. In northern Montana, shrews manage to maintain their metabolism even in winter by building an extensive system of tunnels under the snow. Yet, at northern latitudes, they are unusually vulnerable to accelerated global warming: with their high-speed metabolism, they cannot survive exposure to temperatures higher than 77 degrees Fahrenheit (25°C). The shrew's Achilles' heel is its dependence on a habitat most affected by global climate change and interference from humans – in order to thrive, they require cool, dark coniferous bogs with dense understory, standing water and an abundance of decaying mossy logs.</p>
+        </div>
+        <h4 style="color:#38a169; margin:20px 0 12px;">Are the following sentences TRUE or FALSE? Use words from the passage to explain your answers.</h4>
+        <div id="tf-questions"></div>
+        <div class="btn-row">
+            <button class="check-btn" id="check1" onclick="checkTask1()" disabled>Check Answers</button>
+            <button class="next-btn" id="next1" disabled onclick="goToTask(2)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns1" onclick="toggleAnswers('ans1')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans1">
+            <p><strong>1.</strong> FALSE — "virtually unchanged"</p>
+            <p><strong>2.</strong> FALSE — "widespread"</p>
+            <p><strong>3.</strong> FALSE — "never hibernate"</p>
+            <p><strong>4.</strong> TRUE — "their brief life is spent foraging"</p>
+            <p><strong>5.</strong> TRUE — "building an extensive system of tunnels under the snow"</p>
+            <p><strong>6.</strong> FALSE — "unusually vulnerable to accelerated global warming"</p>
+            <p><strong>7.</strong> FALSE — "they require cool, dark coniferous bogs with decaying mossy logs"</p>
+            <p><strong>8.</strong> TRUE — interference from humans affects their habitat</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 2 ══ -->
+    <div class="task-card" id="task2">
+        <div class="task-header">
+            <div class="task-number">2</div>
+            <div><div class="task-title">Article Reading</div><div class="task-subtitle">Read the article and study the vocabulary</div></div>
+        </div>
+        <div class="pdf-links">
+            <a class="pdf-link" href="Life and climate article.pdf" target="_blank"><span class="pdf-icon">📄</span> Life and Climate — Article</a>
+            <a class="pdf-link" href="Life and climate vocab.pdf" target="_blank"><span class="pdf-icon">📘</span> Life and Climate — Vocabulary</a>
+        </div>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(1)">← Previous</button>
+            <button class="next-btn" onclick="goToTask(3)">Next Task →</button>
+        </div>
+    </div>
+
+    <!-- ══ TASK 3 ══ -->
+    <div class="task-card" id="task3">
+        <div class="task-header">
+            <div class="task-number">3</div>
+            <div><div class="task-title">Practice Reading</div><div class="task-subtitle">IELTS-style reading test</div></div>
+        </div>
+        <a class="html-link-btn" href="Reading (19).html" target="_blank">📖 Open Practice Reading</a>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(2)">← Previous</button>
+            <button class="next-btn" onclick="goToTask(4)">Next Task →</button>
+        </div>
+    </div>
+
+    <!-- ══ TASK 4 ══ -->
+    <div class="task-card" id="task4">
+        <div class="task-header">
+            <div class="task-number">4</div>
+            <div><div class="task-title">Listening Mini Task</div><div class="task-subtitle">Listen and write the adjectives you hear for each noun</div></div>
+        </div>
+        <div class="audio-player">
+            <p>🎧 Track 15 — Description of a Place</p>
+            <audio controls src="track15.mp3"></audio>
+        </div>
+        <p style="color:#555; margin-bottom:15px; font-weight:600;">Listen and note the adjectives used to describe each noun. Write as many as you hear.</p>
+        <table class="adj-table">
+            <thead><tr><th style="width:30%">Noun</th><th>Adjectives you heard</th></tr></thead>
+            <tbody>
+                <tr><td><strong>place</strong></td><td><input class="adj-input" id="t4adj1" placeholder="e.g. beautiful, quiet..."></td></tr>
+                <tr><td><strong>area</strong></td><td><input class="adj-input" id="t4adj2" placeholder="e.g. large, open..."></td></tr>
+                <tr><td><strong>buildings</strong></td><td><input class="adj-input" id="t4adj3" placeholder="e.g. old, tall..."></td></tr>
+                <tr><td><strong>accommodation</strong></td><td><input class="adj-input" id="t4adj4" placeholder="e.g. comfortable..."></td></tr>
+                <tr><td><strong>views</strong></td><td><input class="adj-input" id="t4adj5" placeholder="e.g. amazing..."></td></tr>
+                <tr><td><strong>landscape</strong></td><td><input class="adj-input" id="t4adj6" placeholder="e.g. green, wild..."></td></tr>
+            </tbody>
+        </table>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(3)">← Previous</button>
+            <button class="check-btn" id="check4" onclick="checkTask4()" disabled>Check Answers</button>
+            <button class="next-btn" id="next4" disabled onclick="goToTask(5)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns4" onclick="toggleAnswers('ans4')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans4">
+            <p><strong>place:</strong> memorable, amazing, historic, rustic, charming</p>
+            <p><strong>area:</strong> remote, mountainous</p>
+            <p><strong>buildings:</strong> precarious</p>
+            <p><strong>accommodation:</strong> traditional, basic</p>
+            <p><strong>views:</strong> spectacular, breathtaking</p>
+            <p><strong>landscape:</strong> dramatic</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 5 ══ -->
+    <div class="task-card" id="task5">
+        <div class="task-header">
+            <div class="task-number">5</div>
+            <div><div class="task-title">Video Watching Task</div><div class="task-subtitle">Watch and answer questions</div></div>
+        </div>
+        <div class="video-fallback">
+            <p>▶ <a href="https://www.youtube.com/watch?v=R4yIJc9wIas" target="_blank">Click here to open the video in a new tab</a> if it doesn't play below.</p>
+        </div>
+        <div class="video-container">
+            <iframe src="https://www.youtube.com/embed/R4yIJc9wIas" frameborder="0" allowfullscreen></iframe>
+        </div>
+
+        <h4 style="color:#38a169; margin:20px 0 12px;">Part 1 — Multiple Choice Questions</h4>
+        <div class="question-block">
+            <div class="question-text">1. What happened in Jamaica in 2008?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q1" value="A"> A. A beach was destroyed by a hurricane</label>
+                <label><input type="radio" name="t5q1" value="B"> B. An entire beach disappeared after its sand was stolen</label>
+                <label><input type="radio" name="t5q1" value="C"> C. A new beach was artificially created</label>
+                <label><input type="radio" name="t5q1" value="D"> D. A volcano covered a beach with ash</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q1"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">2. Why is sand becoming a valuable resource?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q2" value="A"> A. It is needed only for beaches</label>
+                <label><input type="radio" name="t5q2" value="B"> B. It is becoming fashionable for decoration</label>
+                <label><input type="radio" name="t5q2" value="C"> C. It is essential for construction and modern technology</label>
+                <label><input type="radio" name="t5q2" value="D"> D. It can be used as a fuel source</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q2"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">3. What creates the white sand found on tropical beaches?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q3" value="A"> A. Crushed coral and marine skeletons</label>
+                <label><input type="radio" name="t5q3" value="B"> B. Volcanic ash</label>
+                <label><input type="radio" name="t5q3" value="C"> C. Iron-rich rocks</label>
+                <label><input type="radio" name="t5q3" value="D"> D. Desert winds</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q3"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">4. Why do some sand dunes in the Sahara produce a humming sound?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q4" value="A"> A. Wind passes through underground caves</label>
+                <label><input type="radio" name="t5q4" value="B"> B. Animals move beneath the dunes</label>
+                <label><input type="radio" name="t5q4" value="C"> C. Vibrating sand particles create the sound</label>
+                <label><input type="radio" name="t5q4" value="D"> D. Hidden water flows beneath them</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q4"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">5. What rare material was created when a meteor struck the Libyan Desert?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q5" value="A"> A. Quartz crystal</label>
+                <label><input type="radio" name="t5q5" value="B"> B. Basalt glass</label>
+                <label><input type="radio" name="t5q5" value="C"> C. Roman concrete</label>
+                <label><input type="radio" name="t5q5" value="D"> D. Libyan Desert glass</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q5"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">6. According to the video, what major Roman invention relied on sand?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q6" value="A"> A. Steel production</label>
+                <label><input type="radio" name="t5q6" value="B"> B. Concrete</label>
+                <label><input type="radio" name="t5q6" value="C"> C. Plastic</label>
+                <label><input type="radio" name="t5q6" value="D"> D. Paper</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q6"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">7. How is sand used in modern technology?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q7" value="A"> A. To manufacture batteries only</label>
+                <label><input type="radio" name="t5q7" value="B"> B. To create fuel for computers</label>
+                <label><input type="radio" name="t5q7" value="C"> C. To make glass and silicon chips</label>
+                <label><input type="radio" name="t5q7" value="D"> D. To cool electronic devices</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q7"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">8. Why is Sahara Desert sand unsuitable for construction?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q8" value="A"> A. It contains too much salt</label>
+                <label><input type="radio" name="t5q8" value="B"> B. Its grains are too smooth and rounded</label>
+                <label><input type="radio" name="t5q8" value="C"> C. It is too expensive to transport</label>
+                <label><input type="radio" name="t5q8" value="D"> D. It melts easily in hot weather</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q8"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">9. What can happen when excessive sand is removed from rivers?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q9" value="A"> A. Increased biodiversity</label>
+                <label><input type="radio" name="t5q9" value="B"> B. Faster plant growth</label>
+                <label><input type="radio" name="t5q9" value="C"> C. Flooding and erosion</label>
+                <label><input type="radio" name="t5q9" value="D"> D. Better water quality</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q9"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">10. What solution does the video suggest for protecting sand resources?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q10" value="A"> A. Ban all construction projects</label>
+                <label><input type="radio" name="t5q10" value="B"> B. Use only imported sand</label>
+                <label><input type="radio" name="t5q10" value="C"> C. Adopt more sustainable building practices</label>
+                <label><input type="radio" name="t5q10" value="D"> D. Mine sand from every desert</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q10"></div>
+        </div>
+
+        <h4 style="color:#38a169; margin:20px 0 12px;">Part 2 — Gap Filling</h4>
+        <div class="word-box">
+            <strong>Word Box:</strong> commodity &nbsp;|&nbsp; biodiversity &nbsp;|&nbsp; erosion &nbsp;|&nbsp; concrete &nbsp;|&nbsp; ecosystem &nbsp;|&nbsp; scarcity &nbsp;|&nbsp; quartz
+        </div>
+        <div class="gap-fill-section">
+            <div class="gap-sentence">11. The Romans used sand, lime, and volcanic ash to create <input class="gap-input" id="t5g11" placeholder="___">.</div>
+            <div class="gap-sentence">12. Many computer chips are made from high-quality <input class="gap-input" id="t5g12" placeholder="___"> sand.</div>
+            <div class="gap-sentence">13. Removing too much sand from rivers can increase flooding and <input class="gap-input" id="t5g13" placeholder="___">.</div>
+            <div class="gap-sentence">14. Illegal mining often develops when there is a <input class="gap-input" id="t5g14" placeholder="___"> of resources.</div>
+            <div class="gap-sentence">15. Sand has become such a valuable <input class="gap-input" id="t5g15" placeholder="___"> that criminal groups are willing to steal it.</div>
+        </div>
+
+        <h4 style="color:#38a169; margin:20px 0 12px;">Part 3 — Vocabulary Matching</h4>
+        <table class="matching-table">
+            <thead><tr><th>#</th><th>Word</th><th>Definition</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td><strong>commodity</strong></td><td><select class="match-select" id="t5m1"><option value="">— select —</option><option value="A">A. variety of plant and animal life</option><option value="B">B. a naturally occurring community of living organisms</option><option value="C">C. a useful product that can be bought or sold</option><option value="D">D. gradual destruction of land by natural forces</option><option value="E">E. lack or shortage of something</option><option value="F">F. giving off light without heat</option><option value="G">G. dark volcanic rock</option><option value="H">H. particles carried and deposited by water or wind</option><option value="I">I. the process of removing a natural resource</option><option value="J">J. able to continue without causing long-term damage</option></select></td></tr>
+                <tr><td>2</td><td><strong>ecosystem</strong></td><td><select class="match-select" id="t5m2"><option value="">— select —</option><option value="A">A. variety of plant and animal life</option><option value="B">B. a naturally occurring community of living organisms</option><option value="C">C. a useful product that can be bought or sold</option><option value="D">D. gradual destruction of land by natural forces</option><option value="E">E. lack or shortage of something</option><option value="F">F. giving off light without heat</option><option value="G">G. dark volcanic rock</option><option value="H">H. particles carried and deposited by water or wind</option><option value="I">I. the process of removing a natural resource</option><option value="J">J. able to continue without causing long-term damage</option></select></td></tr>
+                <tr><td>3</td><td><strong>scarcity</strong></td><td><select class="match-select" id="t5m3"><option value="">— select —</option><option value="A">A. variety of plant and animal life</option><option value="B">B. a naturally occurring community of living organisms</option><option value="C">C. a useful product that can be bought or sold</option><option value="D">D. gradual destruction of land by natural forces</option><option value="E">E. lack or shortage of something</option><option value="F">F. giving off light without heat</option><option value="G">G. dark volcanic rock</option><option value="H">H. particles carried and deposited by water or wind</option><option value="I">I. the process of removing a natural resource</option><option value="J">J. able to continue without causing long-term damage</option></select></td></tr>
+                <tr><td>4</td><td><strong>biodiversity</strong></td><td><select class="match-select" id="t5m4"><option value="">— select —</option><option value="A">A. variety of plant and animal life</option><option value="B">B. a naturally occurring community of living organisms</option><option value="C">C. a useful product that can be bought or sold</option><option value="D">D. gradual destruction of land by natural forces</option><option value="E">E. lack or shortage of something</option><option value="F">F. giving off light without heat</option><option value="G">G. dark volcanic rock</option><option value="H">H. particles carried and deposited by water or wind</option><option value="I">I. the process of removing a natural resource</option><option value="J">J. able to continue without causing long-term damage</option></select></td></tr>
+                <tr><td>5</td><td><strong>erosion</strong></td><td><select class="match-select" id="t5m5"><option value="">— select —</option><option value="A">A. variety of plant and animal life</option><option value="B">B. a naturally occurring community of living organisms</option><option value="C">C. a useful product that can be bought or sold</option><option value="D">D. gradual destruction of land by natural forces</option><option value="E">E. lack or shortage of something</option><option value="F">F. giving off light without heat</option><option value="G">G. dark volcanic rock</option><option value="H">H. particles carried and deposited by water or wind</option><option value="I">I. the process of removing a natural resource</option><option value="J">J. able to continue without causing long-term damage</option></select></td></tr>
+                <tr><td>6</td><td><strong>luminescence</strong></td><td><select class="match-select" id="t5m6"><option value="">— select —</option><option value="A">A. variety of plant and animal life</option><option value="B">B. a naturally occurring community of living organisms</option><option value="C">C. a useful product that can be bought or sold</option><option value="D">D. gradual destruction of land by natural forces</option><option value="E">E. lack or shortage of something</option><option value="F">F. giving off light without heat</option><option value="G">G. dark volcanic rock</option><option value="H">H. particles carried and deposited by water or wind</option><option value="I">I. the process of removing a natural resource</option><option value="J">J. able to continue without causing long-term damage</option></select></td></tr>
+                <tr><td>7</td><td><strong>basalt</strong></td><td><select class="match-select" id="t5m7"><option value="">— select —</option><option value="A">A. variety of plant and animal life</option><option value="B">B. a naturally occurring community of living organisms</option><option value="C">C. a useful product that can be bought or sold</option><option value="D">D. gradual destruction of land by natural forces</option><option value="E">E. lack or shortage of something</option><option value="F">F. giving off light without heat</option><option value="G">G. dark volcanic rock</option><option value="H">H. particles carried and deposited by water or wind</option><option value="I">I. the process of removing a natural resource</option><option value="J">J. able to continue without causing long-term damage</option></select></td></tr>
+                <tr><td>8</td><td><strong>sediment</strong></td><td><select class="match-select" id="t5m8"><option value="">— select —</option><option value="A">A. variety of plant and animal life</option><option value="B">B. a naturally occurring community of living organisms</option><option value="C">C. a useful product that can be bought or sold</option><option value="D">D. gradual destruction of land by natural forces</option><option value="E">E. lack or shortage of something</option><option value="F">F. giving off light without heat</option><option value="G">G. dark volcanic rock</option><option value="H">H. particles carried and deposited by water or wind</option><option value="I">I. the process of removing a natural resource</option><option value="J">J. able to continue without causing long-term damage</option></select></td></tr>
+                <tr><td>9</td><td><strong>extraction</strong></td><td><select class="match-select" id="t5m9"><option value="">— select —</option><option value="A">A. variety of plant and animal life</option><option value="B">B. a naturally occurring community of living organisms</option><option value="C">C. a useful product that can be bought or sold</option><option value="D">D. gradual destruction of land by natural forces</option><option value="E">E. lack or shortage of something</option><option value="F">F. giving off light without heat</option><option value="G">G. dark volcanic rock</option><option value="H">H. particles carried and deposited by water or wind</option><option value="I">I. the process of removing a natural resource</option><option value="J">J. able to continue without causing long-term damage</option></select></td></tr>
+                <tr><td>10</td><td><strong>sustainable</strong></td><td><select class="match-select" id="t5m10"><option value="">— select —</option><option value="A">A. variety of plant and animal life</option><option value="B">B. a naturally occurring community of living organisms</option><option value="C">C. a useful product that can be bought or sold</option><option value="D">D. gradual destruction of land by natural forces</option><option value="E">E. lack or shortage of something</option><option value="F">F. giving off light without heat</option><option value="G">G. dark volcanic rock</option><option value="H">H. particles carried and deposited by water or wind</option><option value="I">I. the process of removing a natural resource</option><option value="J">J. able to continue without causing long-term damage</option></select></td></tr>
+            </tbody>
+        </table>
+
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(4)">← Previous</button>
+            <button class="check-btn" id="check5" onclick="checkTask5()" disabled>Check Answers</button>
+            <button class="next-btn" id="next5" disabled onclick="goToTask(6)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns5" onclick="toggleAnswers('ans5')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans5">
+            <p><strong>MCQ:</strong> 1-B, 2-C, 3-A, 4-C, 5-D, 6-B, 7-C, 8-B, 9-C, 10-C</p>
+            <p><strong>Gap Fill:</strong> 11-concrete, 12-quartz, 13-erosion, 14-scarcity, 15-commodity</p>
+            <p><strong>Matching:</strong> 1-C, 2-B, 3-E, 4-A, 5-D, 6-F, 7-G, 8-H, 9-I, 10-J</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 6 ══ -->
+    <div class="task-card" id="task6">
+        <div class="task-header">
+            <div class="task-number">6</div>
+            <div><div class="task-title">Dictation + Comprehension</div><div class="task-subtitle">Listen, complete the gaps, then answer questions</div></div>
+        </div>
+        <div class="audio-player">
+            <p>🎧 Heatwaves & Keeping Cool — BBC Learning English</p>
+            <audio controls src="heatwaves.mp3"></audio>
+        </div>
+        <h4 style="color:#38a169; margin-bottom:12px;">Part 1 — Dictation (ONE WORD ONLY)</h4>
+        <div class="gap-fill-section" id="dictation-gaps"></div>
+        <h4 style="color:#38a169; margin:20px 0 12px;">Part 2 — Comprehension Questions</h4>
+        <div class="question-block">
+            <div class="question-text">1. Why is keeping houses cool a major problem in some parts of India?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q1" value="A"> A. Houses are too large</label>
+                <label><input type="radio" name="t6q1" value="B"> B. Many homes lack reliable electricity and air conditioning</label>
+                <label><input type="radio" name="t6q1" value="C"> C. People prefer living outside</label>
+                <label><input type="radio" name="t6q1" value="D"> D. Building materials are too expensive</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q1"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">2. What does Ole Sivertsen's liquid clay technology do?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q2" value="A"> A. Produces water from the air</label>
+                <label><input type="radio" name="t6q2" value="B"> B. Creates artificial rain</label>
+                <label><input type="radio" name="t6q2" value="C"> C. Helps sandy soil retain water and nutrients</label>
+                <label><input type="radio" name="t6q2" value="D"> D. Replaces soil completely</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q2"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">3. Why is clay soil better at holding water than sandy soil?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q3" value="A"> A. It contains more insects</label>
+                <label><input type="radio" name="t6q3" value="B"> B. It is darker in colour</label>
+                <label><input type="radio" name="t6q3" value="C"> C. Its particles cling together and prevent water from escaping</label>
+                <label><input type="radio" name="t6q3" value="D"> D. It is warmer</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q3"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">4. What concern does Myra Anubi raise about liquid clay technology?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q4" value="A"> A. It is too expensive to manufacture</label>
+                <label><input type="radio" name="t6q4" value="B"> B. It may create problems in the future</label>
+                <label><input type="radio" name="t6q4" value="C"> C. It requires too much electricity</label>
+                <label><input type="radio" name="t6q4" value="D"> D. It damages fruit trees</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q4"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">5. What is a "jaali"?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q5" value="A"> A. A system for spraying cool water</label>
+                <label><input type="radio" name="t6q5" value="B"> B. A tall building designed to block sunlight</label>
+                <label><input type="radio" name="t6q5" value="C"> C. A type of clay used in farming</label>
+                <label><input type="radio" name="t6q5" value="D"> D. A honeycomb pattern used in windows</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q5"></div>
+        </div>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(5)">← Previous</button>
+            <button class="check-btn" id="check6" onclick="checkTask6()" disabled>Check Answers</button>
+            <button class="next-btn" id="next6" disabled onclick="goToTask(7)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns6" onclick="toggleAnswers('ans6')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans6">
+            <p><strong>Dictation:</strong> 1-confession, 2-year, 3-heatwaves, 4-heat, 5-India, 6-45, 7-window, 8-70, 9-Yuma, 10-drought, 11-sponge, 12-gaps, 13-system, 14-cling, 15-evolve, 16-liquid, 17-tightly, 18-composition, 19-trees, 20-acre, 21-line, 22-effects, 23-chemicals, 24-result, 25-scarcity, 26-future, 27-skin, 28-pack, 29-tightly, 30-quickly</p>
+            <p><strong>MCQ:</strong> 1-B, 2-C, 3-C, 4-B, 5-D</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 7 ══ -->
+    <div class="task-card" id="task7">
+        <div class="task-header">
+            <div class="task-number">7</div>
+            <div><div class="task-title">Practice Listening</div><div class="task-subtitle">Full IELTS-style listening test</div></div>
+        </div>
+        <a class="html-link-btn" href="Listening (19).html" target="_blank">🎧 Open Practice Listening</a>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(6)">← Previous</button>
+            <button class="next-btn" onclick="finishDay()">Finish Day 5 ✓</button>
+        </div>
+    </div>
+
+    <!-- COMPLETION -->
+    <div class="completion-screen" id="completion-screen">
+        <div class="icon">🎉</div>
+        <h2>Week 4 Complete!</h2>
+        <p>Outstanding! You've completed all 5 days of Week 4: Environment!</p>
+        <div style="margin:30px 0; text-align:left;">
+            <h3 style="color:#38a169; border-bottom:2px solid #38a169; padding-bottom:10px; margin-bottom:15px;">📋 Review Your Work</h3>
+            <p style="color:#888; margin-bottom:20px; font-size:0.9rem;">Click any task below to go back and review it.</p>
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:15px;">
+                <div onclick="reviewTask(1)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#38a169;font-size:1.1rem;margin-bottom:5px;">Task 1</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Pygmy Shrew</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(2)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#38a169;font-size:1.1rem;margin-bottom:5px;">Task 2</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Article Reading</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(3)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#38a169;font-size:1.1rem;margin-bottom:5px;">Task 3</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Reading</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(4)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#38a169;font-size:1.1rem;margin-bottom:5px;">Task 4</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Adjectives Listening</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(5)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#38a169;font-size:1.1rem;margin-bottom:5px;">Task 5</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Video + Vocab</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(6)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#38a169;font-size:1.1rem;margin-bottom:5px;">Task 6</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Dictation + MCQ</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(7)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#38a169;font-size:1.1rem;margin-bottom:5px;">Task 7</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Listening</div><div style="font-size:1.4rem;">✅</div></div>
+            </div>
+        </div>
+        <a href="/student-dashboard.html" class="dashboard-btn">← Back to Dashboard</a>
+    </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://nbfceuhuauizyucugejr.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_0mFIGJkA_DKZfUiDAWFdrA_nXt0hF6H';
+const dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const WEEK = 4, DAY = 5, TOTAL_TASKS = 7;
+let studentId = null, currentTask = 1;
+let taskStartTime = Date.now(), saveTimeout = null;
+
+const tfStatements = [
+    "Today's shrews are very different to those of ten million years ago.",
+    "Shrews are found within a limited area.",
+    "Shrews sleep through most of the winter.",
+    "Shrews spend most of their life looking for food.",
+    "Shrews construct a home underground to help shelter them from the cold.",
+    "Shrews are too small to be affected by global warming.",
+    "The ideal living conditions for the shrew are dry and warm.",
+    "Shrews are likely to be negatively affected by logging."
+];
+const tfAnswers = ['false','false','false','true','true','false','false','true'];
+
+const dictationAnswers = ['confession','year','heatwaves','heat','India','45','window','70','Yuma','drought','sponge','gaps','system','cling','evolve','liquid','tightly','composition','trees','acre','line','effects','chemicals','result','scarcity','future','skin','pack','tightly','quickly'];
+
+const dictationScripts = [
+    "I have a <input class='gap-input' id='d1' placeholder='(1)'> to make, Neil - I love the hot weather.",
+    "you've probably noticed that it's getting hotter year after <input class='gap-input' id='d2' placeholder='(2)'>.",
+    "2023 is the hottest year on record with <input class='gap-input' id='d3' placeholder='(3)'> in many countries around the world.",
+    "It sweats, passing salty water called sweat through the skin to lose <input class='gap-input' id='d4' placeholder='(4)'>.",
+    "we'll be hearing about an innovative new idea for keeping houses cool in one of the hottest countries on Earth, <input class='gap-input' id='d5' placeholder='(5)'>.",
+    "summer temperatures regularly exceed <input class='gap-input' id='d6' placeholder='(6)'> degrees Celsius.",
+    "Hmmm, I'll guess jaali is a honeycomb <input class='gap-input' id='d7' placeholder='(7)'> pattern.",
+    "Agriculture uses a massive <input class='gap-input' id='d8' placeholder='(8)'>% of the world's fresh water supply.",
+    "Ole Sivertsen's company works with date farmers in <input class='gap-input' id='d9' placeholder='(9)'>, an area on the border of California and Mexico.",
+    "Yuma has been experiencing its worst <input class='gap-input' id='d10' placeholder='(10)'> in 500 years.",
+    "Ole's team have created a liquid that can turn the sandy desert soil into a <input class='gap-input' id='d11' placeholder='(11)'> which holds water and nutrients.",
+    "Sandy desert soil has a lot of <input class='gap-input' id='d12' placeholder='(12)'> in it so water drains through it quickly.",
+    "This makes it hard for plants to establish the root <input class='gap-input' id='d13' placeholder='(13)'> in the ground.",
+    "clay soil is made up of much smaller particles that <input class='gap-input' id='d14' placeholder='(14)'> together and naturally stop water from escaping.",
+    "It creates the habitat for the soil microbiology to also start to develop and <input class='gap-input' id='d15' placeholder='(15)'>.",
+    "If you drain something, you remove the <input class='gap-input' id='d16' placeholder='(16)'> from it.",
+    "Clay soil is made of smaller particles which cling, or stick together <input class='gap-input' id='d17' placeholder='(17)'>.",
+    "Ole makes a liquid by mixing clay and water which changes the soil <input class='gap-input' id='d18' placeholder='(18)'>.",
+    "The liquid also kick-starts the growth of his <input class='gap-input' id='d19' placeholder='(19)'>.",
+    "costing around 2,000 dollars an <input class='gap-input' id='d20' placeholder='(20)'>, it's not cheap.",
+    "could you be causing problems down the <input class='gap-input' id='d21' placeholder='(21)'>?",
+    "Only time will tell what the long-term <input class='gap-input' id='d22' placeholder='(22)'> of that will be.",
+    "Ole stressed that their liquid clay does not use any <input class='gap-input' id='d23' placeholder='(23)'>.",
+    "using and controlling it skilfully to achieve some <input class='gap-input' id='d24' placeholder='(24)'>.",
+    "only time will tell if liquid clay is a long-term solution to the problem of water <input class='gap-input' id='d25' placeholder='(25)'>.",
+    "the result of something happening now will not be known until the <input class='gap-input' id='d26' placeholder='(26)'>.",
+    "I guessed it was for smoothing facial <input class='gap-input' id='d27' placeholder='(27)'>.",
+    "A clay mask, also called a mud <input class='gap-input' id='d28' placeholder='(28)'>, is used to smooth the skin on your face.",
+    "To cling means to stick or hold <input class='gap-input' id='d29' placeholder='(29)'> onto something.",
+    "If you kick-start something, you make it start or develop more <input class='gap-input' id='d30' placeholder='(30)'>.",
+];
+
+const vocab = [
+    {word:"1. Shrew (n)", def:"A very small mammal with a pointed snout"},
+    {word:"2. Forage (v)", def:"To search widely for food"},
+    {word:"3. Hibernate (v)", def:"To spend winter in a dormant state"},
+    {word:"4. Metabolism (n)", def:"The chemical processes in an organism that sustain life"},
+    {word:"5. Vulnerable (adj)", def:"Susceptible to harm or attack"},
+    {word:"6. Coniferous (adj)", def:"Relating to trees that produce cones and stay green"},
+    {word:"7. Understory (n)", def:"Layer of vegetation beneath the forest canopy"},
+    {word:"8. Lifespan (n)", def:"The length of time something lives"},
+    {word:"9. Ancient (adj)", def:"Very old; belonging to the distant past"},
+    {word:"10. Widespread (adj)", def:"Found or distributed over a large area"},
+    {word:"11. Commodity (n)", def:"A useful product that can be bought or sold"},
+    {word:"12. Ecosystem (n)", def:"A community of living organisms and their environment"},
+    {word:"13. Scarcity (n)", def:"Lack or shortage of something"},
+    {word:"14. Biodiversity (n)", def:"The variety of plant and animal life"},
+    {word:"15. Erosion (n)", def:"Gradual destruction of land by natural forces"},
+    {word:"16. Luminescence (n)", def:"Giving off light without heat"},
+    {word:"17. Basalt (n)", def:"Dark volcanic rock"},
+    {word:"18. Sediment (n)", def:"Particles deposited by water or wind"},
+    {word:"19. Extraction (n)", def:"The process of removing a natural resource"},
+    {word:"20. Sustainable (adj)", def:"Able to continue without causing long-term damage"},
+    {word:"21. Heatwave (n)", def:"A period of unusually hot weather"},
+    {word:"22. Drought (n)", def:"A long period of abnormally low rainfall"},
+    {word:"23. Jaali (n)", def:"A traditional Indian lattice or honeycomb window pattern"},
+    {word:"24. Composition (n)", def:"The way something is made up or put together"},
+    {word:"25. Scarcity (n)", def:"Insufficient supply; shortage"},
+    {word:"26. Confession (n)", def:"An admission of something one has done"},
+    {word:"27. Tightly (adv)", def:"With a firm or close hold"},
+    {word:"28. Nutrients (n)", def:"Substances that provide nourishment for growth"},
+    {word:"29. Kick-start (v)", def:"To make something start or develop more quickly"},
+    {word:"30. Manipulate (v)", def:"To control or use something skilfully"},
+    {word:"31. Precarious (adj)", def:"Not securely held; dangerously likely to fall"},
+    {word:"32. Rustic (adj)", def:"Having a simple, charming quality associated with the countryside"},
+    {word:"33. Charming (adj)", def:"Delightful, attractive"},
+    {word:"34. Remote (adj)", def:"Far away from other places; isolated"},
+    {word:"35. Mountainous (adj)", def:"Having many mountains"},
+    {word:"36. Spectacular (adj)", def:"Beautiful in a dramatic and eye-catching way"},
+    {word:"37. Breathtaking (adj)", def:"Astonishing or awe-inspiring"},
+    {word:"38. Dramatic (adj)", def:"Exciting, impressive, or striking"},
+    {word:"39. Historic (adj)", def:"Famous or important in history"},
+    {word:"40. Traditional (adj)", def:"Following long-established customs"},
+    {word:"41. Concrete (n)", def:"A building material made from cement, sand, and water"},
+    {word:"42. Quartz (n)", def:"A hard mineral used in high-quality sand for technology"},
+    {word:"43. Silicon chip (n)", def:"A tiny electronic device made from silicon"},
+    {word:"44. Mining (n)", def:"The process of extracting minerals from the earth"},
+    {word:"45. Climate change (n)", def:"Long-term shifts in global temperatures and weather"},
+    {word:"46. Global warming (n)", def:"The gradual heating of Earth's surface"},
+    {word:"47. Habitat (n)", def:"The natural home or environment of a species"},
+    {word:"48. Interference (n)", def:"The action of getting in the way or hindering something"},
+    {word:"49. Accelerated (adj)", def:"Moving or happening faster than usual"},
+    {word:"50. Decaying (adj)", def:"Rotting or breaking down naturally"},
+];
+
+async function initStudent() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('teacher') === 'true') { studentId = 'teacher-preview'; return; }
+    try {
+        const userStr = localStorage.getItem('user');
+        if (!userStr) { window.location.href = '/login.html'; return; }
+        const user = JSON.parse(userStr);
+        const { data, error } = await dbClient.from('students').select('*').eq('username', user.username).single();
+        if (error || !data) return;
+        studentId = data.id;
+    } catch(e) { console.log('Auth error:', e); }
+}
+
+function buildVocab() {
+    document.getElementById('vocab-grid').innerHTML = vocab.map(v =>
+        `<div class="vocab-item"><div class="vocab-word">${v.word}</div><div class="vocab-definition">${v.def}</div></div>`).join('');
+}
+
+function buildTF() {
+    document.getElementById('tf-questions').innerHTML = tfStatements.map((stmt, i) => `
+        <div class="tf-block" id="tf-block-${i+1}">
+            <div class="tf-statement"><strong>${i+1}.</strong> ${stmt}</div>
+            <div class="tf-options">
+                <label id="lbl-t-${i+1}"><input type="radio" name="tf${i+1}" value="true" onchange="onTFChange(${i+1}, 'true', this)"><span>TRUE</span></label>
+                <label id="lbl-f-${i+1}"><input type="radio" name="tf${i+1}" value="false" onchange="onTFChange(${i+1}, 'false', this)"><span>FALSE</span></label>
+            </div>
+            <div class="tf-feedback" id="tf-fb-${i+1}"></div>
+        </div>`).join('');
+}
+
+function onTFChange(num, val, el) {
+    document.getElementById('lbl-t-' + num).classList.remove('selected-true');
+    document.getElementById('lbl-f-' + num).classList.remove('selected-false');
+    if (val === 'true') document.getElementById('lbl-t-' + num).classList.add('selected-true');
+    else document.getElementById('lbl-f-' + num).classList.add('selected-false');
+    validateTask1Check(); scheduleSave();
+}
+
+function buildDictation() {
+    document.getElementById('dictation-gaps').innerHTML = dictationScripts.map((s, i) =>
+        `<div class="gap-sentence"><strong>${i+1}.</strong> …${s}</div>`).join('');
+}
+
+async function startDay() {
+    document.getElementById('splash-screen').style.display = 'none';
+    document.getElementById('main-content').style.display = 'block';
+    buildVocab(); buildTF(); buildDictation();
+    await initStudent();
+    await restoreProgress();
+    setupLiveValidation();
+}
+
+function goToTask(num) {
+    document.getElementById('task' + currentTask).classList.remove('active');
+    currentTask = num;
+    document.getElementById('task' + num).classList.add('active');
+    document.getElementById('task' + num).scrollIntoView({behavior:'smooth', block:'start'});
+    updateProgress(num); taskStartTime = Date.now(); saveResume(num);
+}
+
+function updateProgress(taskNum) {
+    document.getElementById('progress-bar').style.width = Math.round(((taskNum-1)/TOTAL_TASKS)*100) + '%';
+    document.getElementById('progress-label').textContent = `Task ${taskNum} of ${TOTAL_TASKS}`;
+}
+
+function showSaveIndicator() {
+    const el = document.getElementById('saveIndicator');
+    el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+async function saveResume(taskNum) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try { await dbClient.from('student_resume').upsert({student_id:studentId, week:WEEK, day:DAY, last_task:taskNum, updated_at:new Date().toISOString()}, {onConflict:'student_id'}); } catch(e) {}
+}
+
+function scheduleSave() {
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+        localStorage.setItem(`w${WEEK}d${DAY}_answers`, JSON.stringify(gatherAllAnswers()));
+        showSaveIndicator();
+    }, 800);
+}
+
+function gatherAllAnswers() {
+    const data = {};
+    document.querySelectorAll('.gap-input, .adj-input').forEach(el => { if (el.id) data[el.id] = el.value; });
+    for (let i = 1; i <= 8; i++) {
+        const sel = document.querySelector(`input[name="tf${i}"]:checked`);
+        if (sel) data['tf' + i] = sel.value;
+    }
+    ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10','t6q1','t6q2','t6q3','t6q4','t6q5'].forEach(name => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`); if (sel) data[name] = sel.value;
+    });
+    document.querySelectorAll('select').forEach(el => { if (el.id) data[el.id] = el.value; });
+    return data;
+}
+
+async function restoreProgress() {
+    try {
+        const saved = localStorage.getItem(`w${WEEK}d${DAY}_answers`);
+        if (saved) {
+            const data = JSON.parse(saved);
+            Object.entries(data).forEach(([id, val]) => {
+                const el = document.getElementById(id);
+                if (el && el.tagName === 'INPUT') el.value = val;
+            });
+            for (let i = 1; i <= 8; i++) {
+                const val = data['tf' + i];
+                if (val) {
+                    const r = document.querySelector(`input[name="tf${i}"][value="${val}"]`);
+                    if (r) { r.checked = true; onTFChange(i, val, r); }
+                }
+            }
+            ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10','t6q1','t6q2','t6q3','t6q4','t6q5'].forEach(name => {
+                const val = data[name]; if (val) { const r = document.querySelector(`input[name="${name}"][value="${val}"]`); if (r) r.checked = true; }
+            });
+            Object.entries(data).forEach(([id, val]) => { const el = document.getElementById(id); if (el && el.tagName === 'SELECT') el.value = val; });
+        }
+        if (studentId && studentId !== 'teacher-preview') {
+            const { data: taskData } = await dbClient.from('task_progress').select('task_number,status').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY);
+            const completedCount = taskData ? taskData.filter(t => t.status === 'completed').length : 0;
+            if (completedCount >= TOTAL_TASKS) {
+                await restoreAnswersFromSupabase();
+                document.getElementById('task1').classList.remove('active');
+                document.getElementById('completion-screen').style.display = 'block';
+                updateProgress(TOTAL_TASKS); validateAll(); makeReadOnly(); return;
+            }
+            const { data: resume } = await dbClient.from('student_resume').select('last_task').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY).single();
+            if (resume && resume.last_task > 1) {
+                document.getElementById('task1').classList.remove('active');
+                currentTask = resume.last_task;
+                document.getElementById('task' + currentTask).classList.add('active');
+                updateProgress(currentTask);
+            }
+        }
+        validateAll();
+    } catch(e) { console.log('Restore error:', e); }
+}
+
+async function restoreAnswersFromSupabase() {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        const { data: answers } = await dbClient.from('student_answers').select('*').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY);
+        if (!answers || answers.length === 0) return;
+        answers.forEach(a => {
+            const { question_id, student_answer, question_type, is_correct, correct_answer } = a;
+            if (question_type === 'mcq') {
+                const radio = document.querySelector(`input[name="${question_id}"][value="${student_answer}"]`);
+                if (radio) radio.checked = true;
+                const fb = document.getElementById('fb_' + question_id);
+                if (fb) { fb.textContent = is_correct ? '✅ Correct!' : `❌ Incorrect — correct answer: ${correct_answer}`; fb.className = 'answer-feedback ' + (is_correct ? 'correct' : 'incorrect'); }
+            } else if (question_type === 'gap_fill') {
+                const inp = document.getElementById(question_id);
+                if (inp) { inp.value = student_answer || ''; inp.classList.toggle('correct', is_correct); inp.classList.toggle('incorrect', !is_correct); }
+            } else if (question_type === 'matching') {
+                const sel = document.getElementById(question_id);
+                if (sel) { sel.value = student_answer || ''; sel.classList.toggle('correct', is_correct); sel.classList.toggle('incorrect', !is_correct); }
+            } else if (question_type === 'true_false') {
+                const radio = document.querySelector(`input[name="${question_id}"][value="${student_answer}"]`);
+                if (radio) { radio.checked = true; onTFChange(question_id.replace('tf',''), student_answer, radio); }
+                const fb = document.getElementById('tf-fb-' + question_id.replace('tf',''));
+                if (fb) { fb.textContent = is_correct ? '✅ Correct!' : `❌ Incorrect — Answer: ${correct_answer}`; fb.className = 'tf-feedback ' + (is_correct ? 'correct' : 'incorrect'); }
+            }
+        });
+        document.querySelectorAll('.show-answers-btn').forEach(btn => btn.style.display = 'inline-block');
+        document.querySelectorAll('.next-btn').forEach(btn => btn.disabled = false);
+    } catch(e) { console.error('Restore answers error:', e); }
+}
+
+function makeReadOnly() {
+    document.querySelectorAll('.gap-input, .adj-input').forEach(el => { el.disabled = true; el.style.opacity = '0.85'; });
+    document.querySelectorAll('input[type="radio"]').forEach(el => el.disabled = true);
+    document.querySelectorAll('select').forEach(el => { el.disabled = true; });
+    document.querySelectorAll('.check-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.next-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.prev-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.show-answers-btn').forEach(el => el.style.display = 'inline-block');
+}
+
+function setupLiveValidation() {
+    for (let i = 1; i <= 8; i++) {
+        document.querySelectorAll(`input[name="tf${i}"]`).forEach(el => el.addEventListener('change', () => { validateTask1Check(); scheduleSave(); }));
+    }
+    ['t4adj1','t4adj2','t4adj3','t4adj4','t4adj5','t4adj6'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', () => { validateTask4Check(); scheduleSave(); }); });
+    ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10'].forEach(name => { document.querySelectorAll(`input[name="${name}"]`).forEach(el => el.addEventListener('change', () => { validateTask5Check(); scheduleSave(); })); });
+    ['t5g11','t5g12','t5g13','t5g14','t5g15'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', () => { validateTask5Check(); scheduleSave(); }); });
+    ['t5m1','t5m2','t5m3','t5m4','t5m5','t5m6','t5m7','t5m8','t5m9','t5m10'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('change', () => { validateTask5Check(); scheduleSave(); }); });
+    ['t6q1','t6q2','t6q3','t6q4','t6q5'].forEach(name => { document.querySelectorAll(`input[name="${name}"]`).forEach(el => el.addEventListener('change', () => { validateTask6Check(); scheduleSave(); })); });
+    for (let i = 1; i <= 30; i++) { const el = document.getElementById('d' + i); if (el) el.addEventListener('input', () => { validateTask6Check(); scheduleSave(); }); }
+}
+
+function validateAll() { validateTask1Check(); validateTask4Check(); validateTask5Check(); validateTask6Check(); }
+function validateTask1Check() {
+    const all = Array.from({length:8}, (_,i) => document.querySelector(`input[name="tf${i+1}"]:checked`)).every(Boolean);
+    document.getElementById('check1').disabled = !all;
+}
+function validateTask4Check() {
+    document.getElementById('check4').disabled = !['t4adj1','t4adj2','t4adj3','t4adj4','t4adj5','t4adj6'].every(id => document.getElementById(id)?.value.trim());
+}
+function validateTask5Check() {
+    const allMcq = ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10'].every(name => document.querySelector(`input[name="${name}"]:checked`));
+    const allGaps = ['t5g11','t5g12','t5g13','t5g14','t5g15'].every(id => document.getElementById(id)?.value.trim());
+    const allMatch = ['t5m1','t5m2','t5m3','t5m4','t5m5','t5m6','t5m7','t5m8','t5m9','t5m10'].every(id => document.getElementById(id)?.value);
+    document.getElementById('check5').disabled = !(allMcq && allGaps && allMatch);
+}
+function validateTask6Check() {
+    const allDict = Array.from({length:30}, (_,i) => document.getElementById('d'+(i+1))?.value.trim()).every(Boolean);
+    const allMcq = ['t6q1','t6q2','t6q3','t6q4','t6q5'].every(name => document.querySelector(`input[name="${name}"]:checked`));
+    document.getElementById('check6').disabled = !(allDict && allMcq);
+}
+
+const t5McqAnswers = {t5q1:'B',t5q2:'C',t5q3:'A',t5q4:'C',t5q5:'D',t5q6:'B',t5q7:'C',t5q8:'B',t5q9:'C',t5q10:'C'};
+const t5GapAnswers = {t5g11:'concrete',t5g12:'quartz',t5g13:'erosion',t5g14:'scarcity',t5g15:'commodity'};
+const t5MatchAnswers = {t5m1:'C',t5m2:'B',t5m3:'E',t5m4:'A',t5m5:'D',t5m6:'F',t5m7:'G',t5m8:'H',t5m9:'I',t5m10:'J'};
+const t6McqAnswers = {t6q1:'B',t6q2:'C',t6q3:'C',t6q4:'B',t6q5:'D'};
+
+// adjective keywords for checking
+const adjKeywords = {
+    t4adj1: ['memorable','amazing','historic','rustic','charming'],
+    t4adj2: ['remote','mountainous'],
+    t4adj3: ['precarious'],
+    t4adj4: ['traditional','basic'],
+    t4adj5: ['spectacular','breathtaking'],
+    t4adj6: ['dramatic']
+};
+
+function checkTask1() {
+    const answers = [];
+    for (let i = 1; i <= 8; i++) {
+        const sel = document.querySelector(`input[name="tf${i}"]:checked`);
+        const correct = tfAnswers[i-1];
+        const ok = sel && sel.value === correct;
+        const fb = document.getElementById('tf-fb-' + i);
+        fb.textContent = ok ? '✅ Correct!' : `❌ Incorrect — Answer: ${correct.toUpperCase()}`;
+        fb.className = 'tf-feedback ' + (ok ? 'correct' : 'incorrect');
+        answers.push({question_id:'tf'+i, question_type:'true_false', student_answer:sel?sel.value:'', correct_answer:correct, is_correct:ok});
+    }
+    document.getElementById('showAns1').style.display = 'inline-block';
+    document.getElementById('next1').disabled = false;
+    saveAnswers(1, answers); saveTaskProgress(1);
+}
+
+function checkTask4() {
+    const answers = [];
+    Object.entries(adjKeywords).forEach(([id, keywords]) => {
+        const inp = document.getElementById(id);
+        const val = inp.value.trim().toLowerCase();
+        const ok = keywords.some(kw => val.includes(kw.toLowerCase()));
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:keywords.join(', '), is_correct:ok});
+    });
+    document.getElementById('showAns4').style.display = 'inline-block';
+    document.getElementById('next4').disabled = false;
+    saveAnswers(4, answers); saveTaskProgress(4);
+}
+
+function checkTask5() {
+    const answers = [];
+    Object.entries(t5McqAnswers).forEach(([name, correct]) => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`);
+        const fb = document.getElementById('fb_' + name);
+        if (!sel) return;
+        const ok = sel.value === correct;
+        fb.textContent = ok ? '✅ Correct!' : `❌ Incorrect — correct answer: ${correct}`;
+        fb.className = 'answer-feedback ' + (ok ? 'correct' : 'incorrect');
+        answers.push({question_id:name, question_type:'mcq', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    Object.entries(t5GapAnswers).forEach(([id, correct]) => {
+        const inp = document.getElementById(id);
+        const val = inp.value.trim().toLowerCase();
+        const ok = val === correct.toLowerCase();
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:correct, is_correct:ok});
+    });
+    Object.entries(t5MatchAnswers).forEach(([id, correct]) => {
+        const sel = document.getElementById(id);
+        const ok = sel.value === correct;
+        sel.classList.toggle('correct', ok); sel.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'matching', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    document.getElementById('showAns5').style.display = 'inline-block';
+    document.getElementById('next5').disabled = false;
+    saveAnswers(5, answers); saveTaskProgress(5);
+}
+
+function checkTask6() {
+    const answers = [];
+    for (let i = 1; i <= 30; i++) {
+        const inp = document.getElementById('d' + i);
+        const val = inp.value.trim().toLowerCase();
+        const correct = dictationAnswers[i-1];
+        const ok = val === correct.toLowerCase();
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:'d'+i, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:correct, is_correct:ok});
+    }
+    Object.entries(t6McqAnswers).forEach(([name, correct]) => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`);
+        const fb = document.getElementById('fb_' + name);
+        if (!sel) return;
+        const ok = sel.value === correct;
+        fb.textContent = ok ? '✅ Correct!' : `❌ Incorrect — correct answer: ${correct}`;
+        fb.className = 'answer-feedback ' + (ok ? 'correct' : 'incorrect');
+        answers.push({question_id:name, question_type:'mcq', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    document.getElementById('showAns6').style.display = 'inline-block';
+    document.getElementById('next6').disabled = false;
+    saveAnswers(6, answers); saveTaskProgress(6);
+}
+
+async function saveAnswers(taskNum, answers) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        const rows = answers.map(a => ({student_id:studentId, week:WEEK, day:DAY, task_number:taskNum, question_id:a.question_id, question_type:a.question_type, student_answer:a.student_answer, correct_answer:a.correct_answer, is_correct:a.is_correct, answered_at:new Date().toISOString()}));
+        await dbClient.from('student_answers').upsert(rows, {onConflict:'student_id,week,day,task_number,question_id'});
+    } catch(e) { console.error('Answer save error:', e); }
+}
+
+async function saveTaskProgress(taskNum) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        await dbClient.from('task_progress').upsert({student_id:studentId, week:WEEK, day:DAY, task_number:taskNum, status:'completed', time_completed:new Date().toISOString(), time_spent_seconds:Math.round((Date.now()-taskStartTime)/1000)}, {onConflict:'student_id,week,day,task_number'});
+    } catch(e) { console.error('Progress save error:', e); }
+}
+
+async function finishDay() {
+    document.getElementById('task7').classList.remove('active');
+    document.getElementById('completion-screen').style.display = 'block';
+    document.getElementById('completion-screen').scrollIntoView({behavior:'smooth'});
+    localStorage.removeItem(`w${WEEK}d${DAY}_answers`);
+    for (let i = 1; i <= TOTAL_TASKS; i++) await saveTaskProgress(i);
+    if (studentId && studentId !== 'teacher-preview') await dbClient.from('student_resume').delete().eq('student_id', studentId);
+    makeReadOnly();
+}
+
+function reviewTask(num) {
+    document.getElementById('completion-screen').style.display = 'none';
+    currentTask = num;
+    document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active'));
+    document.getElementById('task' + num).classList.add('active');
+    document.getElementById('task' + num).scrollIntoView({behavior:'smooth', block:'start'});
+    const existing = document.getElementById('back-to-results');
+    if (!existing) {
+        const btn = document.createElement('button');
+        btn.id = 'back-to-results';
+        btn.textContent = '🏆 Back to Results';
+        btn.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#38a169;color:white;border:none;padding:12px 22px;border-radius:50px;cursor:pointer;font-weight:bold;font-size:0.95rem;box-shadow:0 4px 15px rgba(56,161,105,0.4);z-index:9998;';
+        btn.onclick = () => { btn.remove(); document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active')); document.getElementById('completion-screen').style.display = 'block'; document.getElementById('completion-screen').scrollIntoView({behavior:'smooth'}); };
+        document.body.appendChild(btn);
+    }
+}
+
+function toggleVocab() { document.getElementById('vocab-body').classList.toggle('open'); document.getElementById('vocab-arrow').classList.toggle('open'); }
+function toggleAnswers(id) {
+    const div = document.getElementById(id);
+    const btn = div.previousElementSibling;
+    div.style.display = div.style.display === 'block' ? 'none' : 'block';
+    btn.textContent = div.style.display === 'block' ? '▲ Hide Answers' : '▼ Show Answers';
+}
+</script>
+</body>
+</html>
