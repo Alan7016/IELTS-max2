@@ -190,6 +190,25 @@
                 <div class="day-num">Day 5</div><div class="day-label">Environment</div><div class="day-topic">Environment Review</div>
             </a>
         </div>
+        <div style="margin-top:20px; color:#dd6b20; font-weight:600; font-size:0.95rem;">💼 Week 5: Business</div>
+        <div class="materials-grid" style="margin-top:10px;">
+            <a href="/week5/day1/day1.html?teacher=true" class="material-card" style="background: linear-gradient(135deg, #dd6b20 0%, #c05621 100%);">
+                <div class="day-num">Day 1</div><div class="day-label">Business</div><div class="day-topic">Gig Economy</div>
+            </a>
+            <a href="/week5/day2/day2.html?teacher=true" class="material-card" style="background: linear-gradient(135deg, #dd6b20 0%, #c05621 100%);">
+                <div class="day-num">Day 2</div><div class="day-label">Business</div><div class="day-topic">Economy</div>
+            </a>
+            <a href="/week5/day3/day3.html?teacher=true" class="material-card" style="background: linear-gradient(135deg, #dd6b20 0%, #c05621 100%);">
+                <div class="day-num">Day 3</div><div class="day-label">Business</div><div class="day-topic">Money</div>
+            </a>
+            <a href="/week5/day4/day4.html?teacher=true" class="material-card" style="background: linear-gradient(135deg, #dd6b20 0%, #c05621 100%);">
+                <div class="day-num">Day 4</div><div class="day-label">Business</div><div class="day-topic">Employment</div>
+            </a>
+            <a href="/week5/day5/day5.html?teacher=true" class="material-card" style="background: linear-gradient(135deg, #dd6b20 0%, #c05621 100%);">
+                <div class="day-num">Day 5</div><div class="day-label">Business</div><div class="day-topic">Business Review</div>
+            </a>
+        </div>
+    </div>
     <div class="students-section">
         <div class="section-header">
             <h2 class="section-title">📊 Student Progress</h2>
@@ -235,7 +254,8 @@
         1: { 1:6, 2:7, 3:7, 4:7, 5:8 },
         2: { 1:7, 2:7, 3:7, 4:7, 5:7 },
         3: { 1:7, 2:7, 3:7, 4:7, 5:7 },
-        4: { 1:7, 2:7, 3:7, 4:7, 5:7 }
+        4: { 1:7, 2:7, 3:7, 4:7, 5:7 },
+        5: { 1:7, 2:7, 3:7, 4:7, 5:7 }
     };
     window.addEventListener('load', async () => {
         const userStr = localStorage.getItem('user');
@@ -342,13 +362,13 @@
                 supabaseClient.from('essay_submissions').select('*').eq('student_id', studentId).order('week').order('day').order('task_number'),
                 supabaseClient.from('student_answers').select('*').eq('student_id', studentId).order('week').order('day').order('task_number').order('question_id')
             ]);
-            const weeks = [1, 2, 3, 4];
+            const weeks = [1, 2, 3, 4, 5];
             let tabsHtml = '<div class="day-tabs" id="weekTabs">';
             weeks.forEach((w, i) => { tabsHtml += `<button class="day-tab ${i === 0 ? 'active' : ''}" onclick="switchWeekTab(${w})">Week ${w}</button>`; });
             tabsHtml += '</div>';
             let weeksHtml = '';
             weeks.forEach((week, wi) => {
-                const maxDay = week === 1 ? 5 : week === 2 ? 5 : week === 3 ? 5 : 5;
+                const maxDay = week === 1 ? 5 : week === 2 ? 5 : week === 3 ? 5 : week === 4 ? 5 : 5;
                 weeksHtml += `<div class="day-content ${wi === 0 ? 'active' : ''}" id="week-tab-${week}">`;
                 weeksHtml += `<div class="day-tabs" id="dayTabs-w${week}">`;
                 for (let d = 1; d <= maxDay; d++) { weeksHtml += `<button class="day-tab ${d === 1 ? 'active' : ''}" onclick="switchDayTab(${week}, ${d})">Day ${d}</button>`; }
