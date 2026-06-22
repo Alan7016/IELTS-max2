@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEEK 5 - DAY 2 (Business)</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #fff7ed; color: #333; }
+        #splash-screen { position: fixed; inset: 0; background: linear-gradient(135deg, #dd6b20 0%, #c05621 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; color: white; text-align: center; padding: 20px; }
+        #splash-screen h1 { font-size: 3rem; margin-bottom: 10px; }
+        #splash-screen h2 { font-size: 2rem; margin-bottom: 10px; opacity: 0.9; }
+        #splash-screen p { font-size: 1.2rem; margin-bottom: 40px; opacity: 0.8; }
+        .splash-btn { background: white; color: #dd6b20; border: none; padding: 18px 60px; font-size: 1.4rem; font-weight: bold; border-radius: 50px; cursor: pointer; box-shadow: 0 8px 25px rgba(0,0,0,0.2); transition: all 0.3s; }
+        .splash-btn:hover { transform: translateY(-3px); }
+        .main-container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        .day-header { background: linear-gradient(135deg, #dd6b20 0%, #c05621 100%); color: white; padding: 25px 30px; border-radius: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; }
+        .day-header h1 { font-size: 1.6rem; }
+        .day-header .topic { opacity: 0.85; font-size: 1rem; margin-top: 4px; }
+        .back-btn { background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; text-decoration: none; font-size: 0.9rem; transition: all 0.3s; }
+        .back-btn:hover { background: white; color: #dd6b20; }
+        .vocab-section { background: white; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-left: 5px solid #dd6b20; overflow: hidden; }
+        .vocab-toggle { width: 100%; background: none; border: none; cursor: pointer; padding: 18px 25px; display: flex; align-items: center; justify-content: space-between; text-align: left; }
+        .vocab-toggle:hover { background: #fff7ed; }
+        .vocab-toggle-left { display: flex; align-items: center; gap: 10px; }
+        .vocab-toggle h3 { color: #dd6b20; font-size: 1.1rem; margin: 0; }
+        .vocab-count { background: #dd6b20; color: white; font-size: 0.75rem; font-weight: bold; padding: 3px 10px; border-radius: 20px; }
+        .vocab-arrow { color: #dd6b20; font-size: 1rem; transition: transform 0.3s; }
+        .vocab-arrow.open { transform: rotate(180deg); }
+        .vocab-body { display: none; padding: 0 25px 20px; }
+        .vocab-body.open { display: block; }
+        .vocab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+        .vocab-item { background: #fff7ed; padding: 10px 14px; border-radius: 8px; }
+        .vocab-word { font-weight: bold; color: #333; font-size: 0.95rem; }
+        .vocab-definition { color: #666; font-size: 0.82rem; margin-top: 2px; }
+        .progress-label { text-align: center; color: #dd6b20; font-size: 0.85rem; margin-bottom: 8px; font-weight: 600; }
+        .progress-bar-wrap { background: #fbd38d; border-radius: 20px; height: 10px; margin-bottom: 20px; overflow: hidden; }
+        .progress-bar-fill { background: linear-gradient(90deg, #dd6b20, #c05621); height: 100%; border-radius: 20px; transition: width 0.5s ease; }
+        .task-card { background: white; border-radius: 15px; padding: 28px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); display: none; }
+        .task-card.active { display: block; }
+        .task-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .task-number { background: linear-gradient(135deg, #dd6b20, #c05621); color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; flex-shrink: 0; }
+        .task-title { font-size: 1.3rem; font-weight: bold; color: #333; }
+        .task-subtitle { color: #888; font-size: 0.9rem; margin-top: 2px; }
+        .pdf-links { display: flex; flex-direction: column; gap: 12px; margin: 15px 0; }
+        .pdf-link { display: flex; align-items: center; gap: 12px; background: #fff7ed; padding: 15px 20px; border-radius: 10px; text-decoration: none; color: #333; font-weight: 600; border: 2px solid #fbd38d; transition: all 0.3s; }
+        .pdf-link:hover { background: #dd6b20; color: white; border-color: #dd6b20; transform: translateX(5px); }
+        .pdf-icon { font-size: 1.5rem; }
+        .html-link-btn { display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #dd6b20, #c05621); color: white; padding: 15px 30px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 1rem; transition: all 0.3s; margin: 10px 0; }
+        .html-link-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(221,107,32,0.4); }
+        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; margin: 15px 0; }
+        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .video-fallback { background: #fff7ed; padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align: center; }
+        .video-fallback a { color: #dd6b20; font-weight: bold; }
+        .audio-player { background: #fff7ed; border: 2px solid #fbd38d; border-radius: 12px; padding: 20px; margin: 15px 0; }
+        .audio-player p { color: #555; margin-bottom: 10px; font-weight: 600; }
+        .audio-player audio { width: 100%; }
+        .passage-text { background: #fffaf5; border: 1px solid #fbd38d; border-radius: 10px; padding: 25px; margin: 15px 0; line-height: 1.8; font-size: 0.97rem; color: #333; }
+        .passage-text h3 { color: #dd6b20; margin-bottom: 15px; font-size: 1.2rem; }
+        .passage-text p { margin-bottom: 14px; }
+        .highlight { font-style: italic; color: #c05621; font-weight: 600; }
+        .question-block { margin-bottom: 20px; padding: 18px; background: #f8f9fa; border-radius: 10px; }
+        .question-text { font-weight: 600; margin-bottom: 12px; color: #333; line-height: 1.5; }
+        .options label { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: background 0.2s; margin-bottom: 5px; }
+        .options label:hover { background: #fef3e6; }
+        .options input[type="radio"] { margin-top: 3px; flex-shrink: 0; }
+        .answer-feedback { margin-top: 8px; font-weight: bold; font-size: 0.9rem; }
+        .answer-feedback.correct { color: #28a745; }
+        .answer-feedback.incorrect { color: #dc3545; }
+        .gap-fill-section { margin-top: 20px; }
+        .gap-sentence { margin-bottom: 14px; line-height: 2; font-size: 1rem; }
+        .gap-input { border: none; border-bottom: 2px solid #dd6b20; padding: 4px 8px; font-size: 0.95rem; width: 200px; background: transparent; outline: none; color: #333; }
+        .gap-input.correct { border-bottom-color: #28a745; background: #d4edda33; }
+        .gap-input.incorrect { border-bottom-color: #dc3545; background: #f8d7da33; }
+        .word-box { background: #fff7ed; border: 2px solid #fbd38d; border-radius: 10px; padding: 12px 18px; margin-bottom: 15px; }
+        .word-box strong { color: #dd6b20; }
+        .matching-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .matching-table th { background: #dd6b20; color: white; padding: 10px 14px; text-align: left; }
+        .matching-table td { padding: 10px 14px; border-bottom: 1px solid #eee; }
+        .matching-table tr:nth-child(even) td { background: #fff7ed; }
+        .match-select { border: 2px solid #fbd38d; border-radius: 6px; padding: 5px 8px; font-size: 0.88rem; background: white; width: 100%; max-width: 380px; }
+        .match-select.correct { border-color: #28a745; }
+        .match-select.incorrect { border-color: #dc3545; }
+        .opinion-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        .opinion-table th { background: #dd6b20; color: white; padding: 12px 16px; text-align: left; }
+        .opinion-table td { padding: 10px 16px; border-bottom: 1px solid #eee; vertical-align: middle; font-size: 0.92rem; }
+        .opinion-table tr:nth-child(even) td { background: #fff7ed; }
+        .ab-select { border: 2px solid #fbd38d; border-radius: 6px; padding: 5px 10px; font-size: 0.9rem; background: white; width: 80px; }
+        .ab-select.correct { border-color: #28a745; }
+        .ab-select.incorrect { border-color: #dc3545; }
+        .btn-row { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+        .check-btn { background: linear-gradient(135deg, #dd6b20, #c05621); color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .check-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(221,107,32,0.4); }
+        .check-btn:disabled { background: #ccc; cursor: not-allowed; transform: none !important; box-shadow: none; }
+        .next-btn { background: #28a745; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .next-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .next-btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(40,167,69,0.4); }
+        .prev-btn { background: #6c757d; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .prev-btn:hover { background: #5a6268; }
+        .show-answers-btn { background: #ffc107; color: #333; border: none; padding: 10px 22px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.88rem; display: none; }
+        .show-answers-btn:hover { background: #e0a800; }
+        .answers-panel { display: none; background: #fffbea; border: 2px solid #ffc107; border-radius: 10px; padding: 15px; margin-top: 12px; }
+        .answers-panel p { margin-bottom: 6px; font-size: 0.9rem; }
+        .completion-screen { text-align: center; padding: 60px 20px; display: none; }
+        .completion-screen .icon { font-size: 5rem; margin-bottom: 20px; }
+        .completion-screen h2 { font-size: 2.2rem; color: #dd6b20; margin-bottom: 10px; }
+        .completion-screen p { color: #666; font-size: 1rem; margin-bottom: 30px; }
+        .dashboard-btn { background: linear-gradient(135deg, #dd6b20, #c05621); color: white; padding: 16px 40px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 1.1rem; display: inline-block; transition: all 0.3s; }
+        .dashboard-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(221,107,32,0.4); }
+        .save-indicator { position: fixed; bottom: 20px; right: 20px; background: #dd6b20; color: white; padding: 10px 18px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; opacity: 0; transition: opacity 0.4s; z-index: 9000; pointer-events: none; }
+        .save-indicator.show { opacity: 1; }
+    </style>
+</head>
+<body>
+<div id="splash-screen">
+    <h1>💼 WEEK 5</h1>
+    <h2>DAY 2</h2>
+    <p>Topic: Business</p>
+    <button class="splash-btn" onclick="startDay()">LET'S GO!</button>
+</div>
+<div class="save-indicator" id="saveIndicator">✓ Progress saved</div>
+<div class="main-container" id="main-content" style="display:none;">
+    <div class="day-header">
+        <div><h1>💼 Week 5 — Day 2</h1><div class="topic">Topic: Business</div></div>
+        <a href="/student-dashboard.html" class="back-btn">← Dashboard</a>
+    </div>
+    <div class="progress-label" id="progress-label">Task 0 of 7</div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-bar" style="width:0%"></div></div>
+
+    <!-- VOCAB -->
+    <div class="vocab-section">
+        <button class="vocab-toggle" onclick="toggleVocab()">
+            <div class="vocab-toggle-left"><h3>📖 Today's Vocabulary</h3><span class="vocab-count">50 words</span></div>
+            <span class="vocab-arrow" id="vocab-arrow">▼</span>
+        </button>
+        <div class="vocab-body" id="vocab-body"><div class="vocab-grid" id="vocab-grid"></div></div>
+    </div>
+
+    <!-- ══ TASK 1 ══ -->
+    <div class="task-card active" id="task1">
+        <div class="task-header">
+            <div class="task-number">1</div>
+            <div><div class="task-title">Mini Reading</div><div class="task-subtitle">Read and answer — NO MORE THAN THREE WORDS from the passage</div></div>
+        </div>
+        <div class="passage-text">
+            <h3>Globalisation and Business: A Double-Edged Sword</h3>
+            <p>Few forces have reshaped the global business landscape as profoundly as <span class="highlight">(1) globalisation</span>. Over the past several decades, falling trade barriers, advances in transportation and the rise of digital communication have allowed companies to source materials, manufacture products and sell to customers across vastly different markets, often with remarkable <span class="highlight">(2) efficiency</span>. A smartphone designed in California might contain components from a dozen countries, assembled in another, and sold worldwide within weeks of production.</p>
+            <p>Proponents argue that globalisation has been overwhelmingly beneficial. By accessing larger markets, businesses can achieve economies of scale, lowering production costs and ultimately offering consumers lower prices and greater <span class="highlight">(3) choice</span>. Multinational corporations bring investment, technology and employment opportunities to developing economies, while consumers everywhere gain access to goods and services that would once have been unavailable or prohibitively <span class="highlight">(4) expensive</span>.</p>
+            <p>However, critics highlight significant drawbacks. Small local businesses frequently struggle to <span class="highlight">(5) compete</span> with multinational corporations that benefit from superior economies of scale and marketing budgets. There are also concerns about the erosion of distinct local cultures and identities, as global brands and standardised products spread into every corner of the world, sometimes displacing traditional ways of life. Furthermore, the interconnectedness that globalisation creates means that economic shocks — whether a financial crisis or a pandemic — can spread rapidly across borders, affecting businesses and workers far from the original source of <span class="highlight">(6) disruption</span>.</p>
+            <p>Perhaps most contentiously, globalisation has reshaped labour markets in complex ways. While it has lifted millions out of poverty in manufacturing hubs, it has also been blamed for job losses in industries that cannot compete with cheaper overseas <span class="highlight">(7) labour</span>. Businesses today must therefore navigate not only the opportunities that globalisation presents but also the considerable risks and ethical questions that come with operating on a truly global <span class="highlight">(8) scale</span>.</p>
+        </div>
+        <h4 style="color:#dd6b20; margin:20px 0 12px;">Answer — NO MORE THAN THREE WORDS from the passage:</h4>
+        <div class="gap-fill-section">
+            <div class="gap-sentence">1. What has globalisation allowed companies to do across different markets?<br><input class="gap-input" id="t1q1" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">2. What can businesses achieve by accessing larger markets?<br><input class="gap-input" id="t1q2" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">3. What do multinational corporations bring to developing economies?<br><input class="gap-input" id="t1q3" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">4. What do small local businesses frequently struggle to do?<br><input class="gap-input" id="t1q4" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">5. What can spread rapidly across borders due to interconnectedness?<br><input class="gap-input" id="t1q5" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">6. What has globalisation been blamed for in industries that cannot compete?<br><input class="gap-input" id="t1q6" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">7. What must businesses navigate when operating globally?<br><input class="gap-input" id="t1q7" placeholder="___" style="width:300px; margin-top:8px;"></div>
+        </div>
+        <div class="btn-row">
+            <button class="check-btn" id="check1" onclick="checkTask1()" disabled>Check Answers</button>
+            <button class="next-btn" id="next1" disabled onclick="goToTask(2)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns1" onclick="toggleAnswers('ans1')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans1">
+            <p><strong>Answers:</strong> 1-source materials/manufacture products/sell to customers, 2-economies of scale, 3-investment, technology and employment, 4-compete (with multinational corporations), 5-economic shocks, 6-job losses, 7-opportunities and (considerable) risks</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 2 ══ -->
+    <div class="task-card" id="task2">
+        <div class="task-header">
+            <div class="task-number">2</div>
+            <div><div class="task-title">Article Reading</div><div class="task-subtitle">Read the article and study the vocabulary</div></div>
+        </div>
+        <div class="pdf-links">
+            <a class="pdf-link" href="article 2.pdf" target="_blank"><span class="pdf-icon">📄</span> Business — Article</a>
+            <a class="pdf-link" href="vocab 2.pdf" target="_blank"><span class="pdf-icon">📘</span> Business — Vocabulary</a>
+        </div>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(1)">← Previous</button>
+            <button class="next-btn" onclick="goToTask(3)">Next Task →</button>
+        </div>
+    </div>
+
+    <!-- ══ TASK 3 ══ -->
+    <div class="task-card" id="task3">
+        <div class="task-header">
+            <div class="task-number">3</div>
+            <div><div class="task-title">Practice Reading</div><div class="task-subtitle">IELTS-style reading test</div></div>
+        </div>
+        <a class="html-link-btn" href="Reading (21).html" target="_blank">📖 Open Practice Reading</a>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(2)">← Previous</button>
+            <button class="next-btn" onclick="goToTask(4)">Next Task →</button>
+        </div>
+    </div>
+
+    <!-- ══ TASK 4 ══ -->
+    <div class="task-card" id="task4">
+        <div class="task-header">
+            <div class="task-number">4</div>
+            <div><div class="task-title">Listening Mini Task</div><div class="task-subtitle">Listen to Amy and Bill discussing globalisation</div></div>
+        </div>
+        <div class="audio-player">
+            <p>🎧 Track 13A — Amy and Bill Discuss Globalisation</p>
+            <audio controls src="track13a.mp3"></audio>
+        </div>
+        <p style="color:#555; margin-bottom:15px; font-weight:600;">Who expresses the following opinions? Write A for Amy and B for Bill.</p>
+        <table class="opinion-table">
+            <thead><tr><th style="width:60px">#</th><th>Statement</th><th style="width:90px">Speaker</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td>Globalisation could harm the regional way of life.</td><td><select class="ab-select" id="t4o1"><option value="">—</option><option value="A">A</option><option value="B">B</option></select></td></tr>
+                <tr><td>2</td><td>Globalisation can help people who live within a small area.</td><td><select class="ab-select" id="t4o2"><option value="">—</option><option value="A">A</option><option value="B">B</option></select></td></tr>
+                <tr><td>3</td><td>Worldwide, more people eat traditional food than fast food.</td><td><select class="ab-select" id="t4o3"><option value="">—</option><option value="A">A</option><option value="B">B</option></select></td></tr>
+                <tr><td>4</td><td>People can enjoy products from many different cultures today.</td><td><select class="ab-select" id="t4o4"><option value="">—</option><option value="A">A</option><option value="B">B</option></select></td></tr>
+                <tr><td>5</td><td>Large overseas companies have control over the non-alcoholic drink market.</td><td><select class="ab-select" id="t4o5"><option value="">—</option><option value="A">A</option><option value="B">B</option></select></td></tr>
+                <tr><td>6</td><td>If not for globalisation, companies from different countries would not join together to do business.</td><td><select class="ab-select" id="t4o6"><option value="">—</option><option value="A">A</option><option value="B">B</option></select></td></tr>
+                <tr><td>7</td><td>People who travel prefer to see unusual and exciting things instead of symbols used by big companies.</td><td><select class="ab-select" id="t4o7"><option value="">—</option><option value="A">A</option><option value="B">B</option></select></td></tr>
+                <tr><td>8</td><td>Experiencing something from another country does not take away your feeling of belonging to your country.</td><td><select class="ab-select" id="t4o8"><option value="">—</option><option value="A">A</option><option value="B">B</option></select></td></tr>
+                <tr><td>9</td><td>A range of different cultures can be reflected in food bought overseas.</td><td><select class="ab-select" id="t4o9"><option value="">—</option><option value="A">A</option><option value="B">B</option></select></td></tr>
+                <tr><td>10</td><td>No single company has complete control over the fashion industry.</td><td><select class="ab-select" id="t4o10"><option value="">—</option><option value="A">A</option><option value="B">B</option></select></td></tr>
+            </tbody>
+        </table>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(3)">← Previous</button>
+            <button class="check-btn" id="check4" onclick="checkTask4()" disabled>Check Answers</button>
+            <button class="next-btn" id="next4" disabled onclick="goToTask(5)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns4" onclick="toggleAnswers('ans4')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans4">
+            <p><strong>Answers:</strong> 1-B, 2-A, 3-A, 4-A, 5-B, 6-A, 7-B, 8-A, 9-A, 10-B</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 5 ══ -->
+    <div class="task-card" id="task5">
+        <div class="task-header">
+            <div class="task-number">5</div>
+            <div><div class="task-title">Video Watching Task</div><div class="task-subtitle">Watch and answer questions</div></div>
+        </div>
+        <div class="video-fallback">
+            <p>▶ <a href="https://www.youtube.com/watch?v=4T1M3c5d8B8" target="_blank">Click here to open the video in a new tab</a> if it doesn't play below.</p>
+        </div>
+        <div class="video-container">
+            <iframe src="https://www.youtube.com/embed/4T1M3c5d8B8" frameborder="0" allowfullscreen></iframe>
+        </div>
+
+        <h4 style="color:#dd6b20; margin:20px 0 12px;">Part 1 — Multiple Choice Questions</h4>
+        <div class="question-block">
+            <div class="question-text">1. Why did the speaker start selling sweets at school?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q1" value="A"> A. To become popular among classmates</label>
+                <label><input type="radio" name="t5q1" value="B"> B. To earn money for a PlayStation</label>
+                <label><input type="radio" name="t5q1" value="C"> C. To help his family financially</label>
+                <label><input type="radio" name="t5q1" value="D"> D. To learn business skills</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q1"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">2. Why did the speaker believe selling sweets at school was a good business opportunity?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q2" value="A"> A. The sweets were cheaper than in shops</label>
+                <label><input type="radio" name="t5q2" value="B"> B. Teachers encouraged the business</label>
+                <label><input type="radio" name="t5q2" value="C"> C. Students were not allowed to leave school grounds during the day</label>
+                <label><input type="radio" name="t5q2" value="D"> D. He had exclusive permission from the school</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q2"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">3. What does the expression "Eat the Frog" mean?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q3" value="A"> A. Have breakfast early</label>
+                <label><input type="radio" name="t5q3" value="B"> B. Finish your easiest task first</label>
+                <label><input type="radio" name="t5q3" value="C"> C. Start with the most difficult task of the day</label>
+                <label><input type="radio" name="t5q3" value="D"> D. Complete all tasks before lunch</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q3"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">4. During his free periods at school, the speaker often:</div>
+            <div class="options">
+                <label><input type="radio" name="t5q4" value="A"> A. Played sports</label>
+                <label><input type="radio" name="t5q4" value="B"> B. Worked on financial forecasts</label>
+                <label><input type="radio" name="t5q4" value="C"> C. Read novels</label>
+                <label><input type="radio" name="t5q4" value="D"> D. Helped teachers</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q4"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">5. How did being a carer for his deaf parents affect the speaker?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q5" value="A"> A. It made him dislike responsibility</label>
+                <label><input type="radio" name="t5q5" value="B"> B. It helped him mature earlier than many children</label>
+                <label><input type="radio" name="t5q5" value="C"> C. It prevented him from studying</label>
+                <label><input type="radio" name="t5q5" value="D"> D. It encouraged him to become a doctor</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q5"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">6. What inspired the idea behind the speaker's property business?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q6" value="A"> A. Watching television programmes</label>
+                <label><input type="radio" name="t5q6" value="B"> B. Learning about social media marketing</label>
+                <label><input type="radio" name="t5q6" value="C"> C. Understanding estate agency fees and business disruptors like Uber and Amazon</label>
+                <label><input type="radio" name="t5q6" value="D"> D. Working in a bank</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q6"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">7. Why does the speaker recommend reading biographies?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q7" value="A"> A. They are easier than business books</label>
+                <label><input type="radio" name="t5q7" value="B"> B. They provide entertainment only</label>
+                <label><input type="radio" name="t5q7" value="C"> C. They show that successful entrepreneurs were ordinary people who took risks</label>
+                <label><input type="radio" name="t5q7" value="D"> D. They guarantee business success</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q7"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">8. What skills did the speaker teach himself?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q8" value="A"> A. Programming and engineering</label>
+                <label><input type="radio" name="t5q8" value="B"> B. Photography and creating floor plans</label>
+                <label><input type="radio" name="t5q8" value="C"> C. Accounting and law</label>
+                <label><input type="radio" name="t5q8" value="D"> D. Public speaking and marketing</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q8"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">9. Why couldn't the speaker drive to his first property visit?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q9" value="A"> A. He did not own a car</label>
+                <label><input type="radio" name="t5q9" value="B"> B. He had lost his driving licence</label>
+                <label><input type="radio" name="t5q9" value="C"> C. He was too young to drive legally</label>
+                <label><input type="radio" name="t5q9" value="D"> D. He disliked driving</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q9"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">10. How does the speaker feel about his success and wealth?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q10" value="A"> A. It has completely changed his lifestyle</label>
+                <label><input type="radio" name="t5q10" value="B"> B. He enjoys spending money on luxury items</label>
+                <label><input type="radio" name="t5q10" value="C"> C. It has made little difference to his everyday life</label>
+                <label><input type="radio" name="t5q10" value="D"> D. He plans to retire early</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q10"></div>
+        </div>
+
+        <h4 style="color:#dd6b20; margin:20px 0 12px;">Part 2 — Gap Filling</h4>
+        <div class="word-box">
+            <strong>Word Box:</strong> motivating &nbsp;|&nbsp; disability &nbsp;|&nbsp; influential &nbsp;|&nbsp; forecasts &nbsp;|&nbsp; migration &nbsp;|&nbsp; disruptors &nbsp;|&nbsp; workflow
+        </div>
+        <div class="gap-fill-section">
+            <div class="gap-sentence">11. The speaker used free periods at school to work on financial <input class="gap-input" id="t5g11" placeholder="___">.</div>
+            <div class="gap-sentence">12. Managing tasks effectively helped him organise his <input class="gap-input" id="t5g12" placeholder="___">.</div>
+            <div class="gap-sentence">13. Companies such as Uber and Amazon were examples of industry <input class="gap-input" id="t5g13" placeholder="___">.</div>
+            <div class="gap-sentence">14. The speaker describes a good biography as highly <input class="gap-input" id="t5g14" placeholder="___">.</div>
+            <div class="gap-sentence">15. His parents never allowed their <input class="gap-input" id="t5g15" placeholder="___"> to prevent them from succeeding.</div>
+        </div>
+
+        <h4 style="color:#dd6b20; margin:20px 0 12px;">Part 3 — Vocabulary Matching</h4>
+        <table class="matching-table">
+            <thead><tr><th>#</th><th>Word</th><th>Definition</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td><strong>captive customer base</strong></td><td><select class="match-select" id="t5m1"><option value="">— select —</option><option value="A">A. a process of moving from one country to another</option><option value="B">B. likely future prediction based on information</option><option value="C">C. a group of customers with limited alternatives</option><option value="D">D. a person who provides unpaid support to someone in need</option><option value="E">E. a company that changes the way an industry operates</option><option value="F">F. the sequence of tasks involved in completing work</option><option value="G">G. a book about a person's life</option><option value="H">H. a business involved in buying and selling property</option><option value="I">I. having the power to affect decisions or behaviour</option><option value="J">J. standards or targets that are continually changed</option></select></td></tr>
+                <tr><td>2</td><td><strong>forecast</strong></td><td><select class="match-select" id="t5m2"><option value="">— select —</option><option value="A">A. a process of moving from one country to another</option><option value="B">B. likely future prediction based on information</option><option value="C">C. a group of customers with limited alternatives</option><option value="D">D. a person who provides unpaid support to someone in need</option><option value="E">E. a company that changes the way an industry operates</option><option value="F">F. the sequence of tasks involved in completing work</option><option value="G">G. a book about a person's life</option><option value="H">H. a business involved in buying and selling property</option><option value="I">I. having the power to affect decisions or behaviour</option><option value="J">J. standards or targets that are continually changed</option></select></td></tr>
+                <tr><td>3</td><td><strong>workflow</strong></td><td><select class="match-select" id="t5m3"><option value="">— select —</option><option value="A">A. a process of moving from one country to another</option><option value="B">B. likely future prediction based on information</option><option value="C">C. a group of customers with limited alternatives</option><option value="D">D. a person who provides unpaid support to someone in need</option><option value="E">E. a company that changes the way an industry operates</option><option value="F">F. the sequence of tasks involved in completing work</option><option value="G">G. a book about a person's life</option><option value="H">H. a business involved in buying and selling property</option><option value="I">I. having the power to affect decisions or behaviour</option><option value="J">J. standards or targets that are continually changed</option></select></td></tr>
+                <tr><td>4</td><td><strong>disruptor</strong></td><td><select class="match-select" id="t5m4"><option value="">— select —</option><option value="A">A. a process of moving from one country to another</option><option value="B">B. likely future prediction based on information</option><option value="C">C. a group of customers with limited alternatives</option><option value="D">D. a person who provides unpaid support to someone in need</option><option value="E">E. a company that changes the way an industry operates</option><option value="F">F. the sequence of tasks involved in completing work</option><option value="G">G. a book about a person's life</option><option value="H">H. a business involved in buying and selling property</option><option value="I">I. having the power to affect decisions or behaviour</option><option value="J">J. standards or targets that are continually changed</option></select></td></tr>
+                <tr><td>5</td><td><strong>estate agency</strong></td><td><select class="match-select" id="t5m5"><option value="">— select —</option><option value="A">A. a process of moving from one country to another</option><option value="B">B. likely future prediction based on information</option><option value="C">C. a group of customers with limited alternatives</option><option value="D">D. a person who provides unpaid support to someone in need</option><option value="E">E. a company that changes the way an industry operates</option><option value="F">F. the sequence of tasks involved in completing work</option><option value="G">G. a book about a person's life</option><option value="H">H. a business involved in buying and selling property</option><option value="I">I. having the power to affect decisions or behaviour</option><option value="J">J. standards or targets that are continually changed</option></select></td></tr>
+                <tr><td>6</td><td><strong>biography</strong></td><td><select class="match-select" id="t5m6"><option value="">— select —</option><option value="A">A. a process of moving from one country to another</option><option value="B">B. likely future prediction based on information</option><option value="C">C. a group of customers with limited alternatives</option><option value="D">D. a person who provides unpaid support to someone in need</option><option value="E">E. a company that changes the way an industry operates</option><option value="F">F. the sequence of tasks involved in completing work</option><option value="G">G. a book about a person's life</option><option value="H">H. a business involved in buying and selling property</option><option value="I">I. having the power to affect decisions or behaviour</option><option value="J">J. standards or targets that are continually changed</option></select></td></tr>
+                <tr><td>7</td><td><strong>carer</strong></td><td><select class="match-select" id="t5m7"><option value="">— select —</option><option value="A">A. a process of moving from one country to another</option><option value="B">B. likely future prediction based on information</option><option value="C">C. a group of customers with limited alternatives</option><option value="D">D. a person who provides unpaid support to someone in need</option><option value="E">E. a company that changes the way an industry operates</option><option value="F">F. the sequence of tasks involved in completing work</option><option value="G">G. a book about a person's life</option><option value="H">H. a business involved in buying and selling property</option><option value="I">I. having the power to affect decisions or behaviour</option><option value="J">J. standards or targets that are continually changed</option></select></td></tr>
+                <tr><td>8</td><td><strong>migration</strong></td><td><select class="match-select" id="t5m8"><option value="">— select —</option><option value="A">A. a process of moving from one country to another</option><option value="B">B. likely future prediction based on information</option><option value="C">C. a group of customers with limited alternatives</option><option value="D">D. a person who provides unpaid support to someone in need</option><option value="E">E. a company that changes the way an industry operates</option><option value="F">F. the sequence of tasks involved in completing work</option><option value="G">G. a book about a person's life</option><option value="H">H. a business involved in buying and selling property</option><option value="I">I. having the power to affect decisions or behaviour</option><option value="J">J. standards or targets that are continually changed</option></select></td></tr>
+                <tr><td>9</td><td><strong>influential</strong></td><td><select class="match-select" id="t5m9"><option value="">— select —</option><option value="A">A. a process of moving from one country to another</option><option value="B">B. likely future prediction based on information</option><option value="C">C. a group of customers with limited alternatives</option><option value="D">D. a person who provides unpaid support to someone in need</option><option value="E">E. a company that changes the way an industry operates</option><option value="F">F. the sequence of tasks involved in completing work</option><option value="G">G. a book about a person's life</option><option value="H">H. a business involved in buying and selling property</option><option value="I">I. having the power to affect decisions or behaviour</option><option value="J">J. standards or targets that are continually changed</option></select></td></tr>
+                <tr><td>10</td><td><strong>goalposts</strong></td><td><select class="match-select" id="t5m10"><option value="">— select —</option><option value="A">A. a process of moving from one country to another</option><option value="B">B. likely future prediction based on information</option><option value="C">C. a group of customers with limited alternatives</option><option value="D">D. a person who provides unpaid support to someone in need</option><option value="E">E. a company that changes the way an industry operates</option><option value="F">F. the sequence of tasks involved in completing work</option><option value="G">G. a book about a person's life</option><option value="H">H. a business involved in buying and selling property</option><option value="I">I. having the power to affect decisions or behaviour</option><option value="J">J. standards or targets that are continually changed</option></select></td></tr>
+            </tbody>
+        </table>
+
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(4)">← Previous</button>
+            <button class="check-btn" id="check5" onclick="checkTask5()" disabled>Check Answers</button>
+            <button class="next-btn" id="next5" disabled onclick="goToTask(6)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns5" onclick="toggleAnswers('ans5')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans5">
+            <p><strong>MCQ:</strong> 1-B, 2-C, 3-C, 4-B, 5-B, 6-C, 7-C, 8-B, 9-C, 10-C</p>
+            <p><strong>Gap Fill:</strong> 11-forecasts, 12-workflow, 13-disruptors, 14-motivating, 15-disability</p>
+            <p><strong>Matching:</strong> 1-C, 2-B, 3-F, 4-E, 5-H, 6-G, 7-D, 8-A, 9-I, 10-J</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 6 ══ -->
+    <div class="task-card" id="task6">
+        <div class="task-header">
+            <div class="task-number">6</div>
+            <div><div class="task-title">Dictation + Comprehension</div><div class="task-subtitle">Listen, complete the gaps, then answer questions</div></div>
+        </div>
+        <div class="audio-player">
+            <p>🎧 Finding Happiness at Work — BBC Learning English</p>
+            <audio controls src="happywork.mp3"></audio>
+        </div>
+        <h4 style="color:#dd6b20; margin-bottom:12px;">Part 1 — Dictation (ONE WORD ONLY)</h4>
+        <div class="gap-fill-section" id="dictation-gaps"></div>
+        <h4 style="color:#dd6b20; margin:20px 0 12px;">Part 2 — Comprehension Questions</h4>
+        <div class="question-block">
+            <div class="question-text">1. According to Professor Damian Grimshaw, what is a common feature of British working culture?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q1" value="A"> A. Long holidays</label>
+                <label><input type="radio" name="t6q1" value="B"> B. Working at a slow pace</label>
+                <label><input type="radio" name="t6q1" value="C"> C. Pressure from targets and deadlines</label>
+                <label><input type="radio" name="t6q1" value="D"> D. Flexible schedules</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q1"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">2. What does the idiom "breathing down your neck" mean?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q2" value="A"> A. Helping you with your work</label>
+                <label><input type="radio" name="t6q2" value="B"> B. Watching and checking you very closely</label>
+                <label><input type="radio" name="t6q2" value="C"> C. Talking loudly to you</label>
+                <label><input type="radio" name="t6q2" value="D"> D. Working beside you</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q2"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">3. What is "presenteeism"?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q3" value="A"> A. Working from home</label>
+                <label><input type="radio" name="t6q3" value="B"> B. Changing jobs frequently</label>
+                <label><input type="radio" name="t6q3" value="C"> C. Staying at work longer to appear hardworking</label>
+                <label><input type="radio" name="t6q3" value="D"> D. Being promoted at work</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q3"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">4. What was the main idea behind Emma Stewart's trial project?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q4" value="A"> A. Paying workers less money</label>
+                <label><input type="radio" name="t6q4" value="B"> B. Letting workers leave once their tasks were completed</label>
+                <label><input type="radio" name="t6q4" value="C"> C. Reducing the number of workers on site</label>
+                <label><input type="radio" name="t6q4" value="D"> D. Increasing overtime hours</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q4"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">5. According to the Forbes survey mentioned in the programme, what was voted the worst job in the UK?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q5" value="A"> A. Bartender</label>
+                <label><input type="radio" name="t6q5" value="B"> B. Traffic warden</label>
+                <label><input type="radio" name="t6q5" value="C"> C. Construction worker</label>
+                <label><input type="radio" name="t6q5" value="D"> D. Call centre worker</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q5"></div>
+        </div>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(5)">← Previous</button>
+            <button class="check-btn" id="check6" onclick="checkTask6()" disabled>Check Answers</button>
+            <button class="next-btn" id="next6" disabled onclick="goToTask(7)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns6" onclick="toggleAnswers('ans6')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans6">
+            <p><strong>Dictation:</strong> 1-job, 2-feet, 3-out, 4-unhappy, 5-culture, 6-deadlines, 7-neck, 8-finished, 9-do, 10-work, 11-hours, 12-injury, 13-presenteeism, 14-tasks, 15-home, 16-budget, 17-overtime, 18-ill, 19-balance, 20-enjoy, 21-win-win, 22-call centre, 23-enthusiasm, 24-done, 25-do, 26-important, 27-enjoy, 28-result, 29-deadlines, 30-enthusiasm</p>
+            <p><strong>MCQ:</strong> 1-C, 2-B, 3-C, 4-B, 5-D</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 7 ══ -->
+    <div class="task-card" id="task7">
+        <div class="task-header">
+            <div class="task-number">7</div>
+            <div><div class="task-title">Practice Listening</div><div class="task-subtitle">Full IELTS-style listening test</div></div>
+        </div>
+        <a class="html-link-btn" href="Listening (21).html" target="_blank">🎧 Open Practice Listening</a>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(6)">← Previous</button>
+            <button class="next-btn" onclick="finishDay()">Finish Day 2 ✓</button>
+        </div>
+    </div>
+
+    <!-- COMPLETION -->
+    <div class="completion-screen" id="completion-screen">
+        <div class="icon">🎉</div>
+        <h2>Day 2 Complete!</h2>
+        <p>Great work! You've completed all tasks for Week 5, Day 2.</p>
+        <div style="margin:30px 0; text-align:left;">
+            <h3 style="color:#dd6b20; border-bottom:2px solid #dd6b20; padding-bottom:10px; margin-bottom:15px;">📋 Review Your Work</h3>
+            <p style="color:#888; margin-bottom:20px; font-size:0.9rem;">Click any task below to go back and review it.</p>
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:15px;">
+                <div onclick="reviewTask(1)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#dd6b20;font-size:1.1rem;margin-bottom:5px;">Task 1</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Mini Reading</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(2)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#dd6b20;font-size:1.1rem;margin-bottom:5px;">Task 2</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Article Reading</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(3)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#dd6b20;font-size:1.1rem;margin-bottom:5px;">Task 3</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Reading</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(4)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#dd6b20;font-size:1.1rem;margin-bottom:5px;">Task 4</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Globalisation Listening</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(5)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#dd6b20;font-size:1.1rem;margin-bottom:5px;">Task 5</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Video + Vocab</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(6)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#dd6b20;font-size:1.1rem;margin-bottom:5px;">Task 6</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Dictation + MCQ</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(7)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#dd6b20;font-size:1.1rem;margin-bottom:5px;">Task 7</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Listening</div><div style="font-size:1.4rem;">✅</div></div>
+            </div>
+        </div>
+        <a href="/student-dashboard.html" class="dashboard-btn">← Back to Dashboard</a>
+    </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://nbfceuhuauizyucugejr.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_0mFIGJkA_DKZfUiDAWFdrA_nXt0hF6H';
+const dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const WEEK = 5, DAY = 2, TOTAL_TASKS = 7;
+let studentId = null, currentTask = 1;
+let taskStartTime = Date.now(), saveTimeout = null;
+
+const dictationAnswers = ['job','feet','out','unhappy','culture','deadlines','neck','finished','do','work','hours','injury','presenteeism','tasks','home','budget','overtime','ill','balance','enjoy','win-win','call centre','enthusiasm','done','do','important','enjoy','result','deadlines','enthusiasm'];
+
+const dictationScripts = [
+    "have you ever had a horrible boss, not been paid enough, or simply got tired of doing the same old boring <input class='gap-input' id='d1' placeholder='(1)'>?",
+    "When I waitressed in cafes I was on my <input class='gap-input' id='d2' placeholder='(2)'> ten hours a day.",
+    "maybe a job that was boring, badly paid, or just working too much and getting burned <input class='gap-input' id='d3' placeholder='(3)'>.",
+    "how can we make sure our job doesn't make us <input class='gap-input' id='d4' placeholder='(4)'>?",
+    "being unhappy at work could be related to the British working <input class='gap-input' id='d5' placeholder='(5)'>.",
+    "Really it's all about pace, cost efficiencies, meeting targets, <input class='gap-input' id='d6' placeholder='(6)'>…",
+    "is there a supervisor breathing down your <input class='gap-input' id='d7' placeholder='(7)'>?, we score really badly compared to European countries.",
+    "a time or date by which a particular job must be <input class='gap-input' id='d8' placeholder='(8)'>.",
+    "breathing down your neck, an idiom meaning that someone is watching you very closely and checking everything you <input class='gap-input' id='d9' placeholder='(9)'>.",
+    "it's one that uses your talents, and gives you some choice over how and when you <input class='gap-input' id='d10' placeholder='(10)'>.",
+    "the NHS lost more than 15,000 nurses, many quitting because of the long and inflexible working <input class='gap-input' id='d11' placeholder='(11)'>.",
+    "construction workers also risk high levels of work-related <input class='gap-input' id='d12' placeholder='(12)'>.",
+    "we shift away from this sense of <input class='gap-input' id='d13' placeholder='(13)'>.",
+    "you are going to do five <input class='gap-input' id='d14' placeholder='(14)'> over the course of this day.",
+    "When you've done those tasks, and you've done them well, you can go <input class='gap-input' id='d15' placeholder='(15)'>.",
+    "They were able to deliver the projects on time, on <input class='gap-input' id='d16' placeholder='(16)'>.",
+    "they were able to reduce the amount of <input class='gap-input' id='d17' placeholder='(17)'> that they did.",
+    "presenteeism – staying at work longer than usual, or going to work when you're <input class='gap-input' id='d18' placeholder='(18)'>.",
+    "a task-based approach is better, both at getting the job done, and for improving work-life <input class='gap-input' id='d19' placeholder='(19)'>.",
+    "compared with the amount of time you spend relaxing with your family, and doing things you <input class='gap-input' id='d20' placeholder='(20)'>.",
+    "flexible working is a <input class='gap-input' id='d21' placeholder='(21)'> – a situation that's good for everyone involved.",
+    "I guessed it was a job I've done myself - working in a <input class='gap-input' id='d22' placeholder='(22)'>.",
+    "burnout – lack of energy or <input class='gap-input' id='d23' placeholder='(23)'> because of working too hard.",
+    "A deadline is the time by which a particular job must be <input class='gap-input' id='d24' placeholder='(24)'>.",
+    "they're watching you very closely and checking everything you <input class='gap-input' id='d25' placeholder='(25)'>.",
+    "to show your employer that you work hard and are <input class='gap-input' id='d26' placeholder='(26)'> to them.",
+    "compared with the amount of time you spend doing things you <input class='gap-input' id='d27' placeholder='(27)'>.",
+    "a win-win is a situation or <input class='gap-input' id='d28' placeholder='(28)'> that is good for everyone.",
+    "Many British workers experience pressure from targets and <input class='gap-input' id='d29' placeholder='(29)'>.",
+    "Burnout can happen when people work too hard and lose energy or <input class='gap-input' id='d30' placeholder='(30)'>.",
+];
+
+const vocab = [
+    {word:"1. Globalisation (n)", def:"The process by which businesses develop worldwide influence"},
+    {word:"2. Efficiency (n)", def:"The ability to achieve results without wasted effort"},
+    {word:"3. Economies of scale (n)", def:"Cost advantages from increased production"},
+    {word:"4. Multinational corporation (n)", def:"A company operating in multiple countries"},
+    {word:"5. Trade barrier (n)", def:"A restriction that limits international trade"},
+    {word:"6. Compete (v)", def:"To try to be more successful than others"},
+    {word:"7. Disruption (n)", def:"A disturbance that interrupts a process or system"},
+    {word:"8. Labour (n)", def:"Workers, especially in manual or industrial work"},
+    {word:"9. Manufacturing hub (n)", def:"A centre where goods are produced"},
+    {word:"10. Standardised (adj)", def:"Made uniform or consistent across a range"},
+    {word:"11. Captive customer base (n)", def:"A group of customers with limited alternatives"},
+    {word:"12. Forecast (n)", def:"A prediction based on available information"},
+    {word:"13. Workflow (n)", def:"The sequence of tasks involved in completing work"},
+    {word:"14. Disruptor (n)", def:"A company that changes how an industry operates"},
+    {word:"15. Estate agency (n)", def:"A business involved in buying and selling property"},
+    {word:"16. Biography (n)", def:"A book about a person's life"},
+    {word:"17. Carer (n)", def:"A person who provides unpaid support to someone in need"},
+    {word:"18. Migration (n)", def:"The movement of people from one country to another"},
+    {word:"19. Influential (adj)", def:"Having the power to affect decisions or behaviour"},
+    {word:"20. Goalposts (n)", def:"Standards or targets that are continually changed"},
+    {word:"21. Entrepreneur (n)", def:"A person who sets up and runs a business"},
+    {word:"22. Risk-taker (n)", def:"A person willing to take chances to succeed"},
+    {word:"23. Property business (n)", def:"A business involved in buying, selling or renting real estate"},
+    {word:"24. Floor plan (n)", def:"A diagram showing a building's layout"},
+    {word:"25. Burnout (n)", def:"Exhaustion caused by prolonged stress or overwork"},
+    {word:"26. Deadline (n)", def:"A time by which something must be completed"},
+    {word:"27. Work culture (n)", def:"Shared values and behaviours within a workplace"},
+    {word:"28. Presenteeism (n)", def:"Staying at work longer to appear hardworking"},
+    {word:"29. Work-life balance (n)", def:"A healthy balance between work and personal life"},
+    {word:"30. Output-based (adj)", def:"Measured by results produced, not time spent"},
+    {word:"31. Task-based (adj)", def:"Organised around completing specific tasks"},
+    {word:"32. Win-win (n)", def:"A situation good for everyone involved"},
+    {word:"33. Overtime (n)", def:"Time worked beyond normal hours"},
+    {word:"34. Construction industry (n)", def:"The sector involved in building structures"},
+    {word:"35. Work-related injury (n)", def:"Harm suffered as a result of one's job"},
+    {word:"36. Call centre (n)", def:"A workplace handling customer phone enquiries"},
+    {word:"37. Enthusiasm (n)", def:"Strong interest or excitement about something"},
+    {word:"38. Cost efficiency (n)", def:"Achieving results while minimising costs"},
+    {word:"39. Pace (n)", def:"The speed at which something is done"},
+    {word:"40. Supervisor (n)", def:"A person who oversees the work of others"},
+    {word:"41. Investment (n)", def:"Money committed to generate future returns"},
+    {word:"42. Erosion (n)", def:"The gradual wearing away of something"},
+    {word:"43. Local culture (n)", def:"The customs and traditions of a specific area"},
+    {word:"44. Interconnectedness (n)", def:"The state of being linked together"},
+    {word:"45. Financial crisis (n)", def:"A severe disruption in financial markets"},
+    {word:"46. Poverty (n)", def:"The state of being extremely poor"},
+    {word:"47. Job losses (n)", def:"The elimination of employment positions"},
+    {word:"48. Ethical questions (n)", def:"Moral issues requiring careful consideration"},
+    {word:"49. Scale (n)", def:"The size or extent of an operation"},
+    {word:"50. Choice (n)", def:"The range of options available to someone"},
+];
+
+async function initStudent() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('teacher') === 'true') { studentId = 'teacher-preview'; return; }
+    try {
+        const userStr = localStorage.getItem('user');
+        if (!userStr) { window.location.href = '/login.html'; return; }
+        const user = JSON.parse(userStr);
+        const { data, error } = await dbClient.from('students').select('*').eq('username', user.username).single();
+        if (error || !data) return;
+        studentId = data.id;
+    } catch(e) { console.log('Auth error:', e); }
+}
+
+function buildVocab() {
+    document.getElementById('vocab-grid').innerHTML = vocab.map(v =>
+        `<div class="vocab-item"><div class="vocab-word">${v.word}</div><div class="vocab-definition">${v.def}</div></div>`).join('');
+}
+
+function buildDictation() {
+    document.getElementById('dictation-gaps').innerHTML = dictationScripts.map((s, i) =>
+        `<div class="gap-sentence"><strong>${i+1}.</strong> …${s}</div>`).join('');
+}
+
+async function startDay() {
+    document.getElementById('splash-screen').style.display = 'none';
+    document.getElementById('main-content').style.display = 'block';
+    buildVocab(); buildDictation();
+    await initStudent();
+    await restoreProgress();
+    setupLiveValidation();
+}
+
+function goToTask(num) {
+    document.getElementById('task' + currentTask).classList.remove('active');
+    currentTask = num;
+    document.getElementById('task' + num).classList.add('active');
+    document.getElementById('task' + num).scrollIntoView({behavior:'smooth', block:'start'});
+    updateProgress(num); taskStartTime = Date.now(); saveResume(num);
+}
+
+function updateProgress(taskNum) {
+    document.getElementById('progress-bar').style.width = Math.round(((taskNum-1)/TOTAL_TASKS)*100) + '%';
+    document.getElementById('progress-label').textContent = `Task ${taskNum} of ${TOTAL_TASKS}`;
+}
+
+function showSaveIndicator() {
+    const el = document.getElementById('saveIndicator');
+    el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+async function saveResume(taskNum) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try { await dbClient.from('student_resume').upsert({student_id:studentId, week:WEEK, day:DAY, last_task:taskNum, updated_at:new Date().toISOString()}, {onConflict:'student_id'}); } catch(e) {}
+}
+
+function scheduleSave() {
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+        localStorage.setItem(`w${WEEK}d${DAY}_answers`, JSON.stringify(gatherAllAnswers()));
+        showSaveIndicator();
+    }, 800);
+}
+
+function gatherAllAnswers() {
+    const data = {};
+    document.querySelectorAll('.gap-input').forEach(el => { if (el.id) data[el.id] = el.value; });
+    ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10','t6q1','t6q2','t6q3','t6q4','t6q5'].forEach(name => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`); if (sel) data[name] = sel.value;
+    });
+    document.querySelectorAll('select').forEach(el => { if (el.id) data[el.id] = el.value; });
+    return data;
+}
+
+async function restoreProgress() {
+    try {
+        const saved = localStorage.getItem(`w${WEEK}d${DAY}_answers`);
+        if (saved) {
+            const data = JSON.parse(saved);
+            Object.entries(data).forEach(([id, val]) => { const el = document.getElementById(id); if (el && el.tagName === 'INPUT') el.value = val; });
+            ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10','t6q1','t6q2','t6q3','t6q4','t6q5'].forEach(name => {
+                const val = data[name]; if (val) { const r = document.querySelector(`input[name="${name}"][value="${val}"]`); if (r) r.checked = true; }
+            });
+            Object.entries(data).forEach(([id, val]) => { const el = document.getElementById(id); if (el && el.tagName === 'SELECT') el.value = val; });
+        }
+        if (studentId && studentId !== 'teacher-preview') {
+            const { data: taskData } = await dbClient.from('task_progress').select('task_number,status').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY);
+            const completedCount = taskData ? taskData.filter(t => t.status === 'completed').length : 0;
+            if (completedCount >= TOTAL_TASKS) {
+                await restoreAnswersFromSupabase();
+                document.getElementById('task1').classList.remove('active');
+                document.getElementById('completion-screen').style.display = 'block';
+                updateProgress(TOTAL_TASKS); validateAll(); makeReadOnly(); return;
+            }
+            const { data: resume } = await dbClient.from('student_resume').select('last_task').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY).single();
+            if (resume && resume.last_task > 1) {
+                document.getElementById('task1').classList.remove('active');
+                currentTask = resume.last_task;
+                document.getElementById('task' + currentTask).classList.add('active');
+                updateProgress(currentTask);
+            }
+        }
+        validateAll();
+    } catch(e) { console.log('Restore error:', e); }
+}
+
+async function restoreAnswersFromSupabase() {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        const { data: answers } = await dbClient.from('student_answers').select('*').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY);
+        if (!answers || answers.length === 0) return;
+        answers.forEach(a => {
+            const { question_id, student_answer, question_type, is_correct, correct_answer } = a;
+            if (question_type === 'mcq') {
+                const radio = document.querySelector(`input[name="${question_id}"][value="${student_answer}"]`);
+                if (radio) radio.checked = true;
+                const fb = document.getElementById('fb_' + question_id);
+                if (fb) { fb.textContent = is_correct ? '✅ Correct!' : `❌ Incorrect — correct answer: ${correct_answer}`; fb.className = 'answer-feedback ' + (is_correct ? 'correct' : 'incorrect'); }
+            } else if (question_type === 'gap_fill') {
+                const inp = document.getElementById(question_id);
+                if (inp) { inp.value = student_answer || ''; inp.classList.toggle('correct', is_correct); inp.classList.toggle('incorrect', !is_correct); }
+            } else if (question_type === 'matching') {
+                const sel = document.getElementById(question_id);
+                if (sel) { sel.value = student_answer || ''; sel.classList.toggle('correct', is_correct); sel.classList.toggle('incorrect', !is_correct); }
+            }
+        });
+        document.querySelectorAll('.show-answers-btn').forEach(btn => btn.style.display = 'inline-block');
+        document.querySelectorAll('.next-btn').forEach(btn => btn.disabled = false);
+    } catch(e) { console.error('Restore answers error:', e); }
+}
+
+function makeReadOnly() {
+    document.querySelectorAll('.gap-input').forEach(el => { el.disabled = true; el.style.opacity = '0.85'; });
+    document.querySelectorAll('input[type="radio"]').forEach(el => el.disabled = true);
+    document.querySelectorAll('select').forEach(el => { el.disabled = true; });
+    document.querySelectorAll('.check-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.next-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.prev-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.show-answers-btn').forEach(el => el.style.display = 'inline-block');
+}
+
+function setupLiveValidation() {
+    ['t1q1','t1q2','t1q3','t1q4','t1q5','t1q6','t1q7'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', () => { validateTask1Check(); scheduleSave(); }); });
+    ['t4o1','t4o2','t4o3','t4o4','t4o5','t4o6','t4o7','t4o8','t4o9','t4o10'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('change', () => { validateTask4Check(); scheduleSave(); }); });
+    ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10'].forEach(name => { document.querySelectorAll(`input[name="${name}"]`).forEach(el => el.addEventListener('change', () => { validateTask5Check(); scheduleSave(); })); });
+    ['t5g11','t5g12','t5g13','t5g14','t5g15'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', () => { validateTask5Check(); scheduleSave(); }); });
+    ['t5m1','t5m2','t5m3','t5m4','t5m5','t5m6','t5m7','t5m8','t5m9','t5m10'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('change', () => { validateTask5Check(); scheduleSave(); }); });
+    ['t6q1','t6q2','t6q3','t6q4','t6q5'].forEach(name => { document.querySelectorAll(`input[name="${name}"]`).forEach(el => el.addEventListener('change', () => { validateTask6Check(); scheduleSave(); })); });
+    for (let i = 1; i <= 30; i++) { const el = document.getElementById('d' + i); if (el) el.addEventListener('input', () => { validateTask6Check(); scheduleSave(); }); }
+}
+
+function validateAll() { validateTask1Check(); validateTask4Check(); validateTask5Check(); validateTask6Check(); }
+function validateTask1Check() { document.getElementById('check1').disabled = !['t1q1','t1q2','t1q3','t1q4','t1q5','t1q6','t1q7'].every(id => document.getElementById(id)?.value.trim()); }
+function validateTask4Check() { document.getElementById('check4').disabled = !['t4o1','t4o2','t4o3','t4o4','t4o5','t4o6','t4o7','t4o8','t4o9','t4o10'].every(id => document.getElementById(id)?.value); }
+function validateTask5Check() {
+    const allMcq = ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10'].every(name => document.querySelector(`input[name="${name}"]:checked`));
+    const allGaps = ['t5g11','t5g12','t5g13','t5g14','t5g15'].every(id => document.getElementById(id)?.value.trim());
+    const allMatch = ['t5m1','t5m2','t5m3','t5m4','t5m5','t5m6','t5m7','t5m8','t5m9','t5m10'].every(id => document.getElementById(id)?.value);
+    document.getElementById('check5').disabled = !(allMcq && allGaps && allMatch);
+}
+function validateTask6Check() {
+    const allDict = Array.from({length:30}, (_,i) => document.getElementById('d'+(i+1))?.value.trim()).every(Boolean);
+    const allMcq = ['t6q1','t6q2','t6q3','t6q4','t6q5'].every(name => document.querySelector(`input[name="${name}"]:checked`));
+    document.getElementById('check6').disabled = !(allDict && allMcq);
+}
+
+const t1Accepted = {
+    t1q1:['source materials','manufacture products','sell to customers'],
+    t1q2:['economies of scale'],
+    t1q3:['investment','technology and employment'],
+    t1q4:['compete'],
+    t1q5:['economic shocks'],
+    t1q6:['job losses'],
+    t1q7:['opportunities and','considerable risks','risks']
+};
+const t4Answers = {t4o1:'B',t4o2:'A',t4o3:'A',t4o4:'A',t4o5:'B',t4o6:'A',t4o7:'B',t4o8:'A',t4o9:'A',t4o10:'B'};
+const t5McqAnswers = {t5q1:'B',t5q2:'C',t5q3:'C',t5q4:'B',t5q5:'B',t5q6:'C',t5q7:'C',t5q8:'B',t5q9:'C',t5q10:'C'};
+const t5GapAnswers = {t5g11:'forecasts',t5g12:'workflow',t5g13:'disruptors',t5g14:'motivating',t5g15:'disability'};
+const t5MatchAnswers = {t5m1:'C',t5m2:'B',t5m3:'F',t5m4:'E',t5m5:'H',t5m6:'G',t5m7:'D',t5m8:'A',t5m9:'I',t5m10:'J'};
+const t6McqAnswers = {t6q1:'C',t6q2:'B',t6q3:'C',t6q4:'B',t6q5:'D'};
+
+function checkTask1() {
+    const answers = [];
+    Object.entries(t1Accepted).forEach(([id, opts]) => {
+        const inp = document.getElementById(id);
+        const val = inp.value.trim().toLowerCase();
+        const ok = opts.some(o => val.includes(o.toLowerCase()));
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:opts[0], is_correct:ok});
+    });
+    document.getElementById('showAns1').style.display = 'inline-block';
+    document.getElementById('next1').disabled = false;
+    saveAnswers(1, answers); saveTaskProgress(1);
+}
+
+function checkTask4() {
+    const answers = [];
+    Object.entries(t4Answers).forEach(([id, correct]) => {
+        const sel = document.getElementById(id);
+        const ok = sel.value === correct;
+        sel.classList.toggle('correct', ok); sel.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'matching', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    document.getElementById('showAns4').style.display = 'inline-block';
+    document.getElementById('next4').disabled = false;
+    saveAnswers(4, answers); saveTaskProgress(4);
+}
+
+function checkTask5() {
+    const answers = [];
+    Object.entries(t5McqAnswers).forEach(([name, correct]) => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`);
+        const fb = document.getElementById('fb_' + name);
+        if (!sel) return;
+        const ok = sel.value === correct;
+        fb.textContent = ok ? '✅ Correct!' : `❌ Incorrect — correct answer: ${correct}`;
+        fb.className = 'answer-feedback ' + (ok ? 'correct' : 'incorrect');
+        answers.push({question_id:name, question_type:'mcq', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    Object.entries(t5GapAnswers).forEach(([id, correct]) => {
+        const inp = document.getElementById(id);
+        const val = inp.value.trim().toLowerCase();
+        const ok = val === correct.toLowerCase();
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:correct, is_correct:ok});
+    });
+    Object.entries(t5MatchAnswers).forEach(([id, correct]) => {
+        const sel = document.getElementById(id);
+        const ok = sel.value === correct;
+        sel.classList.toggle('correct', ok); sel.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'matching', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    document.getElementById('showAns5').style.display = 'inline-block';
+    document.getElementById('next5').disabled = false;
+    saveAnswers(5, answers); saveTaskProgress(5);
+}
+
+function checkTask6() {
+    const answers = [];
+    for (let i = 1; i <= 30; i++) {
+        const inp = document.getElementById('d' + i);
+        const val = inp.value.trim().toLowerCase();
+        const correct = dictationAnswers[i-1];
+        const ok = val === correct.toLowerCase();
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:'d'+i, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:correct, is_correct:ok});
+    }
+    Object.entries(t6McqAnswers).forEach(([name, correct]) => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`);
+        const fb = document.getElementById('fb_' + name);
+        if (!sel) return;
+        const ok = sel.value === correct;
+        fb.textContent = ok ? '✅ Correct!' : `❌ Incorrect — correct answer: ${correct}`;
+        fb.className = 'answer-feedback ' + (ok ? 'correct' : 'incorrect');
+        answers.push({question_id:name, question_type:'mcq', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    document.getElementById('showAns6').style.display = 'inline-block';
+    document.getElementById('next6').disabled = false;
+    saveAnswers(6, answers); saveTaskProgress(6);
+}
+
+async function saveAnswers(taskNum, answers) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        const rows = answers.map(a => ({student_id:studentId, week:WEEK, day:DAY, task_number:taskNum, question_id:a.question_id, question_type:a.question_type, student_answer:a.student_answer, correct_answer:a.correct_answer, is_correct:a.is_correct, answered_at:new Date().toISOString()}));
+        await dbClient.from('student_answers').upsert(rows, {onConflict:'student_id,week,day,task_number,question_id'});
+    } catch(e) { console.error('Answer save error:', e); }
+}
+
+async function saveTaskProgress(taskNum) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        await dbClient.from('task_progress').upsert({student_id:studentId, week:WEEK, day:DAY, task_number:taskNum, status:'completed', time_completed:new Date().toISOString(), time_spent_seconds:Math.round((Date.now()-taskStartTime)/1000)}, {onConflict:'student_id,week,day,task_number'});
+    } catch(e) { console.error('Progress save error:', e); }
+}
+
+async function finishDay() {
+    document.getElementById('task7').classList.remove('active');
+    document.getElementById('completion-screen').style.display = 'block';
+    document.getElementById('completion-screen').scrollIntoView({behavior:'smooth'});
+    localStorage.removeItem(`w${WEEK}d${DAY}_answers`);
+    for (let i = 1; i <= TOTAL_TASKS; i++) await saveTaskProgress(i);
+    if (studentId && studentId !== 'teacher-preview') await dbClient.from('student_resume').delete().eq('student_id', studentId);
+    makeReadOnly();
+}
+
+function reviewTask(num) {
+    document.getElementById('completion-screen').style.display = 'none';
+    currentTask = num;
+    document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active'));
+    document.getElementById('task' + num).classList.add('active');
+    document.getElementById('task' + num).scrollIntoView({behavior:'smooth', block:'start'});
+    const existing = document.getElementById('back-to-results');
+    if (!existing) {
+        const btn = document.createElement('button');
+        btn.id = 'back-to-results';
+        btn.textContent = '🏆 Back to Results';
+        btn.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#dd6b20;color:white;border:none;padding:12px 22px;border-radius:50px;cursor:pointer;font-weight:bold;font-size:0.95rem;box-shadow:0 4px 15px rgba(221,107,32,0.4);z-index:9998;';
+        btn.onclick = () => { btn.remove(); document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active')); document.getElementById('completion-screen').style.display = 'block'; document.getElementById('completion-screen').scrollIntoView({behavior:'smooth'}); };
+        document.body.appendChild(btn);
+    }
+}
+
+function toggleVocab() { document.getElementById('vocab-body').classList.toggle('open'); document.getElementById('vocab-arrow').classList.toggle('open'); }
+function toggleAnswers(id) {
+    const div = document.getElementById(id);
+    const btn = div.previousElementSibling;
+    div.style.display = div.style.display === 'block' ? 'none' : 'block';
+    btn.textContent = div.style.display === 'block' ? '▲ Hide Answers' : '▼ Show Answers';
+}
+</script>
+</body>
+</html>
