@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEEK 5 - DAY 5 (Business)</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #fff7ed; color: #333; }
+        #splash-screen { position: fixed; inset: 0; background: linear-gradient(135deg, #dd6b20 0%, #c05621 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; color: white; text-align: center; padding: 20px; }
+        #splash-screen h1 { font-size: 3rem; margin-bottom: 10px; }
+        #splash-screen h2 { font-size: 2rem; margin-bottom: 10px; opacity: 0.9; }
+        #splash-screen p { font-size: 1.2rem; margin-bottom: 40px; opacity: 0.8; }
+        .splash-btn { background: white; color: #dd6b20; border: none; padding: 18px 60px; font-size: 1.4rem; font-weight: bold; border-radius: 50px; cursor: pointer; box-shadow: 0 8px 25px rgba(0,0,0,0.2); transition: all 0.3s; }
+        .splash-btn:hover { transform: translateY(-3px); }
+        .main-container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        .day-header { background: linear-gradient(135deg, #dd6b20 0%, #c05621 100%); color: white; padding: 25px 30px; border-radius: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; }
+        .day-header h1 { font-size: 1.6rem; }
+        .day-header .topic { opacity: 0.85; font-size: 1rem; margin-top: 4px; }
+        .back-btn { background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; text-decoration: none; font-size: 0.9rem; transition: all 0.3s; }
+        .back-btn:hover { background: white; color: #dd6b20; }
+        .vocab-section { background: white; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-left: 5px solid #dd6b20; overflow: hidden; }
+        .vocab-toggle { width: 100%; background: none; border: none; cursor: pointer; padding: 18px 25px; display: flex; align-items: center; justify-content: space-between; text-align: left; }
+        .vocab-toggle:hover { background: #fff7ed; }
+        .vocab-toggle-left { display: flex; align-items: center; gap: 10px; }
+        .vocab-toggle h3 { color: #dd6b20; font-size: 1.1rem; margin: 0; }
+        .vocab-count { background: #dd6b20; color: white; font-size: 0.75rem; font-weight: bold; padding: 3px 10px; border-radius: 20px; }
+        .vocab-arrow { color: #dd6b20; font-size: 1rem; transition: transform 0.3s; }
+        .vocab-arrow.open { transform: rotate(180deg); }
+        .vocab-body { display: none; padding: 0 25px 20px; }
+        .vocab-body.open { display: block; }
+        .vocab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+        .vocab-item { background: #fff7ed; padding: 10px 14px; border-radius: 8px; }
+        .vocab-word { font-weight: bold; color: #333; font-size: 0.95rem; }
+        .vocab-definition { color: #666; font-size: 0.82rem; margin-top: 2px; }
+        .progress-label { text-align: center; color: #dd6b20; font-size: 0.85rem; margin-bottom: 8px; font-weight: 600; }
+        .progress-bar-wrap { background: #fbd38d; border-radius: 20px; height: 10px; margin-bottom: 20px; overflow: hidden; }
+        .progress-bar-fill { background: linear-gradient(90deg, #dd6b20, #c05621); height: 100%; border-radius: 20px; transition: width 0.5s ease; }
+        .task-card { background: white; border-radius: 15px; padding: 28px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); display: none; }
+        .task-card.active { display: block; }
+        .task-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .task-number { background: linear-gradient(135deg, #dd6b20, #c05621); color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; flex-shrink: 0; }
+        .task-title { font-size: 1.3rem; font-weight: bold; color: #333; }
+        .task-subtitle { color: #888; font-size: 0.9rem; margin-top: 2px; }
+        .pdf-links { display: flex; flex-direction: column; gap: 12px; margin: 15px 0; }
+        .pdf-link { display: flex; align-items: center; gap: 12px; background: #fff7ed; padding: 15px 20px; border-radius: 10px; text-decoration: none; color: #333; font-weight: 600; border: 2px solid #fbd38d; transition: all 0.3s; }
+        .pdf-link:hover { background: #dd6b20; color: white; border-color: #dd6b20; transform: translateX(5px); }
+        .pdf-icon { font-size: 1.5rem; }
+        .html-link-btn { display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #dd6b20, #c05621); color: white; padding: 15px 30px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 1rem; transition: all 0.3s; margin: 10px 0; }
+        .html-link-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(221,107,32,0.4); }
+        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; margin: 15px 0; }
+        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .video-fallback { background: #fff7ed; padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align: center; }
+        .video-fallback a { color: #dd6b20; font-weight: bold; }
+        .audio-player { background: #fff7ed; border: 2px solid #fbd38d; border-radius: 12px; padding: 20px; margin: 15px 0; }
+        .audio-player p { color: #555; margin-bottom: 10px; font-weight: 600; }
+        .audio-player audio { width: 100%; }
+        .passage-text { background: #fffaf5; border: 1px solid #fbd38d; border-radius: 10px; padding: 25px; margin: 15px 0; line-height: 1.8; font-size: 0.97rem; color: #333; }
+        .passage-text h3 { color: #dd6b20; margin-bottom: 15px; font-size: 1.2rem; }
+        .passage-text p { margin-bottom: 14px; }
+        .question-block { margin-bottom: 20px; padding: 18px; background: #f8f9fa; border-radius: 10px; }
+        .question-text { font-weight: 600; margin-bottom: 12px; color: #333; line-height: 1.5; }
+        .options label { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: background 0.2s; margin-bottom: 5px; }
+        .options label:hover { background: #fef3e6; }
+        .options input[type="radio"] { margin-top: 3px; flex-shrink: 0; }
+        .answer-feedback { margin-top: 8px; font-weight: bold; font-size: 0.9rem; }
+        .answer-feedback.correct { color: #28a745; }
+        .answer-feedback.incorrect { color: #dc3545; }
+        .gap-fill-section { margin-top: 20px; }
+        .gap-sentence { margin-bottom: 14px; line-height: 2; font-size: 1rem; }
+        .gap-input { border: none; border-bottom: 2px solid #dd6b20; padding: 4px 8px; font-size: 0.95rem; width: 200px; background: transparent; outline: none; color: #333; }
+        .gap-input.correct { border-bottom-color: #28a745; background: #d4edda33; }
+        .gap-input.incorrect { border-bottom-color: #dc3545; background: #f8d7da33; }
+        .open-input { border-bottom-color: #dd6b20 !important; background: #fff7ed !important; }
+        .word-box { background: #fff7ed; border: 2px solid #fbd38d; border-radius: 10px; padding: 12px 18px; margin-bottom: 15px; }
+        .word-box strong { color: #dd6b20; }
+        .matching-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .matching-table th { background: #dd6b20; color: white; padding: 10px 14px; text-align: left; }
+        .matching-table td { padding: 10px 14px; border-bottom: 1px solid #eee; }
+        .matching-table tr:nth-child(even) td { background: #fff7ed; }
+        .match-select { border: 2px solid #fbd38d; border-radius: 6px; padding: 5px 8px; font-size: 0.88rem; background: white; width: 100%; max-width: 380px; }
+        .match-select.correct { border-color: #28a745; }
+        .match-select.incorrect { border-color: #dc3545; }
+        .spk-select { border: 2px solid #fbd38d; border-radius: 6px; padding: 5px 10px; font-size: 0.9rem; background: white; width: 80px; }
+        .spk-select.correct { border-color: #28a745; }
+        .spk-select.incorrect { border-color: #dc3545; }
+        .speakers-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        .speakers-table th { background: #dd6b20; color: white; padding: 12px 16px; text-align: left; }
+        .speakers-table td { padding: 10px 16px; border-bottom: 1px solid #eee; vertical-align: middle; font-size: 0.92rem; }
+        .speakers-table tr:nth-child(even) td { background: #fff7ed; }
+        .pv-select { border: 2px solid #fbd38d; border-radius: 6px; padding: 5px 10px; font-size: 0.9rem; background: white; width: 100%; max-width: 260px; }
+        .pv-select.correct { border-color: #28a745; }
+        .pv-select.incorrect { border-color: #dc3545; }
+        .btn-row { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+        .check-btn { background: linear-gradient(135deg, #dd6b20, #c05621); color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .check-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(221,107,32,0.4); }
+        .check-btn:disabled { background: #ccc; cursor: not-allowed; transform: none !important; box-shadow: none; }
+        .next-btn { background: #28a745; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .next-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .next-btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(40,167,69,0.4); }
+        .prev-btn { background: #6c757d; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .prev-btn:hover { background: #5a6268; }
+        .show-answers-btn { background: #ffc107; color: #333; border: none; padding: 10px 22px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.88rem; display: none; }
+        .show-answers-btn:hover { background: #e0a800; }
+        .answers-panel { display: none; background: #fffbea; border: 2px solid #ffc107; border-radius: 10px; padding: 15px; margin-top: 12px; }
+        .answers-panel p { margin-bottom: 6px; font-size: 0.9rem; }
+        .completion-screen { text-align: center; padding: 60px 20px; display: none; }
+        .completion-screen .icon { font-size: 5rem; margin-bottom: 20px; }
+        .completion-screen h2 { font-size: 2.2rem; color: #dd6b20; margin-bottom: 10px; }
+        .completion-screen p { color: #666; font-size: 1rem; margin-bottom: 30px; }
+        .dashboard-btn { background: linear-gradient(135deg, #dd6b20, #c05621); color: white; padding: 16px 40px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 1.1rem; display: inline-block; transition: all 0.3s; }
+        .dashboard-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(221,107,32,0.4); }
+        .save-indicator { position: fixed; bottom: 20px; right: 20px; background: #dd6b20; color: white; padding: 10px 18px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; opacity: 0; transition: opacity 0.4s; z-index: 9000; pointer-events: none; }
+        .save-indicator.show { opacity: 1; }
+        .section-divider { border-top: 2px dashed #fbd38d; margin: 25px 0; }
+    </style>
+</head>
+<body>
+<div id="splash-screen">
+    <h1>💼 WEEK 5</h1>
+    <h2>DAY 5</h2>
+    <p>Topic: Business Review</p>
+    <button class="splash-btn" onclick="startDay()">LET'S GO!</button>
+</div>
+<div class="save-indicator" id="saveIndicator">✓ Progress saved</div>
+<div class="main-container" id="main-content" style="display:none;">
+    <div class="day-header">
+        <div><h1>💼 Week 5 — Day 5</h1><div class="topic">Topic: Business Review</div></div>
+        <a href="/student-dashboard.html" class="back-btn">← Dashboard</a>
+    </div>
+    <div class="progress-label" id="progress-label">Task 0 of 7</div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-bar" style="width:0%"></div></div>
+
+    <!-- VOCAB -->
+    <div class="vocab-section">
+        <button class="vocab-toggle" onclick="toggleVocab()">
+            <div class="vocab-toggle-left"><h3>📖 Today's Vocabulary</h3><span class="vocab-count">50 words</span></div>
+            <span class="vocab-arrow" id="vocab-arrow">▼</span>
+        </button>
+        <div class="vocab-body" id="vocab-body"><div class="vocab-grid" id="vocab-grid"></div></div>
+    </div>
+
+    <!-- ══ TASK 1 ══ -->
+    <div class="task-card active" id="task1">
+        <div class="task-header">
+            <div class="task-number">1</div>
+            <div><div class="task-title">Mini Reading</div><div class="task-subtitle">Complete the sentences with NO MORE THAN TWO WORDS from the passage</div></div>
+        </div>
+        <div class="passage-text">
+            <h3>Lottery Winners and Financial Risk</h3>
+            <p>In this tough economy, the allure of purchasing lottery tickets seems like a pretty enticing way to erase financial problems. But new research from Vanderbilt Law School found that people who won between $50,000 and $150,000 only postponed bankruptcy. The researchers found that mid-level lottery winners did not in fact pay off their debt or increase equity in new or existing assets. And though these mid-level lottery winners were less likely than small winners (those who won less than $10,000) to become bankrupt immediately after winning, they were 50 per cent more likely to do so three to five years after winning their prize. "Our results are consistent with some winners using their prize to take additional risks or buy luxury goods," said a researcher. "Others simply lack the knowledge to handle large amounts of money wisely."</p>
+            <p>The researchers used data from Florida's Fantasy 5 lottery game from April 1993 through November 2002. They examined all winners who won more than $600. This added up to almost 35,000 individuals. In all, almost 2,000 Fantasy 5 winners were linked to a bankruptcy in the five years after winning. The fact that they filed for bankruptcy is significant for several reasons. "Filing for bankruptcy is arguably the most extreme signal of financial distress," said the researcher. "Not only is it bad for creditors, but it also seriously harms a filer's credit rating, affecting the availability and cost of future loans."</p>
+        </div>
+        <h4 style="color:#dd6b20; margin:20px 0 12px;">Complete the sentences — NO MORE THAN TWO WORDS:</h4>
+        <div class="gap-fill-section">
+            <div class="gap-sentence">1. People may buy a lottery ticket as a way of solving<br><input class="gap-input" id="t1q1" placeholder="___" style="width:280px; margin-top:8px;">.</div>
+            <div class="gap-sentence">2. Researchers found that winners of between $50,000 and $150,000 failed to get out of<br><input class="gap-input" id="t1q2" placeholder="___" style="width:280px; margin-top:8px;">.</div>
+            <div class="gap-sentence">3. Researchers believe lottery winners often spend their money on<br><input class="gap-input" id="t1q3" placeholder="___" style="width:280px; margin-top:8px;">.</div>
+            <div class="gap-sentence">4. A certain number of lottery winners were<br><input class="gap-input" id="t1q4" placeholder="___" style="width:280px; margin-top:8px;"> within five years of winning their prize.</div>
+            <div class="gap-sentence">5. Lottery winners may find it difficult to obtain<br><input class="gap-input" id="t1q5" placeholder="___" style="width:280px; margin-top:8px;"> if they have had financial problems.</div>
+        </div>
+        <div class="btn-row">
+            <button class="check-btn" id="check1" onclick="checkTask1()" disabled>Check Answers</button>
+            <button class="next-btn" id="next1" disabled onclick="goToTask(2)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns1" onclick="toggleAnswers('ans1')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans1">
+            <p><strong>Answers:</strong> 1-financial problems, 2-debt, 3-additional risks/luxury goods, 4-linked to a bankruptcy, 5-loans</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 2 ══ -->
+    <div class="task-card" id="task2">
+        <div class="task-header">
+            <div class="task-number">2</div>
+            <div><div class="task-title">Article Reading</div><div class="task-subtitle">Read the article and study the vocabulary</div></div>
+        </div>
+        <div class="pdf-links">
+            <a class="pdf-link" href="article 5.pdf" target="_blank"><span class="pdf-icon">📄</span> Business — Article</a>
+            <a class="pdf-link" href="vocab 5.pdf" target="_blank"><span class="pdf-icon">📘</span> Business — Vocabulary</a>
+        </div>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(1)">← Previous</button>
+            <button class="next-btn" onclick="goToTask(3)">Next Task →</button>
+        </div>
+    </div>
+
+    <!-- ══ TASK 3 ══ -->
+    <div class="task-card" id="task3">
+        <div class="task-header">
+            <div class="task-number">3</div>
+            <div><div class="task-title">Practice Reading</div><div class="task-subtitle">IELTS-style reading test</div></div>
+        </div>
+        <a class="html-link-btn" href="Reading (24).html" target="_blank">📖 Open Practice Reading</a>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(2)">← Previous</button>
+            <button class="next-btn" onclick="goToTask(4)">Next Task →</button>
+        </div>
+    </div>
+
+    <!-- ══ TASK 4 ══ -->
+    <div class="task-card" id="task4">
+        <div class="task-header">
+            <div class="task-number">4</div>
+            <div><div class="task-title">Management Vocabulary &amp; Listening</div><div class="task-subtitle">Two speakers discussing management</div></div>
+        </div>
+        <p style="color:#555; margin-bottom:15px; font-weight:600;">Part 1 — Which speaker (1 or 2)...</p>
+        <table class="speakers-table">
+            <thead><tr><th style="width:60%">Statement</th><th>Speaker</th></tr></thead>
+            <tbody>
+                <tr><td>A. is concerned about a management issue?</td><td><select class="spk-select" id="t4a"><option value="">—</option><option value="1">1</option><option value="2">2</option></select></td></tr>
+                <tr><td>B. is proud of a recent project?</td><td><select class="spk-select" id="t4b"><option value="">—</option><option value="1">1</option><option value="2">2</option></select></td></tr>
+                <tr><td>C. is in charge of a large workforce?</td><td><select class="spk-select" id="t4c"><option value="">—</option><option value="1">1</option><option value="2">2</option></select></td></tr>
+                <tr><td>D. recently gained a promotion?</td><td><select class="spk-select" id="t4d"><option value="">—</option><option value="1">1</option><option value="2">2</option></select></td></tr>
+                <tr><td>E. is linking up with another company?</td><td><select class="spk-select" id="t4e"><option value="">—</option><option value="1">1</option><option value="2">2</option></select></td></tr>
+            </tbody>
+        </table>
+
+        <div class="section-divider"></div>
+        <p style="color:#555; margin-bottom:15px; font-weight:600;">Part 2 — Match the idioms/expressions (1-6) to their meanings (a-f):</p>
+        <table class="matching-table">
+            <thead><tr><th>#</th><th>Expression</th><th>Meaning</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td>a golden opportunity</td><td><select class="match-select" id="t4m1"><option value="">— select —</option><option value="a">a. an excellent chance to do something</option><option value="b">b. to become widely known</option><option value="c">c. beneficial for both sides</option><option value="d">d. to gain a good reputation</option><option value="e">e. the specialist skills of a profession</option><option value="f">f. the most important financial result</option></select></td></tr>
+                <tr><td>2</td><td>make a name for myself</td><td><select class="match-select" id="t4m2"><option value="">— select —</option><option value="a">a. an excellent chance to do something</option><option value="b">b. to become widely known</option><option value="c">c. beneficial for both sides</option><option value="d">d. to gain a good reputation</option><option value="e">e. the specialist skills of a profession</option><option value="f">f. the most important financial result</option></select></td></tr>
+                <tr><td>3</td><td>a win-win situation</td><td><select class="match-select" id="t4m3"><option value="">— select —</option><option value="a">a. an excellent chance to do something</option><option value="b">b. to become widely known</option><option value="c">c. beneficial for both sides</option><option value="d">d. to gain a good reputation</option><option value="e">e. the specialist skills of a profession</option><option value="f">f. the most important financial result</option></select></td></tr>
+                <tr><td>4</td><td>a household name</td><td><select class="match-select" id="t4m4"><option value="">— select —</option><option value="a">a. an excellent chance to do something</option><option value="b">b. to become widely known</option><option value="c">c. beneficial for both sides</option><option value="d">d. to gain a good reputation</option><option value="e">e. the specialist skills of a profession</option><option value="f">f. the most important financial result</option></select></td></tr>
+                <tr><td>5</td><td>the tricks of the trade</td><td><select class="match-select" id="t4m5"><option value="">— select —</option><option value="a">a. an excellent chance to do something</option><option value="b">b. to become widely known</option><option value="c">c. beneficial for both sides</option><option value="d">d. to gain a good reputation</option><option value="e">e. the specialist skills of a profession</option><option value="f">f. the most important financial result</option></select></td></tr>
+                <tr><td>6</td><td>the bottom line</td><td><select class="match-select" id="t4m6"><option value="">— select —</option><option value="a">a. an excellent chance to do something</option><option value="b">b. to become widely known</option><option value="c">c. beneficial for both sides</option><option value="d">d. to gain a good reputation</option><option value="e">e. the specialist skills of a profession</option><option value="f">f. the most important financial result</option></select></td></tr>
+            </tbody>
+        </table>
+
+        <div class="section-divider"></div>
+        <p style="color:#555; margin-bottom:15px; font-weight:600;">Part 3 — Complete the sentences with the correct phrasal verb:</p>
+        <div class="word-box">
+            <strong>Word Box:</strong> draw up &nbsp;|&nbsp; take on &nbsp;|&nbsp; set up &nbsp;|&nbsp; in charge of &nbsp;|&nbsp; paid off &nbsp;|&nbsp; keep track of &nbsp;|&nbsp; break into
+        </div>
+        <div class="gap-fill-section">
+            <div class="gap-sentence">1. We need to <select class="pv-select" id="t4pv1"><option value="">— select —</option><option value="draw up">draw up</option><option value="take on">take on</option><option value="set up">set up</option><option value="in charge of">in charge of</option><option value="paid off">paid off</option><option value="keep track of">keep track of</option><option value="break into">break into</option></select> a contract before the meeting.</div>
+            <div class="gap-sentence">2. The company decided to <select class="pv-select" id="t4pv2"><option value="">— select —</option><option value="draw up">draw up</option><option value="take on">take on</option><option value="set up">set up</option><option value="in charge of">in charge of</option><option value="paid off">paid off</option><option value="keep track of">keep track of</option><option value="break into">break into</option></select> three new employees this month.</div>
+            <div class="gap-sentence">3. They plan to <select class="pv-select" id="t4pv3"><option value="">— select —</option><option value="draw up">draw up</option><option value="take on">take on</option><option value="set up">set up</option><option value="in charge of">in charge of</option><option value="paid off">paid off</option><option value="keep track of">keep track of</option><option value="break into">break into</option></select> a new branch in Asia next year.</div>
+            <div class="gap-sentence">4. We need to <select class="pv-select" id="t4pv4"><option value="">— select —</option><option value="draw up">draw up</option><option value="take on">take on</option><option value="set up">set up</option><option value="in charge of">in charge of</option><option value="paid off">paid off</option><option value="keep track of">keep track of</option><option value="break into">break into</option></select> more responsibility to grow the business.</div>
+            <div class="gap-sentence">5. She is <select class="pv-select" id="t4pv5"><option value="">— select —</option><option value="draw up">draw up</option><option value="take on">take on</option><option value="set up">set up</option><option value="in charge of">in charge of</option><option value="paid off">paid off</option><option value="keep track of">keep track of</option><option value="break into">break into</option></select> the entire marketing department.</div>
+            <div class="gap-sentence">6. After years of hard work, his efforts finally <select class="pv-select" id="t4pv6"><option value="">— select —</option><option value="draw up">draw up</option><option value="take on">take on</option><option value="set up">set up</option><option value="in charge of">in charge of</option><option value="paid off">paid off</option><option value="keep track of">keep track of</option><option value="break into">break into</option></select>.</div>
+            <div class="gap-sentence">7. It's important to <select class="pv-select" id="t4pv7"><option value="">— select —</option><option value="draw up">draw up</option><option value="take on">take on</option><option value="set up">set up</option><option value="in charge of">in charge of</option><option value="paid off">paid off</option><option value="keep track of">keep track of</option><option value="break into">break into</option></select> all your expenses for the project.</div>
+            <div class="gap-sentence">8. The startup is hoping to <select class="pv-select" id="t4pv8"><option value="">— select —</option><option value="draw up">draw up</option><option value="take on">take on</option><option value="set up">set up</option><option value="in charge of">in charge of</option><option value="paid off">paid off</option><option value="keep track of">keep track of</option><option value="break into">break into</option></select> the competitive tech market.</div>
+        </div>
+
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(3)">← Previous</button>
+            <button class="check-btn" id="check4" onclick="checkTask4()" disabled>Check Answers</button>
+            <button class="next-btn" id="next4" disabled onclick="goToTask(5)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns4" onclick="toggleAnswers('ans4')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans4">
+            <p><strong>Speakers:</strong> A-2, B-1, C-2, D-1, E-1</p>
+            <p><strong>Idioms:</strong> 1-a, 2-d, 3-f, 4-b, 5-c, 6-e</p>
+            <p><strong>Phrasal verbs:</strong> 1-draw up, 2-take on, 3-set up, 4-take on, 5-in charge of, 6-paid off, 7-keep track of, 8-break into</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 5 ══ -->
+    <div class="task-card" id="task5">
+        <div class="task-header">
+            <div class="task-number">5</div>
+            <div><div class="task-title">Video Watching Task</div><div class="task-subtitle">Watch and answer questions</div></div>
+        </div>
+        <div class="video-fallback">
+            <p>▶ <a href="https://www.youtube.com/watch?v=4eIDBV4Mpek" target="_blank">Click here to open the video in a new tab</a> if it doesn't play below.</p>
+        </div>
+        <div class="video-container">
+            <iframe src="https://www.youtube.com/embed/4eIDBV4Mpek" frameborder="0" allowfullscreen></iframe>
+        </div>
+
+        <h4 style="color:#dd6b20; margin:20px 0 12px;">Part 1 — Multiple Choice Questions</h4>
+        <div class="question-block">
+            <div class="question-text">1. According to the video, why is it surprising that people pay more for brands like Coke or Levi's?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q1" value="A"> A. The products are difficult to find.</label>
+                <label><input type="radio" name="t5q1" value="B"> B. The products are often very similar to cheaper alternatives.</label>
+                <label><input type="radio" name="t5q1" value="C"> C. The brands are unpopular.</label>
+                <label><input type="radio" name="t5q1" value="D"> D. The products are low quality.</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q1"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">2. What happened in the study where participants were exposed to Apple and IBM logos?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q2" value="A"> A. Apple users bought more products.</label>
+                <label><input type="radio" name="t5q2" value="B"> B. Participants exposed to IBM became more creative.</label>
+                <label><input type="radio" name="t5q2" value="C"> C. Participants exposed to Apple performed better on creative tasks.</label>
+                <label><input type="radio" name="t5q2" value="D"> D. There was no difference between the groups.</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q2"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">3. According to the speakers, what story has Apple repeatedly communicated to consumers?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q3" value="A"> A. Apple products are the cheapest.</label>
+                <label><input type="radio" name="t5q3" value="B"> B. Apple is a brand for creative and innovative people.</label>
+                <label><input type="radio" name="t5q3" value="C"> C. Apple products are only for professionals.</label>
+                <label><input type="radio" name="t5q3" value="D"> D. Apple is a luxury fashion brand.</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q3"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">4. When consumers choose one brand over another, what are they often doing?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q4" value="A"> A. Making purely logical decisions.</label>
+                <label><input type="radio" name="t5q4" value="B"> B. Avoiding social influences.</label>
+                <label><input type="radio" name="t5q4" value="C"> C. Expressing part of their identity.</label>
+                <label><input type="radio" name="t5q4" value="D"> D. Reducing costs.</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q4"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">5. Why might someone choose Nike over Under Armour?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q5" value="A"> A. Nike products last longer.</label>
+                <label><input type="radio" name="t5q5" value="B"> B. Nike is always cheaper.</label>
+                <label><input type="radio" name="t5q5" value="C"> C. Different brands represent different identities and values.</label>
+                <label><input type="radio" name="t5q5" value="D"> D. Under Armour is unavailable.</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q5"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">6. According to the video, what can happen when someone strongly identifies with a brand?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q6" value="A"> A. They become indifferent to criticism.</label>
+                <label><input type="radio" name="t5q6" value="B"> B. They stop buying other products.</label>
+                <label><input type="radio" name="t5q6" value="C"> C. They may defend the brand as if defending themselves.</label>
+                <label><input type="radio" name="t5q6" value="D"> D. They receive discounts from the company.</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q6"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">7. What did Michael Platt's MRI study reveal about Apple users?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q7" value="A"> A. They disliked all technology brands.</label>
+                <label><input type="radio" name="t5q7" value="B"> B. Their brains showed empathy toward Apple similar to empathy for family members.</label>
+                <label><input type="radio" name="t5q7" value="C"> C. They preferred Samsung products.</label>
+                <label><input type="radio" name="t5q7" value="D"> D. They had no emotional response to brand news.</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q7"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">8. How did Samsung users react to negative news about Apple?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q8" value="A"> A. Their brains showed a positive response.</label>
+                <label><input type="radio" name="t5q8" value="B"> B. They ignored the news completely.</label>
+                <label><input type="radio" name="t5q8" value="C"> C. They became sympathetic toward Apple.</label>
+                <label><input type="radio" name="t5q8" value="D"> D. They switched to Apple products.</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q8"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">9. What was surprising about the MRI results?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q9" value="A"> A. Participants accurately described all their feelings.</label>
+                <label><input type="radio" name="t5q9" value="B"> B. The brain scans showed responses people were not consciously aware of.</label>
+                <label><input type="radio" name="t5q9" value="C"> C. Apple users refused to participate.</label>
+                <label><input type="radio" name="t5q9" value="D"> D. Samsung users performed better on creativity tests.</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q9"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">10. What advice do the speakers give consumers?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q10" value="A"> A. Never buy branded products.</label>
+                <label><input type="radio" name="t5q10" value="B"> B. Always buy the cheapest option.</label>
+                <label><input type="radio" name="t5q10" value="C"> C. Pause and think about why you are buying something.</label>
+                <label><input type="radio" name="t5q10" value="D"> D. Ignore marketing completely.</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q10"></div>
+        </div>
+
+        <h4 style="color:#dd6b20; margin:20px 0 12px;">Part 2 — Gap Filling</h4>
+        <div class="word-box">
+            <strong>Word Box:</strong> identity &nbsp;|&nbsp; empathy &nbsp;|&nbsp; subconscious &nbsp;|&nbsp; affiliation &nbsp;|&nbsp; influence &nbsp;|&nbsp; perception &nbsp;|&nbsp; creativity
+        </div>
+        <div class="gap-fill-section">
+            <div class="gap-sentence">11. Brands often appeal to our sense of <input class="gap-input" id="t5g11" placeholder="___"> and help us express who we are.</div>
+            <div class="gap-sentence">12. The Apple logo study found improvements in <input class="gap-input" id="t5g12" placeholder="___"> among participants.</div>
+            <div class="gap-sentence">13. People may choose certain brands because of <input class="gap-input" id="t5g13" placeholder="___"> with a particular group or lifestyle.</div>
+            <div class="gap-sentence">14. MRI scans showed that Apple users experienced <input class="gap-input" id="t5g14" placeholder="___"> responses toward the brand.</div>
+            <div class="gap-sentence">15. Many brand choices are made at a <input class="gap-input" id="t5g15" placeholder="___"> level rather than through conscious reasoning.</div>
+        </div>
+
+        <h4 style="color:#dd6b20; margin:20px 0 12px;">Part 3 — Vocabulary Matching</h4>
+        <table class="matching-table">
+            <thead><tr><th>#</th><th>Word</th><th>Definition</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td><strong>rational</strong></td><td><select class="match-select" id="t5m1"><option value="">— select —</option><option value="A">A. a strong feeling of understanding another person's emotions</option><option value="B">B. image or understanding of something</option><option value="C">C. based on logic and reason</option><option value="D">D. connection or association with a group</option><option value="E">E. below the level of conscious awareness</option><option value="F">F. influence on behaviour or decisions</option><option value="G">G. the characteristics that define who a person is</option><option value="H">H. part of the mind operating outside conscious awareness</option><option value="I">I. the scientific study of the brain and nervous system</option><option value="J">J. relating to moral principles and what is right or wrong</option></select></td></tr>
+                <tr><td>2</td><td><strong>subliminally</strong></td><td><select class="match-select" id="t5m2"><option value="">— select —</option><option value="A">A. a strong feeling of understanding another person's emotions</option><option value="B">B. image or understanding of something</option><option value="C">C. based on logic and reason</option><option value="D">D. connection or association with a group</option><option value="E">E. below the level of conscious awareness</option><option value="F">F. influence on behaviour or decisions</option><option value="G">G. the characteristics that define who a person is</option><option value="H">H. part of the mind operating outside conscious awareness</option><option value="I">I. the scientific study of the brain and nervous system</option><option value="J">J. relating to moral principles and what is right or wrong</option></select></td></tr>
+                <tr><td>3</td><td><strong>identity</strong></td><td><select class="match-select" id="t5m3"><option value="">— select —</option><option value="A">A. a strong feeling of understanding another person's emotions</option><option value="B">B. image or understanding of something</option><option value="C">C. based on logic and reason</option><option value="D">D. connection or association with a group</option><option value="E">E. below the level of conscious awareness</option><option value="F">F. influence on behaviour or decisions</option><option value="G">G. the characteristics that define who a person is</option><option value="H">H. part of the mind operating outside conscious awareness</option><option value="I">I. the scientific study of the brain and nervous system</option><option value="J">J. relating to moral principles and what is right or wrong</option></select></td></tr>
+                <tr><td>4</td><td><strong>affiliation</strong></td><td><select class="match-select" id="t5m4"><option value="">— select —</option><option value="A">A. a strong feeling of understanding another person's emotions</option><option value="B">B. image or understanding of something</option><option value="C">C. based on logic and reason</option><option value="D">D. connection or association with a group</option><option value="E">E. below the level of conscious awareness</option><option value="F">F. influence on behaviour or decisions</option><option value="G">G. the characteristics that define who a person is</option><option value="H">H. part of the mind operating outside conscious awareness</option><option value="I">I. the scientific study of the brain and nervous system</option><option value="J">J. relating to moral principles and what is right or wrong</option></select></td></tr>
+                <tr><td>5</td><td><strong>empathy</strong></td><td><select class="match-select" id="t5m5"><option value="">— select —</option><option value="A">A. a strong feeling of understanding another person's emotions</option><option value="B">B. image or understanding of something</option><option value="C">C. based on logic and reason</option><option value="D">D. connection or association with a group</option><option value="E">E. below the level of conscious awareness</option><option value="F">F. influence on behaviour or decisions</option><option value="G">G. the characteristics that define who a person is</option><option value="H">H. part of the mind operating outside conscious awareness</option><option value="I">I. the scientific study of the brain and nervous system</option><option value="J">J. relating to moral principles and what is right or wrong</option></select></td></tr>
+                <tr><td>6</td><td><strong>perception</strong></td><td><select class="match-select" id="t5m6"><option value="">— select —</option><option value="A">A. a strong feeling of understanding another person's emotions</option><option value="B">B. image or understanding of something</option><option value="C">C. based on logic and reason</option><option value="D">D. connection or association with a group</option><option value="E">E. below the level of conscious awareness</option><option value="F">F. influence on behaviour or decisions</option><option value="G">G. the characteristics that define who a person is</option><option value="H">H. part of the mind operating outside conscious awareness</option><option value="I">I. the scientific study of the brain and nervous system</option><option value="J">J. relating to moral principles and what is right or wrong</option></select></td></tr>
+                <tr><td>7</td><td><strong>subconscious</strong></td><td><select class="match-select" id="t5m7"><option value="">— select —</option><option value="A">A. a strong feeling of understanding another person's emotions</option><option value="B">B. image or understanding of something</option><option value="C">C. based on logic and reason</option><option value="D">D. connection or association with a group</option><option value="E">E. below the level of conscious awareness</option><option value="F">F. influence on behaviour or decisions</option><option value="G">G. the characteristics that define who a person is</option><option value="H">H. part of the mind operating outside conscious awareness</option><option value="I">I. the scientific study of the brain and nervous system</option><option value="J">J. relating to moral principles and what is right or wrong</option></select></td></tr>
+                <tr><td>8</td><td><strong>influence</strong></td><td><select class="match-select" id="t5m8"><option value="">— select —</option><option value="A">A. a strong feeling of understanding another person's emotions</option><option value="B">B. image or understanding of something</option><option value="C">C. based on logic and reason</option><option value="D">D. connection or association with a group</option><option value="E">E. below the level of conscious awareness</option><option value="F">F. influence on behaviour or decisions</option><option value="G">G. the characteristics that define who a person is</option><option value="H">H. part of the mind operating outside conscious awareness</option><option value="I">I. the scientific study of the brain and nervous system</option><option value="J">J. relating to moral principles and what is right or wrong</option></select></td></tr>
+                <tr><td>9</td><td><strong>neuroscience</strong></td><td><select class="match-select" id="t5m9"><option value="">— select —</option><option value="A">A. a strong feeling of understanding another person's emotions</option><option value="B">B. image or understanding of something</option><option value="C">C. based on logic and reason</option><option value="D">D. connection or association with a group</option><option value="E">E. below the level of conscious awareness</option><option value="F">F. influence on behaviour or decisions</option><option value="G">G. the characteristics that define who a person is</option><option value="H">H. part of the mind operating outside conscious awareness</option><option value="I">I. the scientific study of the brain and nervous system</option><option value="J">J. relating to moral principles and what is right or wrong</option></select></td></tr>
+                <tr><td>10</td><td><strong>ethical</strong></td><td><select class="match-select" id="t5m10"><option value="">— select —</option><option value="A">A. a strong feeling of understanding another person's emotions</option><option value="B">B. image or understanding of something</option><option value="C">C. based on logic and reason</option><option value="D">D. connection or association with a group</option><option value="E">E. below the level of conscious awareness</option><option value="F">F. influence on behaviour or decisions</option><option value="G">G. the characteristics that define who a person is</option><option value="H">H. part of the mind operating outside conscious awareness</option><option value="I">I. the scientific study of the brain and nervous system</option><option value="J">J. relating to moral principles and what is right or wrong</option></select></td></tr>
+            </tbody>
+        </table>
+
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(4)">← Previous</button>
+            <button class="check-btn" id="check5" onclick="checkTask5()" disabled>Check Answers</button>
+            <button class="next-btn" id="next5" disabled onclick="goToTask(6)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns5" onclick="toggleAnswers('ans5')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans5">
+            <p><strong>MCQ:</strong> 1-B, 2-C, 3-B, 4-C, 5-C, 6-C, 7-B, 8-A, 9-B, 10-C</p>
+            <p><strong>Gap Fill:</strong> 11-identity, 12-creativity, 13-affiliation, 14-empathy, 15-subconscious</p>
+            <p><strong>Matching:</strong> 1-C, 2-E, 3-G, 4-D, 5-A, 6-B, 7-H, 8-F, 9-I, 10-J</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 6 ══ -->
+    <div class="task-card" id="task6">
+        <div class="task-header">
+            <div class="task-number">6</div>
+            <div><div class="task-title">Dictation + Comprehension</div><div class="task-subtitle">Listen, complete the gaps, then answer questions</div></div>
+        </div>
+        <div class="audio-player">
+            <p>🎧 Returning to Work After Lockdown — BBC Learning English</p>
+            <audio controls src="lockdown.mp3"></audio>
+        </div>
+        <h4 style="color:#dd6b20; margin-bottom:12px;">Part 1 — Dictation (ONE WORD ONLY)</h4>
+        <div class="gap-fill-section" id="dictation-gaps"></div>
+        <h4 style="color:#dd6b20; margin:20px 0 12px;">Part 2 — Comprehension Questions</h4>
+        <div class="question-block">
+            <div class="question-text">1. What is the purpose of the Bluetooth wristbands mentioned in the programme?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q1" value="A"> A. To measure body temperature</label>
+                <label><input type="radio" name="t6q1" value="B"> B. To record working hours</label>
+                <label><input type="radio" name="t6q1" value="C"> C. To detect when workers are close to each other</label>
+                <label><input type="radio" name="t6q1" value="D"> D. To track employee productivity</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q1"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">2. What does "contact tracing" involve?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q2" value="A"> A. Testing everyone's temperature daily</label>
+                <label><input type="radio" name="t6q2" value="B"> B. Informing people who may have been in contact with an infected person</label>
+                <label><input type="radio" name="t6q2" value="C"> C. Recording employees' working hours</label>
+                <label><input type="radio" name="t6q2" value="D"> D. Installing more workplace cameras</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q2"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">3. Why is Ravi Naik concerned about the new technology?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q3" value="A"> A. It is too expensive</label>
+                <label><input type="radio" name="t6q3" value="B"> B. It may not work in large offices</label>
+                <label><input type="radio" name="t6q3" value="C"> C. It could interfere with human rights and privacy</label>
+                <label><input type="radio" name="t6q3" value="D"> D. Employees may lose their jobs</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q3"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">4. Which part of the body gives the most accurate skin temperature reading according to the programme?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q4" value="A"> A. The nose</label>
+                <label><input type="radio" name="t6q4" value="B"> B. The ear</label>
+                <label><input type="radio" name="t6q4" value="C"> C. The forehead</label>
+                <label><input type="radio" name="t6q4" value="D"> D. The eye</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q4"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">5. What does the phrase "for its own sake" mean?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q5" value="A"> A. Because it is legally required</label>
+                <label><input type="radio" name="t6q5" value="B"> B. Because it is interesting or desirable in itself, not necessarily needed</label>
+                <label><input type="radio" name="t6q5" value="C"> C. Because it saves money</label>
+                <label><input type="radio" name="t6q5" value="D"> D. Because everyone else is doing it</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q5"></div>
+        </div>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(5)">← Previous</button>
+            <button class="check-btn" id="check6" onclick="checkTask6()" disabled>Check Answers</button>
+            <button class="next-btn" id="next6" disabled onclick="goToTask(7)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns6" onclick="toggleAnswers('ans6')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans6">
+            <p><strong>Dictation:</strong> 1-home, 2-temperature, 3-underway, 4-safer, 5-normal, 6-eye, 7-proximity, 8-retrace, 9-tracing, 10-contact, 11-person, 12-line, 13-privacy, 14-consequences, 15-sake, 16-rights, 17-justification, 18-proof, 19-eye, 20-ducts, 21-normal, 22-Bluetooth, 23-proximity, 24-line, 25-sake, 26-justification, 27-expected, 28-near, 29-future, 30-evidence</p>
+            <p><strong>MCQ:</strong> 1-C, 2-B, 3-C, 4-D, 5-B</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 7 ══ -->
+    <div class="task-card" id="task7">
+        <div class="task-header">
+            <div class="task-number">7</div>
+            <div><div class="task-title">Practice Listening</div><div class="task-subtitle">Full IELTS-style listening test</div></div>
+        </div>
+        <a class="html-link-btn" href="Listening (24).html" target="_blank">🎧 Open Practice Listening</a>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(6)">← Previous</button>
+            <button class="next-btn" onclick="finishDay()">Finish Day 5 ✓</button>
+        </div>
+    </div>
+
+    <!-- COMPLETION -->
+    <div class="completion-screen" id="completion-screen">
+        <div class="icon">🎉</div>
+        <h2>Week 5 Complete!</h2>
+        <p>Outstanding! You've completed all 5 days of Week 5: Business!</p>
+        <div style="margin:30px 0; text-align:left;">
+            <h3 style="color:#dd6b20; border-bottom:2px solid #dd6b20; padding-bottom:10px; margin-bottom:15px;">📋 Review Your Work</h3>
+            <p style="color:#888; margin-bottom:20px; font-size:0.9rem;">Click any task below to go back and review it.</p>
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:15px;">
+                <div onclick="reviewTask(1)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#dd6b20;font-size:1.1rem;margin-bottom:5px;">Task 1</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Mini Reading</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(2)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#dd6b20;font-size:1.1rem;margin-bottom:5px;">Task 2</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Article Reading</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(3)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#dd6b20;font-size:1.1rem;margin-bottom:5px;">Task 3</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Reading</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(4)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#dd6b20;font-size:1.1rem;margin-bottom:5px;">Task 4</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Management Vocab</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(5)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#dd6b20;font-size:1.1rem;margin-bottom:5px;">Task 5</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Video + Vocab</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(6)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#dd6b20;font-size:1.1rem;margin-bottom:5px;">Task 6</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Dictation + MCQ</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(7)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#dd6b20;font-size:1.1rem;margin-bottom:5px;">Task 7</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Listening</div><div style="font-size:1.4rem;">✅</div></div>
+            </div>
+        </div>
+        <a href="/student-dashboard.html" class="dashboard-btn">← Back to Dashboard</a>
+    </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://nbfceuhuauizyucugejr.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_0mFIGJkA_DKZfUiDAWFdrA_nXt0hF6H';
+const dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const WEEK = 5, DAY = 5, TOTAL_TASKS = 7;
+let studentId = null, currentTask = 1;
+let taskStartTime = Date.now(), saveTimeout = null;
+
+const dictationAnswers = ['home','temperature','underway','safer','normal','eye','proximity','retrace','tracing','contact','person','line','privacy','consequences','sake','rights','justification','proof','eye','ducts','normal','Bluetooth','proximity','line','sake','justification','expected','near','future','evidence'];
+
+const dictationScripts = [
+    "And I'm Sam – still working from <input class='gap-input' id='d1' placeholder='(1)'>, as you can hear.",
+    "They measure body <input class='gap-input' id='d2' placeholder='(2)'> to screen for coronavirus.",
+    "the return to the office is slowly getting <input class='gap-input' id='d3' placeholder='(3)'> in a number of countries.",
+    "Lots of companies are rushing to install technology to make offices and workplaces <input class='gap-input' id='d4' placeholder='(4)'>.",
+    "even devices that take our temperature could all become the new <input class='gap-input' id='d5' placeholder='(5)'>.",
+    "I'll say the <input class='gap-input' id='d6' placeholder='(6)'>.",
+    "using Bluetooth wristbands or tags that people are wearing within the workplace which detect <input class='gap-input' id='d7' placeholder='(7)'> events.",
+    "in case they need to, further down the line, <input class='gap-input' id='d8' placeholder='(8)'> the steps of a certain person.",
+    "One important way to control coronavirus involves contact <input class='gap-input' id='d9' placeholder='(9)'>.",
+    "someone who tests positive for the disease informs everyone else they've been in <input class='gap-input' id='d10' placeholder='(10)'> with.",
+    "how near a person is to another <input class='gap-input' id='d11' placeholder='(11)'>.",
+    "if that person is found to have coronavirus later down the <input class='gap-input' id='d12' placeholder='(12)'>.",
+    "it all feels like quite a big invasion of <input class='gap-input' id='d13' placeholder='(13)'>, doesn't it?",
+    "others are worried about the possible <input class='gap-input' id='d14' placeholder='(14)'>.",
+    "are you trying to use tech for tech's <input class='gap-input' id='d15' placeholder='(15)'>?",
+    "such a significant interference with basic human <input class='gap-input' id='d16' placeholder='(16)'>.",
+    "There has to be a high level of evidential <input class='gap-input' id='d17' placeholder='(17)'> to deploy this type of technology.",
+    "Ravi's work as a lawyer involves finding <input class='gap-input' id='d18' placeholder='(18)'> that something is right or wrong.",
+    "And I said the <input class='gap-input' id='d19' placeholder='(19)'>.",
+    "There's a small area of the eye close to the tear <input class='gap-input' id='d20' placeholder='(20)'>.",
+    "becoming the new <input class='gap-input' id='d21' placeholder='(21)'>.",
+    "Some of these devices are wristbands with <input class='gap-input' id='d22' placeholder='(22)'> – technology allowing computers and smartphones to communicate remotely.",
+    "They can identify work colleagues who have been in close <input class='gap-input' id='d23' placeholder='(23)'>.",
+    "if one of them tests positive for coronavirus further down the <input class='gap-input' id='d24' placeholder='(24)'>.",
+    "contact tracing technology is being used for its own <input class='gap-input' id='d25' placeholder='(25)'>.",
+    "it should only be introduced with evidential <input class='gap-input' id='d26' placeholder='(26)'>.",
+    "a previously unfamiliar situation that has become usual and <input class='gap-input' id='d27' placeholder='(27)'>.",
+    "Close proximity means being <input class='gap-input' id='d28' placeholder='(28)'> to another person.",
+    "Further down the line means at some point in the <input class='gap-input' id='d29' placeholder='(29)'>.",
+    "Evidential justification means an explanation based on <input class='gap-input' id='d30' placeholder='(30)'>.",
+];
+
+const vocab = [
+    {word:"1. Bankruptcy (n)", def:"The state of being legally unable to pay debts"},
+    {word:"2. Equity (n)", def:"Ownership value in an asset after debts"},
+    {word:"3. Asset (n)", def:"A useful or valuable resource owned by a person"},
+    {word:"4. Financial distress (n)", def:"A state of severe difficulty managing money"},
+    {word:"5. Creditor (n)", def:"A person or company owed money"},
+    {word:"6. Credit rating (n)", def:"An assessment of creditworthiness"},
+    {word:"7. Luxury goods (n)", def:"Expensive, non-essential products"},
+    {word:"8. Workforce (n)", def:"The people employed by an organisation"},
+    {word:"9. Promotion (n)", def:"Advancement to a higher position at work"},
+    {word:"10. Merger (n)", def:"The joining of two companies into one"},
+    {word:"11. A golden opportunity (idiom)", def:"An excellent chance to do something"},
+    {word:"12. Make a name for yourself (idiom)", def:"To become well known or respected"},
+    {word:"13. A win-win situation (idiom)", def:"An outcome beneficial for everyone involved"},
+    {word:"14. A household name (idiom)", def:"A name widely known to the public"},
+    {word:"15. A hands-on approach (idiom)", def:"Direct, practical involvement in work"},
+    {word:"16. The tricks of the trade (idiom)", def:"Specialist skills or techniques of a profession"},
+    {word:"17. The bottom line (idiom)", def:"The most important financial outcome"},
+    {word:"18. Draw up (phrasal verb)", def:"To prepare a formal document"},
+    {word:"19. Take on (phrasal verb)", def:"To accept responsibility or hire someone"},
+    {word:"20. Set up (phrasal verb)", def:"To establish or start something"},
+    {word:"21. Rational (adj)", def:"Based on logic and reason"},
+    {word:"22. Subliminally (adv)", def:"Below the level of conscious awareness"},
+    {word:"23. Identity (n)", def:"The characteristics that define who a person is"},
+    {word:"24. Affiliation (n)", def:"Connection or association with a group"},
+    {word:"25. Empathy (n)", def:"Understanding and sharing another's feelings"},
+    {word:"26. Perception (n)", def:"The way something is understood or interpreted"},
+    {word:"27. Subconscious (n)", def:"Part of the mind outside conscious awareness"},
+    {word:"28. Influence (n)", def:"The power to affect someone's behaviour"},
+    {word:"29. Neuroscience (n)", def:"The scientific study of the brain and nervous system"},
+    {word:"30. Ethical (adj)", def:"Relating to moral principles"},
+    {word:"31. Consumer psychology (n)", def:"The study of how people make purchasing decisions"},
+    {word:"32. Brand loyalty (n)", def:"Consistent preference for a particular brand"},
+    {word:"33. Innovative (adj)", def:"Introducing new ideas or methods"},
+    {word:"34. MRI scan (n)", def:"A medical imaging technique showing brain activity"},
+    {word:"35. Sympathetic (adj)", def:"Feeling or showing compassion toward others"},
+    {word:"36. Underway (adj)", def:"In progress; happening now"},
+    {word:"37. Thermal camera (n)", def:"A device that detects heat or temperature"},
+    {word:"38. Proximity (n)", def:"Nearness in space or relationship"},
+    {word:"39. Contact tracing (n)", def:"Identifying people who may have been exposed to infection"},
+    {word:"40. Privacy (n)", def:"The state of being free from observation"},
+    {word:"41. Human rights (n)", def:"Basic rights and freedoms belonging to everyone"},
+    {word:"42. Justification (n)", def:"A good reason for an action or belief"},
+    {word:"43. Evidential (adj)", def:"Relating to or based on evidence"},
+    {word:"44. Tear duct (n)", def:"A small channel that carries tears from the eye"},
+    {word:"45. Bluetooth (n)", def:"Wireless technology for short-range communication"},
+    {word:"46. New normal (n)", def:"A previously unusual situation that becomes standard"},
+    {word:"47. Deploy (v)", def:"To put into use or action"},
+    {word:"48. Interference (n)", def:"Action that disrupts or intrudes upon something"},
+    {word:"49. Consequence (n)", def:"A result or effect of an action"},
+    {word:"50. Lawyer (n)", def:"A person qualified to practise law"},
+];
+
+async function initStudent() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('teacher') === 'true') { studentId = 'teacher-preview'; return; }
+    try {
+        const userStr = localStorage.getItem('user');
+        if (!userStr) { window.location.href = '/login.html'; return; }
+        const user = JSON.parse(userStr);
+        const { data, error } = await dbClient.from('students').select('*').eq('username', user.username).single();
+        if (error || !data) return;
+        studentId = data.id;
+    } catch(e) { console.log('Auth error:', e); }
+}
+
+function buildVocab() {
+    document.getElementById('vocab-grid').innerHTML = vocab.map(v =>
+        `<div class="vocab-item"><div class="vocab-word">${v.word}</div><div class="vocab-definition">${v.def}</div></div>`).join('');
+}
+
+function buildDictation() {
+    document.getElementById('dictation-gaps').innerHTML = dictationScripts.map((s, i) =>
+        `<div class="gap-sentence"><strong>${i+1}.</strong> …${s}</div>`).join('');
+}
+
+async function startDay() {
+    document.getElementById('splash-screen').style.display = 'none';
+    document.getElementById('main-content').style.display = 'block';
+    buildVocab(); buildDictation();
+    await initStudent();
+    await restoreProgress();
+    setupLiveValidation();
+}
+
+function goToTask(num) {
+    document.getElementById('task' + currentTask).classList.remove('active');
+    currentTask = num;
+    document.getElementById('task' + num).classList.add('active');
+    document.getElementById('task' + num).scrollIntoView({behavior:'smooth', block:'start'});
+    updateProgress(num); taskStartTime = Date.now(); saveResume(num);
+}
+
+function updateProgress(taskNum) {
+    document.getElementById('progress-bar').style.width = Math.round(((taskNum-1)/TOTAL_TASKS)*100) + '%';
+    document.getElementById('progress-label').textContent = `Task ${taskNum} of ${TOTAL_TASKS}`;
+}
+
+function showSaveIndicator() {
+    const el = document.getElementById('saveIndicator');
+    el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+async function saveResume(taskNum) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try { await dbClient.from('student_resume').upsert({student_id:studentId, week:WEEK, day:DAY, last_task:taskNum, updated_at:new Date().toISOString()}, {onConflict:'student_id'}); } catch(e) {}
+}
+
+function scheduleSave() {
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+        localStorage.setItem(`w${WEEK}d${DAY}_answers`, JSON.stringify(gatherAllAnswers()));
+        showSaveIndicator();
+    }, 800);
+}
+
+function gatherAllAnswers() {
+    const data = {};
+    document.querySelectorAll('.gap-input').forEach(el => { if (el.id) data[el.id] = el.value; });
+    ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10','t6q1','t6q2','t6q3','t6q4','t6q5'].forEach(name => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`); if (sel) data[name] = sel.value;
+    });
+    document.querySelectorAll('select').forEach(el => { if (el.id) data[el.id] = el.value; });
+    return data;
+}
+
+async function restoreProgress() {
+    try {
+        const saved = localStorage.getItem(`w${WEEK}d${DAY}_answers`);
+        if (saved) {
+            const data = JSON.parse(saved);
+            Object.entries(data).forEach(([id, val]) => { const el = document.getElementById(id); if (el && el.tagName === 'INPUT') el.value = val; });
+            ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10','t6q1','t6q2','t6q3','t6q4','t6q5'].forEach(name => {
+                const val = data[name]; if (val) { const r = document.querySelector(`input[name="${name}"][value="${val}"]`); if (r) r.checked = true; }
+            });
+            Object.entries(data).forEach(([id, val]) => { const el = document.getElementById(id); if (el && el.tagName === 'SELECT') el.value = val; });
+        }
+        if (studentId && studentId !== 'teacher-preview') {
+            const { data: taskData } = await dbClient.from('task_progress').select('task_number,status').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY);
+            const completedCount = taskData ? taskData.filter(t => t.status === 'completed').length : 0;
+            if (completedCount >= TOTAL_TASKS) {
+                await restoreAnswersFromSupabase();
+                document.getElementById('task1').classList.remove('active');
+                document.getElementById('completion-screen').style.display = 'block';
+                updateProgress(TOTAL_TASKS); validateAll(); makeReadOnly(); return;
+            }
+            const { data: resume } = await dbClient.from('student_resume').select('last_task').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY).single();
+            if (resume && resume.last_task > 1) {
+                document.getElementById('task1').classList.remove('active');
+                currentTask = resume.last_task;
+                document.getElementById('task' + currentTask).classList.add('active');
+                updateProgress(currentTask);
+            }
+        }
+        validateAll();
+    } catch(e) { console.log('Restore error:', e); }
+}
+
+async function restoreAnswersFromSupabase() {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        const { data: answers } = await dbClient.from('student_answers').select('*').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY);
+        if (!answers || answers.length === 0) return;
+        answers.forEach(a => {
+            const { question_id, student_answer, question_type, is_correct, correct_answer } = a;
+            if (question_type === 'mcq') {
+                const radio = document.querySelector(`input[name="${question_id}"][value="${student_answer}"]`);
+                if (radio) radio.checked = true;
+                const fb = document.getElementById('fb_' + question_id);
+                if (fb) { fb.textContent = is_correct ? '✅ Correct!' : `❌ Incorrect — correct answer: ${correct_answer}`; fb.className = 'answer-feedback ' + (is_correct ? 'correct' : 'incorrect'); }
+            } else if (question_type === 'gap_fill') {
+                const inp = document.getElementById(question_id);
+                if (inp) { inp.value = student_answer || ''; inp.classList.toggle('correct', is_correct); inp.classList.toggle('incorrect', !is_correct); }
+            } else if (question_type === 'matching') {
+                const sel = document.getElementById(question_id);
+                if (sel) { sel.value = student_answer || ''; sel.classList.toggle('correct', is_correct); sel.classList.toggle('incorrect', !is_correct); }
+            }
+        });
+        document.querySelectorAll('.show-answers-btn').forEach(btn => btn.style.display = 'inline-block');
+        document.querySelectorAll('.next-btn').forEach(btn => btn.disabled = false);
+    } catch(e) { console.error('Restore answers error:', e); }
+}
+
+function makeReadOnly() {
+    document.querySelectorAll('.gap-input').forEach(el => { el.disabled = true; el.style.opacity = '0.85'; });
+    document.querySelectorAll('input[type="radio"]').forEach(el => el.disabled = true);
+    document.querySelectorAll('select').forEach(el => { el.disabled = true; });
+    document.querySelectorAll('.check-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.next-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.prev-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.show-answers-btn').forEach(el => el.style.display = 'inline-block');
+}
+
+function setupLiveValidation() {
+    ['t1q1','t1q2','t1q3','t1q4','t1q5'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', () => { validateTask1Check(); scheduleSave(); }); });
+    ['t4a','t4b','t4c','t4d','t4e','t4m1','t4m2','t4m3','t4m4','t4m5','t4m6','t4pv1','t4pv2','t4pv3','t4pv4','t4pv5','t4pv6','t4pv7','t4pv8'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('change', () => { validateTask4Check(); scheduleSave(); }); });
+    ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10'].forEach(name => { document.querySelectorAll(`input[name="${name}"]`).forEach(el => el.addEventListener('change', () => { validateTask5Check(); scheduleSave(); })); });
+    ['t5g11','t5g12','t5g13','t5g14','t5g15'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', () => { validateTask5Check(); scheduleSave(); }); });
+    ['t5m1','t5m2','t5m3','t5m4','t5m5','t5m6','t5m7','t5m8','t5m9','t5m10'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('change', () => { validateTask5Check(); scheduleSave(); }); });
+    ['t6q1','t6q2','t6q3','t6q4','t6q5'].forEach(name => { document.querySelectorAll(`input[name="${name}"]`).forEach(el => el.addEventListener('change', () => { validateTask6Check(); scheduleSave(); })); });
+    for (let i = 1; i <= 30; i++) { const el = document.getElementById('d' + i); if (el) el.addEventListener('input', () => { validateTask6Check(); scheduleSave(); }); }
+}
+
+function validateAll() { validateTask1Check(); validateTask4Check(); validateTask5Check(); validateTask6Check(); }
+function validateTask1Check() { document.getElementById('check1').disabled = !['t1q1','t1q2','t1q3','t1q4','t1q5'].every(id => document.getElementById(id)?.value.trim()); }
+function validateTask4Check() {
+    const speakers = ['t4a','t4b','t4c','t4d','t4e'].every(id => document.getElementById(id)?.value);
+    const idioms = ['t4m1','t4m2','t4m3','t4m4','t4m5','t4m6'].every(id => document.getElementById(id)?.value);
+    const phrasals = ['t4pv1','t4pv2','t4pv3','t4pv4','t4pv5','t4pv6','t4pv7','t4pv8'].every(id => document.getElementById(id)?.value);
+    document.getElementById('check4').disabled = !(speakers && idioms && phrasals);
+}
+function validateTask5Check() {
+    const allMcq = ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10'].every(name => document.querySelector(`input[name="${name}"]:checked`));
+    const allGaps = ['t5g11','t5g12','t5g13','t5g14','t5g15'].every(id => document.getElementById(id)?.value.trim());
+    const allMatch = ['t5m1','t5m2','t5m3','t5m4','t5m5','t5m6','t5m7','t5m8','t5m9','t5m10'].every(id => document.getElementById(id)?.value);
+    document.getElementById('check5').disabled = !(allMcq && allGaps && allMatch);
+}
+function validateTask6Check() {
+    const allDict = Array.from({length:30}, (_,i) => document.getElementById('d'+(i+1))?.value.trim()).every(Boolean);
+    const allMcq = ['t6q1','t6q2','t6q3','t6q4','t6q5'].every(name => document.querySelector(`input[name="${name}"]:checked`));
+    document.getElementById('check6').disabled = !(allDict && allMcq);
+}
+
+const t1Accepted = {
+    t1q1:['financial problems'],
+    t1q2:['debt'],
+    t1q3:['additional risks','luxury goods'],
+    t1q4:['linked to a bankruptcy','bankruptcy'],
+    t1q5:['loans']
+};
+const t4SpkAnswers = {t4a:'2',t4b:'1',t4c:'2',t4d:'1',t4e:'1'};
+const t4MAnswers = {t4m1:'a',t4m2:'d',t4m3:'f',t4m4:'b',t4m5:'c',t4m6:'e'};
+const t4PVAnswers = {t4pv1:'draw up',t4pv2:'take on',t4pv3:'set up',t4pv4:'take on',t4pv5:'in charge of',t4pv6:'paid off',t4pv7:'keep track of',t4pv8:'break into'};
+const t5McqAnswers = {t5q1:'B',t5q2:'C',t5q3:'B',t5q4:'C',t5q5:'C',t5q6:'C',t5q7:'B',t5q8:'A',t5q9:'B',t5q10:'C'};
+const t5GapAnswers = {t5g11:'identity',t5g12:'creativity',t5g13:'affiliation',t5g14:'empathy',t5g15:'subconscious'};
+const t5MatchAnswers = {t5m1:'C',t5m2:'E',t5m3:'G',t5m4:'D',t5m5:'A',t5m6:'B',t5m7:'H',t5m8:'F',t5m9:'I',t5m10:'J'};
+const t6McqAnswers = {t6q1:'C',t6q2:'B',t6q3:'C',t6q4:'D',t6q5:'B'};
+
+function checkTask1() {
+    const answers = [];
+    Object.entries(t1Accepted).forEach(([id, opts]) => {
+        const inp = document.getElementById(id);
+        const val = inp.value.trim().toLowerCase();
+        const ok = opts.some(o => val.includes(o.toLowerCase()));
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:opts[0], is_correct:ok});
+    });
+    document.getElementById('showAns1').style.display = 'inline-block';
+    document.getElementById('next1').disabled = false;
+    saveAnswers(1, answers); saveTaskProgress(1);
+}
+
+function checkTask4() {
+    const answers = [];
+    Object.entries(t4SpkAnswers).forEach(([id, correct]) => {
+        const sel = document.getElementById(id);
+        const ok = sel.value === correct;
+        sel.classList.toggle('correct', ok); sel.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'matching', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    Object.entries(t4MAnswers).forEach(([id, correct]) => {
+        const sel = document.getElementById(id);
+        const ok = sel.value === correct;
+        sel.classList.toggle('correct', ok); sel.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'matching', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    Object.entries(t4PVAnswers).forEach(([id, correct]) => {
+        const sel = document.getElementById(id);
+        const ok = sel.value === correct;
+        sel.classList.toggle('correct', ok); sel.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'matching', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    document.getElementById('showAns4').style.display = 'inline-block';
+    document.getElementById('next4').disabled = false;
+    saveAnswers(4, answers); saveTaskProgress(4);
+}
+
+function checkTask5() {
+    const answers = [];
+    Object.entries(t5McqAnswers).forEach(([name, correct]) => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`);
+        const fb = document.getElementById('fb_' + name);
+        if (!sel) return;
+        const ok = sel.value === correct;
+        fb.textContent = ok ? '✅ Correct!' : `❌ Incorrect — correct answer: ${correct}`;
+        fb.className = 'answer-feedback ' + (ok ? 'correct' : 'incorrect');
+        answers.push({question_id:name, question_type:'mcq', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    Object.entries(t5GapAnswers).forEach(([id, correct]) => {
+        const inp = document.getElementById(id);
+        const val = inp.value.trim().toLowerCase();
+        const ok = val === correct.toLowerCase();
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:correct, is_correct:ok});
+    });
+    Object.entries(t5MatchAnswers).forEach(([id, correct]) => {
+        const sel = document.getElementById(id);
+        const ok = sel.value === correct;
+        sel.classList.toggle('correct', ok); sel.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'matching', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    document.getElementById('showAns5').style.display = 'inline-block';
+    document.getElementById('next5').disabled = false;
+    saveAnswers(5, answers); saveTaskProgress(5);
+}
+
+function checkTask6() {
+    const answers = [];
+    for (let i = 1; i <= 30; i++) {
+        const inp = document.getElementById('d' + i);
+        const val = inp.value.trim().toLowerCase();
+        const correct = dictationAnswers[i-1];
+        const ok = val === correct.toLowerCase();
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:'d'+i, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:correct, is_correct:ok});
+    }
+    Object.entries(t6McqAnswers).forEach(([name, correct]) => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`);
+        const fb = document.getElementById('fb_' + name);
+        if (!sel) return;
+        const ok = sel.value === correct;
+        fb.textContent = ok ? '✅ Correct!' : `❌ Incorrect — correct answer: ${correct}`;
+        fb.className = 'answer-feedback ' + (ok ? 'correct' : 'incorrect');
+        answers.push({question_id:name, question_type:'mcq', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    document.getElementById('showAns6').style.display = 'inline-block';
+    document.getElementById('next6').disabled = false;
+    saveAnswers(6, answers); saveTaskProgress(6);
+}
+
+async function saveAnswers(taskNum, answers) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        const rows = answers.map(a => ({student_id:studentId, week:WEEK, day:DAY, task_number:taskNum, question_id:a.question_id, question_type:a.question_type, student_answer:a.student_answer, correct_answer:a.correct_answer, is_correct:a.is_correct, answered_at:new Date().toISOString()}));
+        await dbClient.from('student_answers').upsert(rows, {onConflict:'student_id,week,day,task_number,question_id'});
+    } catch(e) { console.error('Answer save error:', e); }
+}
+
+async function saveTaskProgress(taskNum) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        await dbClient.from('task_progress').upsert({student_id:studentId, week:WEEK, day:DAY, task_number:taskNum, status:'completed', time_completed:new Date().toISOString(), time_spent_seconds:Math.round((Date.now()-taskStartTime)/1000)}, {onConflict:'student_id,week,day,task_number'});
+    } catch(e) { console.error('Progress save error:', e); }
+}
+
+async function finishDay() {
+    document.getElementById('task7').classList.remove('active');
+    document.getElementById('completion-screen').style.display = 'block';
+    document.getElementById('completion-screen').scrollIntoView({behavior:'smooth'});
+    localStorage.removeItem(`w${WEEK}d${DAY}_answers`);
+    for (let i = 1; i <= TOTAL_TASKS; i++) await saveTaskProgress(i);
+    if (studentId && studentId !== 'teacher-preview') await dbClient.from('student_resume').delete().eq('student_id', studentId);
+    makeReadOnly();
+}
+
+function reviewTask(num) {
+    document.getElementById('completion-screen').style.display = 'none';
+    currentTask = num;
+    document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active'));
+    document.getElementById('task' + num).classList.add('active');
+    document.getElementById('task' + num).scrollIntoView({behavior:'smooth', block:'start'});
+    const existing = document.getElementById('back-to-results');
+    if (!existing) {
+        const btn = document.createElement('button');
+        btn.id = 'back-to-results';
+        btn.textContent = '🏆 Back to Results';
+        btn.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#dd6b20;color:white;border:none;padding:12px 22px;border-radius:50px;cursor:pointer;font-weight:bold;font-size:0.95rem;box-shadow:0 4px 15px rgba(221,107,32,0.4);z-index:9998;';
+        btn.onclick = () => { btn.remove(); document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active')); document.getElementById('completion-screen').style.display = 'block'; document.getElementById('completion-screen').scrollIntoView({behavior:'smooth'}); };
+        document.body.appendChild(btn);
+    }
+}
+
+function toggleVocab() { document.getElementById('vocab-body').classList.toggle('open'); document.getElementById('vocab-arrow').classList.toggle('open'); }
+function toggleAnswers(id) {
+    const div = document.getElementById(id);
+    const btn = div.previousElementSibling;
+    div.style.display = div.style.display === 'block' ? 'none' : 'block';
+    btn.textContent = div.style.display === 'block' ? '▲ Hide Answers' : '▼ Show Answers';
+}
+</script>
+</body>
+</html>
