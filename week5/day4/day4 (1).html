@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEEK 5 - DAY 4 (Business)</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #fff7ed; color: #333; }
+        #splash-screen { position: fixed; inset: 0; background: linear-gradient(135deg, #dd6b20 0%, #c05621 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; color: white; text-align: center; padding: 20px; }
+        #splash-screen h1 { font-size: 3rem; margin-bottom: 10px; }
+        #splash-screen h2 { font-size: 2rem; margin-bottom: 10px; opacity: 0.9; }
+        #splash-screen p { font-size: 1.2rem; margin-bottom: 40px; opacity: 0.8; }
+        .splash-btn { background: white; color: #dd6b20; border: none; padding: 18px 60px; font-size: 1.4rem; font-weight: bold; border-radius: 50px; cursor: pointer; box-shadow: 0 8px 25px rgba(0,0,0,0.2); transition: all 0.3s; }
+        .splash-btn:hover { transform: translateY(-3px); }
+        .main-container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        .day-header { background: linear-gradient(135deg, #dd6b20 0%, #c05621 100%); color: white; padding: 25px 30px; border-radius: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; }
+        .day-header h1 { font-size: 1.6rem; }
+        .day-header .topic { opacity: 0.85; font-size: 1rem; margin-top: 4px; }
+        .back-btn { background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; text-decoration: none; font-size: 0.9rem; transition: all 0.3s; }
+        .back-btn:hover { background: white; color: #dd6b20; }
+        .vocab-section { background: white; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-left: 5px solid #dd6b20; overflow: hidden; }
+        .vocab-toggle { width: 100%; background: none; border: none; cursor: pointer; padding: 18px 25px; display: flex; align-items: center; justify-content: space-between; text-align: left; }
+        .vocab-toggle:hover { background: #fff7ed; }
+        .vocab-toggle-left { display: flex; align-items: center; gap: 10px; }
+        .vocab-toggle h3 { color: #dd6b20; font-size: 1.1rem; margin: 0; }
+        .vocab-count { background: #dd6b20; color: white; font-size: 0.75rem; font-weight: bold; padding: 3px 10px; border-radius: 20px; }
+        .vocab-arrow { color: #dd6b20; font-size: 1rem; transition: transform 0.3s; }
+        .vocab-arrow.open { transform: rotate(180deg); }
+        .vocab-body { display: none; padding: 0 25px 20px; }
+        .vocab-body.open { display: block; }
+        .vocab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+        .vocab-item { background: #fff7ed; padding: 10px 14px; border-radius: 8px; }
+        .vocab-word { font-weight: bold; color: #333; font-size: 0.95rem; }
+        .vocab-definition { color: #666; font-size: 0.82rem; margin-top: 2px; }
+        .progress-label { text-align: center; color: #dd6b20; font-size: 0.85rem; margin-bottom: 8px; font-weight: 600; }
+        .progress-bar-wrap { background: #fbd38d; border-radius: 20px; height: 10px; margin-bottom: 20px; overflow: hidden; }
+        .progress-bar-fill { background: linear-gradient(90deg, #dd6b20, #c05621); height: 100%; border-radius: 20px; transition: width 0.5s ease; }
+        .task-card { background: white; border-radius: 15px; padding: 28px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); display: none; }
+        .task-card.active { display: block; }
+        .task-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .task-number { background: linear-gradient(135deg, #dd6b20, #c05621); color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; flex-shrink: 0; }
+        .task-title { font-size: 1.3rem; font-weight: bold; color: #333; }
+        .task-subtitle { color: #888; font-size: 0.9rem; margin-top: 2px; }
+        .pdf-links { display: flex; flex-direction: column; gap: 12px; margin: 15px 0; }
+        .pdf-link { display: flex; align-items: center; gap: 12px; background: #fff7ed; padding: 15px 20px; border-radius: 10px; text-decoration: none; color: #333; font-weight: 600; border: 2px solid #fbd38d; transition: all 0.3s; }
+        .pdf-link:hover { background: #dd6b20; color: white; border-color: #dd6b20; transform: translateX(5px); }
+        .pdf-icon { font-size: 1.5rem; }
+        .html-link-btn { display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #dd6b20, #c05621); color: white; padding: 15px 30px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 1rem; transition: all 0.3s; margin: 10px 0; }
+        .html-link-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(221,107,32,0.4); }
+        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; margin: 15px 0; }
+        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .video-fallback { background: #fff7ed; padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align: center; }
+        .video-fallback a { color: #dd6b20; font-weight: bold; }
+        .audio-player { background: #fff7ed; border: 2px solid #fbd38d; border-radius: 12px; padding: 20px; margin: 15px 0; }
+        .audio-player p { color: #555; margin-bottom: 10px; font-weight: 600; }
+        .audio-player audio { width: 100%; }
+        .passage-text { background: #fffaf5; border: 1px solid #fbd38d; border-radius: 10px; padding: 25px; margin: 15px 0; line-height: 1.8; font-size: 0.97rem; color: #333; }
+        .passage-text h3 { color: #dd6b20; margin-bottom: 15px; font-size: 1.2rem; }
+        .passage-text p { margin-bottom: 14px; }
+        .highlight { font-style: italic; color: #c05621; font-weight: 600; }
+        .question-block { margin-bottom: 20px; padding: 18px; background: #f8f9fa; border-radius: 10px; }
+        .question-text { font-weight: 600; margin-bottom: 12px; color: #333; line-height: 1.5; }
+        .options label { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: background 0.2s; margin-bottom: 5px; }
+        .options label:hover { background: #fef3e6; }
+        .options input[type="radio"] { margin-top: 3px; flex-shrink: 0; }
+        .answer-feedback { margin-top: 8px; font-weight: bold; font-size: 0.9rem; }
+        .answer-feedback.correct { color: #28a745; }
+        .answer-feedback.incorrect { color: #dc3545; }
+        .gap-fill-section { margin-top: 20px; }
+        .gap-sentence { margin-bottom: 14px; line-height: 2; font-size: 1rem; }
+        .gap-input { border: none; border-bottom: 2px solid #dd6b20; padding: 4px 8px; font-size: 0.95rem; width: 200px; background: transparent; outline: none; color: #333; }
+        .gap-input.correct { border-bottom-color: #28a745; background: #d4edda33; }
+        .gap-input.incorrect { border-bottom-color: #dc3545; background: #f8d7da33; }
+        .word-box { background: #fff7ed; border: 2px solid #fbd38d; border-radius: 10px; padding: 12px 18px; margin-bottom: 15px; }
+        .word-box strong { color: #dd6b20; }
+        .matching-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .matching-table th { background: #dd6b20; color: white; padding: 10px 14px; text-align: left; }
+        .matching-table td { padding: 10px 14px; border-bottom: 1px solid #eee; }
+        .matching-table tr:nth-child(even) td { background: #fff7ed; }
+        .match-select { border: 2px solid #fbd38d; border-radius: 6px; padding: 5px 8px; font-size: 0.88rem; background: white; width: 100%; max-width: 380px; }
+        .match-select.correct { border-color: #28a745; }
+        .match-select.incorrect { border-color: #dc3545; }
+        .vocab-word-select { border: 2px solid #fbd38d; border-radius: 6px; padding: 5px 10px; font-size: 0.9rem; background: white; width: 200px; }
+        .vocab-word-select.correct { border-color: #28a745; }
+        .vocab-word-select.incorrect { border-color: #dc3545; }
+        .btn-row { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+        .check-btn { background: linear-gradient(135deg, #dd6b20, #c05621); color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .check-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(221,107,32,0.4); }
+        .check-btn:disabled { background: #ccc; cursor: not-allowed; transform: none !important; box-shadow: none; }
+        .next-btn { background: #28a745; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .next-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .next-btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(40,167,69,0.4); }
+        .prev-btn { background: #6c757d; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .prev-btn:hover { background: #5a6268; }
+        .show-answers-btn { background: #ffc107; color: #333; border: none; padding: 10px 22px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.88rem; display: none; }
+        .show-answers-btn:hover { background: #e0a800; }
+        .answers-panel { display: none; background: #fffbea; border: 2px solid #ffc107; border-radius: 10px; padding: 15px; margin-top: 12px; }
+        .answers-panel p { margin-bottom: 6px; font-size: 0.9rem; }
+        .completion-screen { text-align: center; padding: 60px 20px; display: none; }
+        .completion-screen .icon { font-size: 5rem; margin-bottom: 20px; }
+        .completion-screen h2 { font-size: 2.2rem; color: #dd6b20; margin-bottom: 10px; }
+        .completion-screen p { color: #666; font-size: 1rem; margin-bottom: 30px; }
+        .dashboard-btn { background: linear-gradient(135deg, #dd6b20, #c05621); color: white; padding: 16px 40px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 1.1rem; display: inline-block; transition: all 0.3s; }
+        .dashboard-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(221,107,32,0.4); }
+        .save-indicator { position: fixed; bottom: 20px; right: 20px; background: #dd6b20; color: white; padding: 10px 18px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; opacity: 0; transition: opacity 0.4s; z-index: 9000; pointer-events: none; }
+        .save-indicator.show { opacity: 1; }
+    </style>
+</head>
+<body>
+<div id="splash-screen">
+    <h1>💼 WEEK 5</h1>
+    <h2>DAY 4</h2>
+    <p>Topic: Business</p>
+    <button class="splash-btn" onclick="startDay()">LET'S GO!</button>
+</div>
+<div class="save-indicator" id="saveIndicator">✓ Progress saved</div>
+<div class="main-container" id="main-content" style="display:none;">
+    <div class="day-header">
+        <div><h1>💼 Week 5 — Day 4</h1><div class="topic">Topic: Business</div></div>
+        <a href="/student-dashboard.html" class="back-btn">← Dashboard</a>
+    </div>
+    <div class="progress-label" id="progress-label">Task 0 of 7</div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-bar" style="width:0%"></div></div>
+
+    <!-- VOCAB -->
+    <div class="vocab-section">
+        <button class="vocab-toggle" onclick="toggleVocab()">
+            <div class="vocab-toggle-left"><h3>📖 Today's Vocabulary</h3><span class="vocab-count">50 words</span></div>
+            <span class="vocab-arrow" id="vocab-arrow">▼</span>
+        </button>
+        <div class="vocab-body" id="vocab-body"><div class="vocab-grid" id="vocab-grid"></div></div>
+    </div>
+
+    <!-- ══ TASK 1 ══ -->
+    <div class="task-card active" id="task1">
+        <div class="task-header">
+            <div class="task-number">1</div>
+            <div><div class="task-title">Mini Reading</div><div class="task-subtitle">Read and answer — NO MORE THAN THREE WORDS from the passage</div></div>
+        </div>
+        <div class="passage-text">
+            <h3>Behavioural Economics: Why We Make Irrational Financial Decisions</h3>
+            <p>Traditional economic theory assumes that people are rational actors who make decisions designed to maximise their own financial wellbeing. Yet decades of research in behavioural economics have demonstrated that human decision-making is frequently shaped by psychological biases that lead to choices that are, by any objective measure, <span class="highlight">(1) irrational</span>. Understanding these biases is increasingly important for businesses, policymakers and individuals seeking to make better financial decisions.</p>
+            <p>One of the most well-documented biases is loss aversion: the tendency for people to feel the pain of a financial loss far more intensely than the pleasure of an equivalent gain. This explains why investors often hold onto failing stocks far longer than is sensible, hoping to avoid <span class="highlight">(2) crystallising</span> a loss, while simultaneously selling profitable investments too early to lock in gains. Businesses exploit this bias constantly, framing prices in terms of what customers stand to lose by not purchasing immediately, rather than simply what they might gain.</p>
+            <p>Another significant bias is present bias, or the tendency to overvalue immediate rewards relative to future benefits. This helps explain why so many people struggle to save adequately for retirement, despite intellectually understanding the long-term <span class="highlight">(3) consequences</span> of failing to do so. The immediate gratification of spending money today consistently outweighs the abstract, distant benefit of financial security decades into the future.</p>
+            <p>Anchoring is a further psychological quirk that affects financial decision-making. When evaluating whether a price is fair, people tend to rely heavily on the first piece of information they encounter — an "anchor" — even when that figure is <span class="highlight">(4) arbitrary</span> or irrelevant. Retailers frequently exploit this by displaying an inflated "original" price alongside a discounted price, making the sale price appear more attractive than it might otherwise seem.</p>
+            <p>Recognising these biases does not eliminate them entirely, but awareness can help individuals build <span class="highlight">(5) safeguards</span> into their financial decision-making, such as automating savings contributions or imposing a mandatory waiting period before making significant purchases. Ultimately, behavioural economics suggests that improving financial outcomes requires not just better information, but better <span class="highlight">(6) systems</span> designed around how humans actually think and behave, rather than how economic theory assumes they should.</p>
+        </div>
+        <h4 style="color:#dd6b20; margin:20px 0 12px;">Answer — NO MORE THAN THREE WORDS from the passage:</h4>
+        <div class="gap-fill-section">
+            <div class="gap-sentence">1. What do decades of research in behavioural economics demonstrate about human decision-making?<br><input class="gap-input" id="t1q1" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">2. What do investors often hold onto for too long due to loss aversion?<br><input class="gap-input" id="t1q2" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">3. What do businesses frame prices around to exploit loss aversion?<br><input class="gap-input" id="t1q3" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">4. What bias causes people to overvalue immediate rewards?<br><input class="gap-input" id="t1q4" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">5. What do retailers display alongside a discounted price to exploit anchoring?<br><input class="gap-input" id="t1q5" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">6. What can awareness of biases help individuals build into their decisions?<br><input class="gap-input" id="t1q6" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">7. What does behavioural economics suggest is needed to improve financial outcomes?<br><input class="gap-input" id="t1q7" placeholder="___" style="width:300px; margin-top:8px;"></div>
+        </div>
+        <div class="btn-row">
+            <button class="check-btn" id="check1" onclick="checkTask1()" disabled>Check Answers</button>
+            <button class="next-btn" id="next1" disabled onclick="goToTask(2)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns1" onclick="toggleAnswers('ans1')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans1">
+            <p><strong>Answers:</strong> 1-(shaped by) psychological biases, 2-failing stocks, 3-what customers stand to lose, 4-present bias, 5-(an) inflated "original" price, 6-safeguards, 7-better systems</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 2 ══ -->
+    <div class="task-card" id="task2">
+        <div class="task-header">
+            <div class="task-number">2</div>
+            <div><div class="task-title">Article Reading</div><div class="task-subtitle">Read the article and study the vocabulary</div></div>
+        </div>
+        <div class="pdf-links">
+            <a class="pdf-link" href="article 4.pdf" target="_blank"><span class="pdf-icon">📄</span> Business — Article</a>
+            <a class="pdf-link" href="vocab 4.pdf" target="_blank"><span class="pdf-icon">📘</span> Business — Vocabulary</a>
+        </div>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(1)">← Previous</button>
+            <button class="next-btn" onclick="goToTask(3)">Next Task →</button>
+        </div>
+    </div>
+
+    <!-- ══ TASK 3 ══ -->
+    <div class="task-card" id="task3">
+        <div class="task-header">
+            <div class="task-number">3</div>
+            <div><div class="task-title">Practice Reading</div><div class="task-subtitle">IELTS-style reading test</div></div>
+        </div>
+        <a class="html-link-btn" href="Reading (23).html" target="_blank">📖 Open Practice Reading</a>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(2)">← Previous</button>
+            <button class="next-btn" onclick="goToTask(4)">Next Task →</button>
+        </div>
+    </div>
+
+    <!-- ══ TASK 4 ══ -->
+    <div class="task-card" id="task4">
+        <div class="task-header">
+            <div class="task-number">4</div>
+            <div><div class="task-title">Vocabulary in Context</div><div class="task-subtitle">Choose the correct word for each sentence</div></div>
+        </div>
+        <div class="gap-fill-section">
+            <div class="gap-sentence">1. Investors often hold onto failing stocks due to <select class="vocab-word-select" id="t4v1"><option value="">— select —</option><option value="loss aversion">loss aversion</option><option value="present bias">present bias</option><option value="anchoring">anchoring</option></select>.</div>
+            <div class="gap-sentence">2. People tend to overvalue immediate rewards due to <select class="vocab-word-select" id="t4v2"><option value="">— select —</option><option value="present bias">present bias</option><option value="loss aversion">loss aversion</option><option value="anchoring">anchoring</option></select>.</div>
+            <div class="gap-sentence">3. Retailers exploit <select class="vocab-word-select" id="t4v3"><option value="">— select —</option><option value="anchoring">anchoring</option><option value="loss aversion">loss aversion</option><option value="present bias">present bias</option></select> by showing an inflated original price.</div>
+            <div class="gap-sentence">4. Awareness of biases can help people build <select class="vocab-word-select" id="t4v4"><option value="">— select —</option><option value="safeguards">safeguards</option><option value="consequences">consequences</option><option value="systems">systems</option></select> into their decisions.</div>
+            <div class="gap-sentence">5. Automating savings is one way to build a financial <select class="vocab-word-select" id="t4v5"><option value="">— select —</option><option value="safeguard">safeguard</option><option value="anchor">anchor</option><option value="bias">bias</option></select>.</div>
+            <div class="gap-sentence">6. Traditional theory assumes people act as <select class="vocab-word-select" id="t4v6"><option value="">— select —</option><option value="rational">rational</option><option value="irrational">irrational</option><option value="arbitrary">arbitrary</option></select> decision-makers.</div>
+            <div class="gap-sentence">7. Behavioural economics studies how psychological <select class="vocab-word-select" id="t4v7"><option value="">— select —</option><option value="biases">biases</option><option value="safeguards">safeguards</option><option value="systems">systems</option></select> affect financial choices.</div>
+        </div>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(3)">← Previous</button>
+            <button class="check-btn" id="check4" onclick="checkTask4()" disabled>Check Answers</button>
+            <button class="next-btn" id="next4" disabled onclick="goToTask(5)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns4" onclick="toggleAnswers('ans4')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans4">
+            <p><strong>Answers:</strong> 1-loss aversion, 2-present bias, 3-anchoring, 4-safeguards, 5-safeguard, 6-rational, 7-biases</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 5 ══ -->
+    <div class="task-card" id="task5">
+        <div class="task-header">
+            <div class="task-number">5</div>
+            <div><div class="task-title">Video Watching Task</div><div class="task-subtitle">Watch and answer questions</div></div>
+        </div>
+        <div class="video-fallback">
+            <p>▶ <a href="https://www.youtube.com/watch?v=ugIuHWc6Nuc" target="_blank">Click here to open the video in a new tab</a> if it doesn't play below.</p>
+        </div>
+        <div class="video-container">
+            <iframe src="https://www.youtube.com/embed/ugIuHWc6Nuc" frameborder="0" allowfullscreen></iframe>
+        </div>
+
+        <h4 style="color:#dd6b20; margin:20px 0 12px;">Part 1 — Multiple Choice Questions</h4>
+        <div class="question-block">
+            <div class="question-text">1. According to Paula Pant, what is money primarily an invitation to do?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q1" value="A"> A. Spend more freely</label>
+                <label><input type="radio" name="t5q1" value="B"> B. Avoid making difficult decisions</label>
+                <label><input type="radio" name="t5q1" value="C"> C. Practice critical thinking</label>
+                <label><input type="radio" name="t5q1" value="D"> D. Earn as much as possible</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q1"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">2. What does the phrase "You can afford anything, but not everything" mean?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q2" value="A"> A. Everyone can buy whatever they want.</label>
+                <label><input type="radio" name="t5q2" value="B"> B. Resources are limited, so choices involve trade-offs.</label>
+                <label><input type="radio" name="t5q2" value="C"> C. Money solves all problems.</label>
+                <label><input type="radio" name="t5q2" value="D"> D. Rich people can have everything.</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q2"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">3. In Paula's tree analogy, what do the roots represent?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q3" value="A"> A. Financial products</label>
+                <label><input type="radio" name="t5q3" value="B"> B. Investment strategies</label>
+                <label><input type="radio" name="t5q3" value="C"> C. Personal values</label>
+                <label><input type="radio" name="t5q3" value="D"> D. Career goals</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q3"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">4. According to the speaker, what should people identify before choosing specific financial products?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q4" value="A"> A. The latest trends</label>
+                <label><input type="radio" name="t5q4" value="B"> B. Their values and goals</label>
+                <label><input type="radio" name="t5q4" value="C"> C. Their favourite investment app</label>
+                <label><input type="radio" name="t5q4" value="D"> D. Their friends' opinions</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q4"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">5. What is financial independence (FI)?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q5" value="A"> A. Having no financial responsibilities</label>
+                <label><input type="radio" name="t5q5" value="B"> B. Earning a six-figure salary</label>
+                <label><input type="radio" name="t5q5" value="C"> C. Having enough passive income to cover basic expenses</label>
+                <label><input type="radio" name="t5q5" value="D"> D. Never needing a job again</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q5"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">6. Which of the following is mentioned as a possible benefit of achieving FI?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q6" value="A"> A. Guaranteed wealth</label>
+                <label><input type="radio" name="t5q6" value="B"> B. Freedom to make different life choices</label>
+                <label><input type="radio" name="t5q6" value="C"> C. Permanent happiness</label>
+                <label><input type="radio" name="t5q6" value="D"> D. Early retirement for everyone</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q6"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">7. What are the three steps to achieving financial independence?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q7" value="A"> A. Save, borrow, repeat</label>
+                <label><input type="radio" name="t5q7" value="B"> B. Earn, spend, enjoy</label>
+                <label><input type="radio" name="t5q7" value="C"> C. Grow the gap, invest the gap, repeat</label>
+                <label><input type="radio" name="t5q7" value="D"> D. Budget, gamble, repeat</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q7"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">8. According to Paula, how can people increase the gap between income and spending?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q8" value="A"> A. Only by earning more money</label>
+                <label><input type="radio" name="t5q8" value="B"> B. Only by spending less money</label>
+                <label><input type="radio" name="t5q8" value="C"> C. By earning more, spending less, or both</label>
+                <label><input type="radio" name="t5q8" value="D"> D. By investing in cryptocurrency</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q8"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">9. What savings target does Paula recommend?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q9" value="A"> A. 5% of income</label>
+                <label><input type="radio" name="t5q9" value="B"> B. 10% of income</label>
+                <label><input type="radio" name="t5q9" value="C"> C. 15% of income</label>
+                <label><input type="radio" name="t5q9" value="D"> D. 20% of income</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q9"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">10. How does Paula suggest people respond to economic uncertainty?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q10" value="A"> A. Ignore it completely</label>
+                <label><input type="radio" name="t5q10" value="B"> B. Panic and stop investing</label>
+                <label><input type="radio" name="t5q10" value="C"> C. Use fear as motivation to make wiser decisions</label>
+                <label><input type="radio" name="t5q10" value="D"> D. Wait until conditions improve</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q10"></div>
+        </div>
+
+        <h4 style="color:#dd6b20; margin:20px 0 12px;">Part 2 — Gap Filling</h4>
+        <div class="word-box">
+            <strong>Word Box:</strong> passive income &nbsp;|&nbsp; philosophy &nbsp;|&nbsp; strategy &nbsp;|&nbsp; independence &nbsp;|&nbsp; intentional &nbsp;|&nbsp; volatility &nbsp;|&nbsp; values
+        </div>
+        <div class="gap-fill-section">
+            <div class="gap-sentence">11. According to the speaker, financial decisions should begin with your <input class="gap-input" id="t5g11" placeholder="___">.</div>
+            <div class="gap-sentence">12. The trunk of the tree represents your <input class="gap-input" id="t5g12" placeholder="___"> of life.</div>
+            <div class="gap-sentence">13. The branches of the tree symbolize your <input class="gap-input" id="t5g13" placeholder="___"> for reaching your goals.</div>
+            <div class="gap-sentence">14. Financial <input class="gap-input" id="t5g14" placeholder="___"> is reached when income from investments can cover basic expenses.</div>
+            <div class="gap-sentence">15. The speaker encourages people to build a more <input class="gap-input" id="t5g15" placeholder="___"> life through better money management.</div>
+        </div>
+
+        <h4 style="color:#dd6b20; margin:20px 0 12px;">Part 3 — Vocabulary Matching</h4>
+        <table class="matching-table">
+            <thead><tr><th>#</th><th>Word</th><th>Definition</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td><strong>critical thinking</strong></td><td><select class="match-select" id="t5m1"><option value="">— select —</option><option value="A">A. money earned without actively working for it</option><option value="B">B. careful analysis and evaluation of information</option><option value="C">C. the ability to support yourself financially</option><option value="D">D. a method for achieving a goal</option><option value="E">E. uncertainty and rapid changes</option><option value="F">F. a person's beliefs and approach to life</option><option value="G">G. a feeling of pleasure or satisfaction</option><option value="H">H. money set aside for unexpected situations</option><option value="I">I. done deliberately and with purpose</option><option value="J">J. to use money in order to generate future returns</option></select></td></tr>
+                <tr><td>2</td><td><strong>financial independence</strong></td><td><select class="match-select" id="t5m2"><option value="">— select —</option><option value="A">A. money earned without actively working for it</option><option value="B">B. careful analysis and evaluation of information</option><option value="C">C. the ability to support yourself financially</option><option value="D">D. a method for achieving a goal</option><option value="E">E. uncertainty and rapid changes</option><option value="F">F. a person's beliefs and approach to life</option><option value="G">G. a feeling of pleasure or satisfaction</option><option value="H">H. money set aside for unexpected situations</option><option value="I">I. done deliberately and with purpose</option><option value="J">J. to use money in order to generate future returns</option></select></td></tr>
+                <tr><td>3</td><td><strong>passive income</strong></td><td><select class="match-select" id="t5m3"><option value="">— select —</option><option value="A">A. money earned without actively working for it</option><option value="B">B. careful analysis and evaluation of information</option><option value="C">C. the ability to support yourself financially</option><option value="D">D. a method for achieving a goal</option><option value="E">E. uncertainty and rapid changes</option><option value="F">F. a person's beliefs and approach to life</option><option value="G">G. a feeling of pleasure or satisfaction</option><option value="H">H. money set aside for unexpected situations</option><option value="I">I. done deliberately and with purpose</option><option value="J">J. to use money in order to generate future returns</option></select></td></tr>
+                <tr><td>4</td><td><strong>volatility</strong></td><td><select class="match-select" id="t5m4"><option value="">— select —</option><option value="A">A. money earned without actively working for it</option><option value="B">B. careful analysis and evaluation of information</option><option value="C">C. the ability to support yourself financially</option><option value="D">D. a method for achieving a goal</option><option value="E">E. uncertainty and rapid changes</option><option value="F">F. a person's beliefs and approach to life</option><option value="G">G. a feeling of pleasure or satisfaction</option><option value="H">H. money set aside for unexpected situations</option><option value="I">I. done deliberately and with purpose</option><option value="J">J. to use money in order to generate future returns</option></select></td></tr>
+                <tr><td>5</td><td><strong>philosophy</strong></td><td><select class="match-select" id="t5m5"><option value="">— select —</option><option value="A">A. money earned without actively working for it</option><option value="B">B. careful analysis and evaluation of information</option><option value="C">C. the ability to support yourself financially</option><option value="D">D. a method for achieving a goal</option><option value="E">E. uncertainty and rapid changes</option><option value="F">F. a person's beliefs and approach to life</option><option value="G">G. a feeling of pleasure or satisfaction</option><option value="H">H. money set aside for unexpected situations</option><option value="I">I. done deliberately and with purpose</option><option value="J">J. to use money in order to generate future returns</option></select></td></tr>
+                <tr><td>6</td><td><strong>strategy</strong></td><td><select class="match-select" id="t5m6"><option value="">— select —</option><option value="A">A. money earned without actively working for it</option><option value="B">B. careful analysis and evaluation of information</option><option value="C">C. the ability to support yourself financially</option><option value="D">D. a method for achieving a goal</option><option value="E">E. uncertainty and rapid changes</option><option value="F">F. a person's beliefs and approach to life</option><option value="G">G. a feeling of pleasure or satisfaction</option><option value="H">H. money set aside for unexpected situations</option><option value="I">I. done deliberately and with purpose</option><option value="J">J. to use money in order to generate future returns</option></select></td></tr>
+                <tr><td>7</td><td><strong>gratification</strong></td><td><select class="match-select" id="t5m7"><option value="">— select —</option><option value="A">A. money earned without actively working for it</option><option value="B">B. careful analysis and evaluation of information</option><option value="C">C. the ability to support yourself financially</option><option value="D">D. a method for achieving a goal</option><option value="E">E. uncertainty and rapid changes</option><option value="F">F. a person's beliefs and approach to life</option><option value="G">G. a feeling of pleasure or satisfaction</option><option value="H">H. money set aside for unexpected situations</option><option value="I">I. done deliberately and with purpose</option><option value="J">J. to use money in order to generate future returns</option></select></td></tr>
+                <tr><td>8</td><td><strong>emergency fund</strong></td><td><select class="match-select" id="t5m8"><option value="">— select —</option><option value="A">A. money earned without actively working for it</option><option value="B">B. careful analysis and evaluation of information</option><option value="C">C. the ability to support yourself financially</option><option value="D">D. a method for achieving a goal</option><option value="E">E. uncertainty and rapid changes</option><option value="F">F. a person's beliefs and approach to life</option><option value="G">G. a feeling of pleasure or satisfaction</option><option value="H">H. money set aside for unexpected situations</option><option value="I">I. done deliberately and with purpose</option><option value="J">J. to use money in order to generate future returns</option></select></td></tr>
+                <tr><td>9</td><td><strong>intentional</strong></td><td><select class="match-select" id="t5m9"><option value="">— select —</option><option value="A">A. money earned without actively working for it</option><option value="B">B. careful analysis and evaluation of information</option><option value="C">C. the ability to support yourself financially</option><option value="D">D. a method for achieving a goal</option><option value="E">E. uncertainty and rapid changes</option><option value="F">F. a person's beliefs and approach to life</option><option value="G">G. a feeling of pleasure or satisfaction</option><option value="H">H. money set aside for unexpected situations</option><option value="I">I. done deliberately and with purpose</option><option value="J">J. to use money in order to generate future returns</option></select></td></tr>
+                <tr><td>10</td><td><strong>invest</strong></td><td><select class="match-select" id="t5m10"><option value="">— select —</option><option value="A">A. money earned without actively working for it</option><option value="B">B. careful analysis and evaluation of information</option><option value="C">C. the ability to support yourself financially</option><option value="D">D. a method for achieving a goal</option><option value="E">E. uncertainty and rapid changes</option><option value="F">F. a person's beliefs and approach to life</option><option value="G">G. a feeling of pleasure or satisfaction</option><option value="H">H. money set aside for unexpected situations</option><option value="I">I. done deliberately and with purpose</option><option value="J">J. to use money in order to generate future returns</option></select></td></tr>
+            </tbody>
+        </table>
+
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(4)">← Previous</button>
+            <button class="check-btn" id="check5" onclick="checkTask5()" disabled>Check Answers</button>
+            <button class="next-btn" id="next5" disabled onclick="goToTask(6)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns5" onclick="toggleAnswers('ans5')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans5">
+            <p><strong>MCQ:</strong> 1-C, 2-B, 3-C, 4-B, 5-C, 6-B, 7-C, 8-C, 9-D, 10-C</p>
+            <p><strong>Gap Fill:</strong> 11-values, 12-philosophy, 13-strategy, 14-independence, 15-intentional</p>
+            <p><strong>Matching:</strong> 1-B, 2-C, 3-A, 4-E, 5-F, 6-D, 7-H, 8-G, 9-I, 10-J</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 6 ══ -->
+    <div class="task-card" id="task6">
+        <div class="task-header">
+            <div class="task-number">6</div>
+            <div><div class="task-title">Dictation + Comprehension</div><div class="task-subtitle">Listen, complete the gaps, then answer questions</div></div>
+        </div>
+        <div class="audio-player">
+            <p>🎧 Banking, Pensions and Green Money — BBC Learning English</p>
+            <audio controls src="greenmoney.mp3"></audio>
+        </div>
+        <h4 style="color:#dd6b20; margin-bottom:12px;">Part 1 — Dictation (ONE WORD ONLY)</h4>
+        <div class="gap-fill-section" id="dictation-gaps"></div>
+        <h4 style="color:#dd6b20; margin:20px 0 12px;">Part 2 — Comprehension Questions</h4>
+        <div class="question-block">
+            <div class="question-text">1. What does Beth mean when she says she is "green" about money?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q1" value="A"> A. She only invests in environmentally friendly companies</label>
+                <label><input type="radio" name="t6q1" value="B"> B. She is rich</label>
+                <label><input type="radio" name="t6q1" value="C"> C. She is inexperienced and doesn't know much about it</label>
+                <label><input type="radio" name="t6q1" value="D"> D. She works in banking</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q1"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">2. Why are some banks accused of greenwashing?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q2" value="A"> A. They refuse to lend money</label>
+                <label><input type="radio" name="t6q2" value="B"> B. They pretend to be environmentally friendly without making meaningful changes</label>
+                <label><input type="radio" name="t6q2" value="C"> C. They only invest in renewable energy</label>
+                <label><input type="radio" name="t6q2" value="D"> D. They charge high fees</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q2"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">3. What does the idiom "jump on the bandwagon" mean?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q3" value="A"> A. To travel by bus</label>
+                <label><input type="radio" name="t6q3" value="B"> B. To support something because it is popular</label>
+                <label><input type="radio" name="t6q3" value="C"> C. To start a new company</label>
+                <label><input type="radio" name="t6q3" value="D"> D. To make a large investment</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q3"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">4. According to Richard Curtis's campaign, which action is considered the most effective way to fight climate change?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q4" value="A"> A. Stopping eating meat</label>
+                <label><input type="radio" name="t6q4" value="B"> B. Driving less</label>
+                <label><input type="radio" name="t6q4" value="C"> C. Stopping flying</label>
+                <label><input type="radio" name="t6q4" value="D"> D. Changing your pension</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q4"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">5. What does the phrase "put the spotlight on" mean?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q5" value="A"> A. To hide information</label>
+                <label><input type="radio" name="t6q5" value="B"> B. To reduce costs</label>
+                <label><input type="radio" name="t6q5" value="C"> C. To draw attention to something</label>
+                <label><input type="radio" name="t6q5" value="D"> D. To invest money carefully</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q5"></div>
+        </div>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(5)">← Previous</button>
+            <button class="check-btn" id="check6" onclick="checkTask6()" disabled>Check Answers</button>
+            <button class="next-btn" id="next6" disabled onclick="goToTask(7)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns6" onclick="toggleAnswers('ans6')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans6">
+            <p><strong>Dictation:</strong> 1-mattress, 2-banks, 3-green, 4-environment, 5-meat, 6-flying, 7-pension, 8-ballooned, 9-niche, 10-greenwashing, 11-bandwagon, 12-popular, 13-environment, 14-fund, 15-Carney, 16-transparent, 17-investing, 18-spotlight, 19-honest, 20-renewable, 21-attention, 22-little, 23-investments, 24-together, 25-inexperienced, 26-people, 27-are, 28-succeed, 29-secrets, 30-attention</p>
+            <p><strong>MCQ:</strong> 1-C, 2-B, 3-B, 4-D, 5-C</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 7 ══ -->
+    <div class="task-card" id="task7">
+        <div class="task-header">
+            <div class="task-number">7</div>
+            <div><div class="task-title">Practice Listening</div><div class="task-subtitle">Full IELTS-style listening test</div></div>
+        </div>
+        <a class="html-link-btn" href="Listening (23).html" target="_blank">🎧 Open Practice Listening</a>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(6)">← Previous</button>
+            <button class="next-btn" onclick="finishDay()">Finish Day 4 ✓</button>
+        </div>
+    </div>
+
+    <!-- COMPLETION -->
+    <div class="completion-screen" id="completion-screen">
+        <div class="icon">🎉</div>
+        <h2>Day 4 Complete!</h2>
+        <p>Great work! You've completed all tasks for Week 5, Day 4.</p>
+        <div style="margin:30px 0; text-align:left;">
+            <h3 style="color:#dd6b20; border-bottom:2px solid #dd6b20; padding-bottom:10px; margin-bottom:15px;">📋 Review Your Work</h3>
+            <p style="color:#888; margin-bottom:20px; font-size:0.9rem;">Click any task below to go back and review it.</p>
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:15px;">
+                <div onclick="reviewTask(1)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#dd6b20;font-size:1.1rem;margin-bottom:5px;">Task 1</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Mini Reading</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(2)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#dd6b20;font-size:1.1rem;margin-bottom:5px;">Task 2</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Article Reading</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(3)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#dd6b20;font-size:1.1rem;margin-bottom:5px;">Task 3</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Reading</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(4)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#dd6b20;font-size:1.1rem;margin-bottom:5px;">Task 4</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Vocabulary in Context</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(5)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#dd6b20;font-size:1.1rem;margin-bottom:5px;">Task 5</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Video + Vocab</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(6)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#dd6b20;font-size:1.1rem;margin-bottom:5px;">Task 6</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Dictation + MCQ</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(7)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#dd6b20;font-size:1.1rem;margin-bottom:5px;">Task 7</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Listening</div><div style="font-size:1.4rem;">✅</div></div>
+            </div>
+        </div>
+        <a href="/student-dashboard.html" class="dashboard-btn">← Back to Dashboard</a>
+    </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://nbfceuhuauizyucugejr.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_0mFIGJkA_DKZfUiDAWFdrA_nXt0hF6H';
+const dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const WEEK = 5, DAY = 4, TOTAL_TASKS = 7;
+let studentId = null, currentTask = 1;
+let taskStartTime = Date.now(), saveTimeout = null;
+
+const dictationAnswers = ['mattress','banks','green','environment','meat','flying','pension','ballooned','niche','greenwashing','bandwagon','popular','environment','fund','Carney','transparent','investing','spotlight','honest','renewable','attention','little','investments','together','inexperienced','people','are','succeed','secrets','attention'];
+
+const dictationScripts = [
+    "do you keep your money under the <input class='gap-input' id='d1' placeholder='(1)'>?",
+    "I have a bank account with one of the big high street <input class='gap-input' id='d2' placeholder='(2)'>.",
+    "I have to admit I'm very <input class='gap-input' id='d3' placeholder='(3)'> about money.",
+    "we'll be discussing ways in which our money can help protect the <input class='gap-input' id='d4' placeholder='(4)'>.",
+    "to stop eating <input class='gap-input' id='d5' placeholder='(5)'>?",
+    "to stop <input class='gap-input' id='d6' placeholder='(6)'>? or, c) to change your pension?",
+    "I'll guess it's changing your <input class='gap-input' id='d7' placeholder='(7)'>.",
+    "John Fleetwood thinks public interest in ethical banks has <input class='gap-input' id='d8' placeholder='(8)'> in the last few years.",
+    "It was always viewed, I think, as a <input class='gap-input' id='d9' placeholder='(9)'> thing.",
+    "there's great concern about <input class='gap-input' id='d10' placeholder='(10)'> so who's jumping on the <input class='gap-input' id='d11' placeholder='(11)'>?",
+    "an idiom meaning to become involved in an activity because it's <input class='gap-input' id='d12' placeholder='(12)'>.",
+    "without actually doing anything serious to protect the <input class='gap-input' id='d13' placeholder='(13)'>.",
+    "moving your pension to an environmentally sustainable <input class='gap-input' id='d14' placeholder='(14)'>.",
+    "Richard was encouraged by former Governor of the Bank of England, Mark <input class='gap-input' id='d15' placeholder='(15)'>.",
+    "The more that people become interested, the more <input class='gap-input' id='d16' placeholder='(16)'> companies will have to be.",
+    "The more examples they'll give you of good things that you're <input class='gap-input' id='d17' placeholder='(17)'> in.",
+    "it will get better the more the <input class='gap-input' id='d18' placeholder='(18)'> is put on exactly what an ethical pension is doing.",
+    "the more banks need to be transparent, meaning open and <input class='gap-input' id='d19' placeholder='(19)'> about their investments.",
+    "whether they support large oil corporations or <input class='gap-input' id='d20' placeholder='(20)'> energy companies.",
+    "To put the spotlight on something means to attract <input class='gap-input' id='d21' placeholder='(21)'> to it.",
+    "by managing our money ethically, we can all help a <input class='gap-input' id='d22' placeholder='(22)'>.",
+    "I said it was by moving your pension into ethical <input class='gap-input' id='d23' placeholder='(23)'>.",
+    "twenty-one times more effective than avoiding meat and stopping flying put <input class='gap-input' id='d24' placeholder='(24)'>.",
+    "Green can mean naïve or <input class='gap-input' id='d25' placeholder='(25)'>.",
+    "A niche interest appeals only to a small number of <input class='gap-input' id='d26' placeholder='(26)'>.",
+    "Greenwashing describes attempts by a business to seem more environmentally friendly than they really <input class='gap-input' id='d27' placeholder='(27)'>.",
+    "become involved in an activity because it is popular and likely to <input class='gap-input' id='d28' placeholder='(28)'>.",
+    "it is open and honest, without hidden <input class='gap-input' id='d29' placeholder='(29)'>.",
+    "the phrase to put the spotlight on something means to draw <input class='gap-input' id='d30' placeholder='(30)'> to it.",
+];
+
+const vocab = [
+    {word:"1. Irrational (adj)", def:"Not logical or reasonable"},
+    {word:"2. Loss aversion (n)", def:"The tendency to fear losses more than valuing gains"},
+    {word:"3. Present bias (n)", def:"Overvaluing immediate rewards over future benefits"},
+    {word:"4. Anchoring (n)", def:"Relying heavily on the first piece of information seen"},
+    {word:"5. Arbitrary (adj)", def:"Based on random choice rather than reason"},
+    {word:"6. Safeguard (n)", def:"A measure taken to protect against harm"},
+    {word:"7. Behavioural economics (n)", def:"The study of psychological factors in economic decisions"},
+    {word:"8. Crystallise (v)", def:"To make a loss or gain definite by selling"},
+    {word:"9. Gratification (n)", def:"A feeling of pleasure or satisfaction"},
+    {word:"10. Consequence (n)", def:"A result or effect of an action"},
+    {word:"11. Critical thinking (n)", def:"Careful analysis and evaluation of information"},
+    {word:"12. Financial independence (n)", def:"The ability to support yourself financially"},
+    {word:"13. Passive income (n)", def:"Money earned without actively working for it"},
+    {word:"14. Volatility (n)", def:"Uncertainty and rapid changes"},
+    {word:"15. Philosophy (n)", def:"A person's beliefs and approach to life"},
+    {word:"16. Strategy (n)", def:"A method for achieving a goal"},
+    {word:"17. Emergency fund (n)", def:"Money set aside for unexpected situations"},
+    {word:"18. Intentional (adj)", def:"Done deliberately and with purpose"},
+    {word:"19. Invest (v)", def:"To use money in order to generate future returns"},
+    {word:"20. Trade-off (n)", def:"A balance between two competing options"},
+    {word:"21. Mattress (n)", def:"A padded part of a bed (idiomatic: storing cash at home)"},
+    {word:"22. Ethical bank (n)", def:"A bank that invests according to moral principles"},
+    {word:"23. Greenwashing (n)", def:"Misleadingly presenting a business as environmentally friendly"},
+    {word:"24. Bandwagon (n)", def:"A popular trend or cause that attracts followers"},
+    {word:"25. Niche (n)", def:"A specialised segment appealing to a small group"},
+    {word:"26. Transparent (adj)", def:"Open and honest about information"},
+    {word:"27. Spotlight (n)", def:"Attention focused on a particular issue"},
+    {word:"28. Renewable energy (n)", def:"Energy from sources that naturally replenish"},
+    {word:"29. Pension (n)", def:"A regular payment made after retirement"},
+    {word:"30. Fund (n)", def:"A pool of money set aside for a purpose"},
+    {word:"31. Sustainable (adj)", def:"Able to continue without causing long-term damage"},
+    {word:"32. Governor (n)", def:"The head of a central bank or institution"},
+    {word:"33. Corporation (n)", def:"A large company or group of companies"},
+    {word:"34. Climate change (n)", def:"Long-term shifts in global temperatures and weather"},
+    {word:"35. Investment (n)", def:"Money committed to generate future returns"},
+    {word:"36. Naïve (adj)", def:"Lacking experience or knowledge"},
+    {word:"37. Ignorant (adj)", def:"Lacking knowledge or awareness"},
+    {word:"38. Honest (adj)", def:"Truthful and sincere"},
+    {word:"39. Attention (n)", def:"Notice taken of something"},
+    {word:"40. Demand (n)", def:"A strong request or requirement"},
+    {word:"41. Wealth (n)", def:"A large amount of money or assets"},
+    {word:"42. Budget (n)", def:"A plan for managing income and expenses"},
+    {word:"43. Retirement (n)", def:"The period after a person stops working"},
+    {word:"44. Income (n)", def:"Money received, especially regularly, for work"},
+    {word:"45. Expenses (n)", def:"Money spent on goods or services"},
+    {word:"46. Six-figure salary (n)", def:"An annual income between 100,000 and 999,999"},
+    {word:"47. Economic uncertainty (n)", def:"Unpredictability in financial and market conditions"},
+    {word:"48. Motivation (n)", def:"A reason for acting or behaving in a certain way"},
+    {word:"49. Decision-making (n)", def:"The process of making choices"},
+    {word:"50. Wellbeing (n)", def:"A state of being comfortable, healthy, or happy"},
+];
+
+async function initStudent() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('teacher') === 'true') { studentId = 'teacher-preview'; return; }
+    try {
+        const userStr = localStorage.getItem('user');
+        if (!userStr) { window.location.href = '/login.html'; return; }
+        const user = JSON.parse(userStr);
+        const { data, error } = await dbClient.from('students').select('*').eq('username', user.username).single();
+        if (error || !data) return;
+        studentId = data.id;
+    } catch(e) { console.log('Auth error:', e); }
+}
+
+function buildVocab() {
+    document.getElementById('vocab-grid').innerHTML = vocab.map(v =>
+        `<div class="vocab-item"><div class="vocab-word">${v.word}</div><div class="vocab-definition">${v.def}</div></div>`).join('');
+}
+
+function buildDictation() {
+    document.getElementById('dictation-gaps').innerHTML = dictationScripts.map((s, i) =>
+        `<div class="gap-sentence"><strong>${i+1}.</strong> …${s}</div>`).join('');
+}
+
+async function startDay() {
+    document.getElementById('splash-screen').style.display = 'none';
+    document.getElementById('main-content').style.display = 'block';
+    buildVocab(); buildDictation();
+    await initStudent();
+    await restoreProgress();
+    setupLiveValidation();
+}
+
+function goToTask(num) {
+    document.getElementById('task' + currentTask).classList.remove('active');
+    currentTask = num;
+    document.getElementById('task' + num).classList.add('active');
+    document.getElementById('task' + num).scrollIntoView({behavior:'smooth', block:'start'});
+    updateProgress(num); taskStartTime = Date.now(); saveResume(num);
+}
+
+function updateProgress(taskNum) {
+    document.getElementById('progress-bar').style.width = Math.round(((taskNum-1)/TOTAL_TASKS)*100) + '%';
+    document.getElementById('progress-label').textContent = `Task ${taskNum} of ${TOTAL_TASKS}`;
+}
+
+function showSaveIndicator() {
+    const el = document.getElementById('saveIndicator');
+    el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+async function saveResume(taskNum) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try { await dbClient.from('student_resume').upsert({student_id:studentId, week:WEEK, day:DAY, last_task:taskNum, updated_at:new Date().toISOString()}, {onConflict:'student_id'}); } catch(e) {}
+}
+
+function scheduleSave() {
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+        localStorage.setItem(`w${WEEK}d${DAY}_answers`, JSON.stringify(gatherAllAnswers()));
+        showSaveIndicator();
+    }, 800);
+}
+
+function gatherAllAnswers() {
+    const data = {};
+    document.querySelectorAll('.gap-input').forEach(el => { if (el.id) data[el.id] = el.value; });
+    ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10','t6q1','t6q2','t6q3','t6q4','t6q5'].forEach(name => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`); if (sel) data[name] = sel.value;
+    });
+    document.querySelectorAll('select').forEach(el => { if (el.id) data[el.id] = el.value; });
+    return data;
+}
+
+async function restoreProgress() {
+    try {
+        const saved = localStorage.getItem(`w${WEEK}d${DAY}_answers`);
+        if (saved) {
+            const data = JSON.parse(saved);
+            Object.entries(data).forEach(([id, val]) => { const el = document.getElementById(id); if (el && el.tagName === 'INPUT') el.value = val; });
+            ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10','t6q1','t6q2','t6q3','t6q4','t6q5'].forEach(name => {
+                const val = data[name]; if (val) { const r = document.querySelector(`input[name="${name}"][value="${val}"]`); if (r) r.checked = true; }
+            });
+            Object.entries(data).forEach(([id, val]) => { const el = document.getElementById(id); if (el && el.tagName === 'SELECT') el.value = val; });
+        }
+        if (studentId && studentId !== 'teacher-preview') {
+            const { data: taskData } = await dbClient.from('task_progress').select('task_number,status').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY);
+            const completedCount = taskData ? taskData.filter(t => t.status === 'completed').length : 0;
+            if (completedCount >= TOTAL_TASKS) {
+                await restoreAnswersFromSupabase();
+                document.getElementById('task1').classList.remove('active');
+                document.getElementById('completion-screen').style.display = 'block';
+                updateProgress(TOTAL_TASKS); validateAll(); makeReadOnly(); return;
+            }
+            const { data: resume } = await dbClient.from('student_resume').select('last_task').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY).single();
+            if (resume && resume.last_task > 1) {
+                document.getElementById('task1').classList.remove('active');
+                currentTask = resume.last_task;
+                document.getElementById('task' + currentTask).classList.add('active');
+                updateProgress(currentTask);
+            }
+        }
+        validateAll();
+    } catch(e) { console.log('Restore error:', e); }
+}
+
+async function restoreAnswersFromSupabase() {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        const { data: answers } = await dbClient.from('student_answers').select('*').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY);
+        if (!answers || answers.length === 0) return;
+        answers.forEach(a => {
+            const { question_id, student_answer, question_type, is_correct, correct_answer } = a;
+            if (question_type === 'mcq') {
+                const radio = document.querySelector(`input[name="${question_id}"][value="${student_answer}"]`);
+                if (radio) radio.checked = true;
+                const fb = document.getElementById('fb_' + question_id);
+                if (fb) { fb.textContent = is_correct ? '✅ Correct!' : `❌ Incorrect — correct answer: ${correct_answer}`; fb.className = 'answer-feedback ' + (is_correct ? 'correct' : 'incorrect'); }
+            } else if (question_type === 'gap_fill') {
+                const inp = document.getElementById(question_id);
+                if (inp) { inp.value = student_answer || ''; inp.classList.toggle('correct', is_correct); inp.classList.toggle('incorrect', !is_correct); }
+            } else if (question_type === 'matching') {
+                const sel = document.getElementById(question_id);
+                if (sel) { sel.value = student_answer || ''; sel.classList.toggle('correct', is_correct); sel.classList.toggle('incorrect', !is_correct); }
+            }
+        });
+        document.querySelectorAll('.show-answers-btn').forEach(btn => btn.style.display = 'inline-block');
+        document.querySelectorAll('.next-btn').forEach(btn => btn.disabled = false);
+    } catch(e) { console.error('Restore answers error:', e); }
+}
+
+function makeReadOnly() {
+    document.querySelectorAll('.gap-input').forEach(el => { el.disabled = true; el.style.opacity = '0.85'; });
+    document.querySelectorAll('input[type="radio"]').forEach(el => el.disabled = true);
+    document.querySelectorAll('select').forEach(el => { el.disabled = true; });
+    document.querySelectorAll('.check-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.next-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.prev-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.show-answers-btn').forEach(el => el.style.display = 'inline-block');
+}
+
+function setupLiveValidation() {
+    ['t1q1','t1q2','t1q3','t1q4','t1q5','t1q6','t1q7'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', () => { validateTask1Check(); scheduleSave(); }); });
+    ['t4v1','t4v2','t4v3','t4v4','t4v5','t4v6','t4v7'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('change', () => { validateTask4Check(); scheduleSave(); }); });
+    ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10'].forEach(name => { document.querySelectorAll(`input[name="${name}"]`).forEach(el => el.addEventListener('change', () => { validateTask5Check(); scheduleSave(); })); });
+    ['t5g11','t5g12','t5g13','t5g14','t5g15'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', () => { validateTask5Check(); scheduleSave(); }); });
+    ['t5m1','t5m2','t5m3','t5m4','t5m5','t5m6','t5m7','t5m8','t5m9','t5m10'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('change', () => { validateTask5Check(); scheduleSave(); }); });
+    ['t6q1','t6q2','t6q3','t6q4','t6q5'].forEach(name => { document.querySelectorAll(`input[name="${name}"]`).forEach(el => el.addEventListener('change', () => { validateTask6Check(); scheduleSave(); })); });
+    for (let i = 1; i <= 30; i++) { const el = document.getElementById('d' + i); if (el) el.addEventListener('input', () => { validateTask6Check(); scheduleSave(); }); }
+}
+
+function validateAll() { validateTask1Check(); validateTask4Check(); validateTask5Check(); validateTask6Check(); }
+function validateTask1Check() { document.getElementById('check1').disabled = !['t1q1','t1q2','t1q3','t1q4','t1q5','t1q6','t1q7'].every(id => document.getElementById(id)?.value.trim()); }
+function validateTask4Check() { document.getElementById('check4').disabled = !['t4v1','t4v2','t4v3','t4v4','t4v5','t4v6','t4v7'].every(id => document.getElementById(id)?.value); }
+function validateTask5Check() {
+    const allMcq = ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10'].every(name => document.querySelector(`input[name="${name}"]:checked`));
+    const allGaps = ['t5g11','t5g12','t5g13','t5g14','t5g15'].every(id => document.getElementById(id)?.value.trim());
+    const allMatch = ['t5m1','t5m2','t5m3','t5m4','t5m5','t5m6','t5m7','t5m8','t5m9','t5m10'].every(id => document.getElementById(id)?.value);
+    document.getElementById('check5').disabled = !(allMcq && allGaps && allMatch);
+}
+function validateTask6Check() {
+    const allDict = Array.from({length:30}, (_,i) => document.getElementById('d'+(i+1))?.value.trim()).every(Boolean);
+    const allMcq = ['t6q1','t6q2','t6q3','t6q4','t6q5'].every(name => document.querySelector(`input[name="${name}"]:checked`));
+    document.getElementById('check6').disabled = !(allDict && allMcq);
+}
+
+const t1Accepted = {
+    t1q1:['psychological biases','shaped by psychological biases'],
+    t1q2:['failing stocks'],
+    t1q3:['what customers stand to lose'],
+    t1q4:['present bias'],
+    t1q5:['inflated','original price','inflated original price'],
+    t1q6:['safeguards'],
+    t1q7:['better systems']
+};
+const t4Answers = {t4v1:'loss aversion',t4v2:'present bias',t4v3:'anchoring',t4v4:'safeguards',t4v5:'safeguard',t4v6:'rational',t4v7:'biases'};
+const t5McqAnswers = {t5q1:'C',t5q2:'B',t5q3:'C',t5q4:'B',t5q5:'C',t5q6:'B',t5q7:'C',t5q8:'C',t5q9:'D',t5q10:'C'};
+const t5GapAnswers = {t5g11:'values',t5g12:'philosophy',t5g13:'strategy',t5g14:'independence',t5g15:'intentional'};
+const t5MatchAnswers = {t5m1:'B',t5m2:'C',t5m3:'A',t5m4:'E',t5m5:'F',t5m6:'D',t5m7:'H',t5m8:'G',t5m9:'I',t5m10:'J'};
+const t6McqAnswers = {t6q1:'C',t6q2:'B',t6q3:'B',t6q4:'D',t6q5:'C'};
+
+function checkTask1() {
+    const answers = [];
+    Object.entries(t1Accepted).forEach(([id, opts]) => {
+        const inp = document.getElementById(id);
+        const val = inp.value.trim().toLowerCase();
+        const ok = opts.some(o => val.includes(o.toLowerCase()));
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:opts[0], is_correct:ok});
+    });
+    document.getElementById('showAns1').style.display = 'inline-block';
+    document.getElementById('next1').disabled = false;
+    saveAnswers(1, answers); saveTaskProgress(1);
+}
+
+function checkTask4() {
+    const answers = [];
+    Object.entries(t4Answers).forEach(([id, correct]) => {
+        const sel = document.getElementById(id);
+        const ok = sel.value === correct;
+        sel.classList.toggle('correct', ok); sel.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'matching', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    document.getElementById('showAns4').style.display = 'inline-block';
+    document.getElementById('next4').disabled = false;
+    saveAnswers(4, answers); saveTaskProgress(4);
+}
+
+function checkTask5() {
+    const answers = [];
+    Object.entries(t5McqAnswers).forEach(([name, correct]) => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`);
+        const fb = document.getElementById('fb_' + name);
+        if (!sel) return;
+        const ok = sel.value === correct;
+        fb.textContent = ok ? '✅ Correct!' : `❌ Incorrect — correct answer: ${correct}`;
+        fb.className = 'answer-feedback ' + (ok ? 'correct' : 'incorrect');
+        answers.push({question_id:name, question_type:'mcq', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    Object.entries(t5GapAnswers).forEach(([id, correct]) => {
+        const inp = document.getElementById(id);
+        const val = inp.value.trim().toLowerCase();
+        const ok = val === correct.toLowerCase();
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:correct, is_correct:ok});
+    });
+    Object.entries(t5MatchAnswers).forEach(([id, correct]) => {
+        const sel = document.getElementById(id);
+        const ok = sel.value === correct;
+        sel.classList.toggle('correct', ok); sel.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'matching', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    document.getElementById('showAns5').style.display = 'inline-block';
+    document.getElementById('next5').disabled = false;
+    saveAnswers(5, answers); saveTaskProgress(5);
+}
+
+function checkTask6() {
+    const answers = [];
+    for (let i = 1; i <= 30; i++) {
+        const inp = document.getElementById('d' + i);
+        const val = inp.value.trim().toLowerCase();
+        const correct = dictationAnswers[i-1];
+        const ok = val === correct.toLowerCase();
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:'d'+i, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:correct, is_correct:ok});
+    }
+    Object.entries(t6McqAnswers).forEach(([name, correct]) => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`);
+        const fb = document.getElementById('fb_' + name);
+        if (!sel) return;
+        const ok = sel.value === correct;
+        fb.textContent = ok ? '✅ Correct!' : `❌ Incorrect — correct answer: ${correct}`;
+        fb.className = 'answer-feedback ' + (ok ? 'correct' : 'incorrect');
+        answers.push({question_id:name, question_type:'mcq', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    document.getElementById('showAns6').style.display = 'inline-block';
+    document.getElementById('next6').disabled = false;
+    saveAnswers(6, answers); saveTaskProgress(6);
+}
+
+async function saveAnswers(taskNum, answers) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        const rows = answers.map(a => ({student_id:studentId, week:WEEK, day:DAY, task_number:taskNum, question_id:a.question_id, question_type:a.question_type, student_answer:a.student_answer, correct_answer:a.correct_answer, is_correct:a.is_correct, answered_at:new Date().toISOString()}));
+        await dbClient.from('student_answers').upsert(rows, {onConflict:'student_id,week,day,task_number,question_id'});
+    } catch(e) { console.error('Answer save error:', e); }
+}
+
+async function saveTaskProgress(taskNum) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        await dbClient.from('task_progress').upsert({student_id:studentId, week:WEEK, day:DAY, task_number:taskNum, status:'completed', time_completed:new Date().toISOString(), time_spent_seconds:Math.round((Date.now()-taskStartTime)/1000)}, {onConflict:'student_id,week,day,task_number'});
+    } catch(e) { console.error('Progress save error:', e); }
+}
+
+async function finishDay() {
+    document.getElementById('task7').classList.remove('active');
+    document.getElementById('completion-screen').style.display = 'block';
+    document.getElementById('completion-screen').scrollIntoView({behavior:'smooth'});
+    localStorage.removeItem(`w${WEEK}d${DAY}_answers`);
+    for (let i = 1; i <= TOTAL_TASKS; i++) await saveTaskProgress(i);
+    if (studentId && studentId !== 'teacher-preview') await dbClient.from('student_resume').delete().eq('student_id', studentId);
+    makeReadOnly();
+}
+
+function reviewTask(num) {
+    document.getElementById('completion-screen').style.display = 'none';
+    currentTask = num;
+    document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active'));
+    document.getElementById('task' + num).classList.add('active');
+    document.getElementById('task' + num).scrollIntoView({behavior:'smooth', block:'start'});
+    const existing = document.getElementById('back-to-results');
+    if (!existing) {
+        const btn = document.createElement('button');
+        btn.id = 'back-to-results';
+        btn.textContent = '🏆 Back to Results';
+        btn.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#dd6b20;color:white;border:none;padding:12px 22px;border-radius:50px;cursor:pointer;font-weight:bold;font-size:0.95rem;box-shadow:0 4px 15px rgba(221,107,32,0.4);z-index:9998;';
+        btn.onclick = () => { btn.remove(); document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active')); document.getElementById('completion-screen').style.display = 'block'; document.getElementById('completion-screen').scrollIntoView({behavior:'smooth'}); };
+        document.body.appendChild(btn);
+    }
+}
+
+function toggleVocab() { document.getElementById('vocab-body').classList.toggle('open'); document.getElementById('vocab-arrow').classList.toggle('open'); }
+function toggleAnswers(id) {
+    const div = document.getElementById(id);
+    const btn = div.previousElementSibling;
+    div.style.display = div.style.display === 'block' ? 'none' : 'block';
+    btn.textContent = div.style.display === 'block' ? '▲ Hide Answers' : '▼ Show Answers';
+}
+</script>
+</body>
+</html>
