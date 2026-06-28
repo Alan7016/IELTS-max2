@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEEK 6 - DAY 2 (Culture)</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #faf5ff; color: #333; }
+        #splash-screen { position: fixed; inset: 0; background: linear-gradient(135deg, #9f7aea 0%, #6b46c1 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; color: white; text-align: center; padding: 20px; }
+        #splash-screen h1 { font-size: 3rem; margin-bottom: 10px; }
+        #splash-screen h2 { font-size: 2rem; margin-bottom: 10px; opacity: 0.9; }
+        #splash-screen p { font-size: 1.2rem; margin-bottom: 40px; opacity: 0.8; }
+        .splash-btn { background: white; color: #6b46c1; border: none; padding: 18px 60px; font-size: 1.4rem; font-weight: bold; border-radius: 50px; cursor: pointer; box-shadow: 0 8px 25px rgba(0,0,0,0.2); transition: all 0.3s; }
+        .splash-btn:hover { transform: translateY(-3px); }
+        .main-container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        .day-header { background: linear-gradient(135deg, #9f7aea 0%, #6b46c1 100%); color: white; padding: 25px 30px; border-radius: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; }
+        .day-header h1 { font-size: 1.6rem; }
+        .day-header .topic { opacity: 0.85; font-size: 1rem; margin-top: 4px; }
+        .back-btn { background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; text-decoration: none; font-size: 0.9rem; transition: all 0.3s; }
+        .back-btn:hover { background: white; color: #6b46c1; }
+        .vocab-section { background: white; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-left: 5px solid #9f7aea; overflow: hidden; }
+        .vocab-toggle { width: 100%; background: none; border: none; cursor: pointer; padding: 18px 25px; display: flex; align-items: center; justify-content: space-between; text-align: left; }
+        .vocab-toggle:hover { background: #faf5ff; }
+        .vocab-toggle-left { display: flex; align-items: center; gap: 10px; }
+        .vocab-toggle h3 { color: #6b46c1; font-size: 1.1rem; margin: 0; }
+        .vocab-count { background: #9f7aea; color: white; font-size: 0.75rem; font-weight: bold; padding: 3px 10px; border-radius: 20px; }
+        .vocab-arrow { color: #6b46c1; font-size: 1rem; transition: transform 0.3s; }
+        .vocab-arrow.open { transform: rotate(180deg); }
+        .vocab-body { display: none; padding: 0 25px 20px; }
+        .vocab-body.open { display: block; }
+        .vocab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+        .vocab-item { background: #faf5ff; padding: 10px 14px; border-radius: 8px; }
+        .vocab-word { font-weight: bold; color: #333; font-size: 0.95rem; }
+        .vocab-definition { color: #666; font-size: 0.82rem; margin-top: 2px; }
+        .progress-label { text-align: center; color: #6b46c1; font-size: 0.85rem; margin-bottom: 8px; font-weight: 600; }
+        .progress-bar-wrap { background: #e9d8fd; border-radius: 20px; height: 10px; margin-bottom: 20px; overflow: hidden; }
+        .progress-bar-fill { background: linear-gradient(90deg, #9f7aea, #6b46c1); height: 100%; border-radius: 20px; transition: width 0.5s ease; }
+        .task-card { background: white; border-radius: 15px; padding: 28px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); display: none; }
+        .task-card.active { display: block; }
+        .task-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .task-number { background: linear-gradient(135deg, #9f7aea, #6b46c1); color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; flex-shrink: 0; }
+        .task-title { font-size: 1.3rem; font-weight: bold; color: #333; }
+        .task-subtitle { color: #888; font-size: 0.9rem; margin-top: 2px; }
+        .pdf-links { display: flex; flex-direction: column; gap: 12px; margin: 15px 0; }
+        .pdf-link { display: flex; align-items: center; gap: 12px; background: #faf5ff; padding: 15px 20px; border-radius: 10px; text-decoration: none; color: #333; font-weight: 600; border: 2px solid #e9d8fd; transition: all 0.3s; }
+        .pdf-link:hover { background: #9f7aea; color: white; border-color: #9f7aea; transform: translateX(5px); }
+        .pdf-icon { font-size: 1.5rem; }
+        .html-link-btn { display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #9f7aea, #6b46c1); color: white; padding: 15px 30px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 1rem; transition: all 0.3s; margin: 10px 0; }
+        .html-link-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(159,122,234,0.4); }
+        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; margin: 15px 0; }
+        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .video-fallback { background: #faf5ff; padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align: center; }
+        .video-fallback a { color: #6b46c1; font-weight: bold; }
+        .audio-player { background: #faf5ff; border: 2px solid #e9d8fd; border-radius: 12px; padding: 20px; margin: 15px 0; }
+        .audio-player p { color: #555; margin-bottom: 10px; font-weight: 600; }
+        .audio-player audio { width: 100%; }
+        .passage-text { background: #fdfaff; border: 1px solid #e9d8fd; border-radius: 10px; padding: 25px; margin: 15px 0; line-height: 1.8; font-size: 0.97rem; color: #333; }
+        .passage-text h3 { color: #6b46c1; margin-bottom: 15px; font-size: 1.2rem; }
+        .passage-text p { margin-bottom: 14px; }
+        .highlight { font-style: italic; color: #6b46c1; font-weight: 600; }
+        .question-block { margin-bottom: 20px; padding: 18px; background: #f8f9fa; border-radius: 10px; }
+        .question-text { font-weight: 600; margin-bottom: 12px; color: #333; line-height: 1.5; }
+        .options label { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: background 0.2s; margin-bottom: 5px; }
+        .options label:hover { background: #f3ebff; }
+        .options input[type="radio"] { margin-top: 3px; flex-shrink: 0; }
+        .answer-feedback { margin-top: 8px; font-weight: bold; font-size: 0.9rem; }
+        .answer-feedback.correct { color: #28a745; }
+        .answer-feedback.incorrect { color: #dc3545; }
+        .gap-fill-section { margin-top: 20px; }
+        .gap-sentence { margin-bottom: 14px; line-height: 2; font-size: 1rem; }
+        .gap-input { border: none; border-bottom: 2px solid #9f7aea; padding: 4px 8px; font-size: 0.95rem; width: 200px; background: transparent; outline: none; color: #333; }
+        .gap-input.correct { border-bottom-color: #28a745; background: #d4edda33; }
+        .gap-input.incorrect { border-bottom-color: #dc3545; background: #f8d7da33; }
+        .word-box { background: #faf5ff; border: 2px solid #e9d8fd; border-radius: 10px; padding: 12px 18px; margin-bottom: 15px; }
+        .word-box strong { color: #6b46c1; }
+        .matching-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .matching-table th { background: #9f7aea; color: white; padding: 10px 14px; text-align: left; }
+        .matching-table td { padding: 10px 14px; border-bottom: 1px solid #eee; }
+        .matching-table tr:nth-child(even) td { background: #faf5ff; }
+        .match-select { border: 2px solid #e9d8fd; border-radius: 6px; padding: 5px 8px; font-size: 0.88rem; background: white; width: 100%; max-width: 380px; }
+        .match-select.correct { border-color: #28a745; }
+        .match-select.incorrect { border-color: #dc3545; }
+        .dev-table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 0.88rem; }
+        .dev-table th { background: #9f7aea; color: white; padding: 10px 12px; text-align: left; }
+        .dev-table td { padding: 8px 10px; border: 1px solid #e9d8fd; vertical-align: top; }
+        .dev-table tr:nth-child(even) td { background: #faf5ff; }
+        .dev-table .label-cell { font-weight: 600; color: #6b46c1; background: #f3ebff; }
+        .dev-input { border: none; border-bottom: 2px solid #9f7aea; padding: 2px 6px; font-size: 0.85rem; width: 110px; background: transparent; outline: none; }
+        .dev-input.correct { border-bottom-color: #28a745; background: #d4edda33; }
+        .dev-input.incorrect { border-bottom-color: #dc3545; background: #f8d7da33; }
+        .btn-row { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+        .check-btn { background: linear-gradient(135deg, #9f7aea, #6b46c1); color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .check-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(159,122,234,0.4); }
+        .check-btn:disabled { background: #ccc; cursor: not-allowed; transform: none !important; box-shadow: none; }
+        .next-btn { background: #28a745; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .next-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .next-btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(40,167,69,0.4); }
+        .prev-btn { background: #6c757d; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .prev-btn:hover { background: #5a6268; }
+        .show-answers-btn { background: #ffc107; color: #333; border: none; padding: 10px 22px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.88rem; display: none; }
+        .show-answers-btn:hover { background: #e0a800; }
+        .answers-panel { display: none; background: #fffbea; border: 2px solid #ffc107; border-radius: 10px; padding: 15px; margin-top: 12px; }
+        .answers-panel p { margin-bottom: 6px; font-size: 0.9rem; }
+        .completion-screen { text-align: center; padding: 60px 20px; display: none; }
+        .completion-screen .icon { font-size: 5rem; margin-bottom: 20px; }
+        .completion-screen h2 { font-size: 2.2rem; color: #6b46c1; margin-bottom: 10px; }
+        .completion-screen p { color: #666; font-size: 1rem; margin-bottom: 30px; }
+        .dashboard-btn { background: linear-gradient(135deg, #9f7aea, #6b46c1); color: white; padding: 16px 40px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 1.1rem; display: inline-block; transition: all 0.3s; }
+        .dashboard-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(159,122,234,0.4); }
+        .save-indicator { position: fixed; bottom: 20px; right: 20px; background: #9f7aea; color: white; padding: 10px 18px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; opacity: 0; transition: opacity 0.4s; z-index: 9000; pointer-events: none; }
+        .save-indicator.show { opacity: 1; }
+        .section-divider { border-top: 2px dashed #e9d8fd; margin: 25px 0; }
+    </style>
+</head>
+<body>
+<div id="splash-screen">
+    <h1>🎭 WEEK 6</h1>
+    <h2>DAY 2</h2>
+    <p>Topic: Culture</p>
+    <button class="splash-btn" onclick="startDay()">LET'S GO!</button>
+</div>
+<div class="save-indicator" id="saveIndicator">✓ Progress saved</div>
+<div class="main-container" id="main-content" style="display:none;">
+    <div class="day-header">
+        <div><h1>🎭 Week 6 — Day 2</h1><div class="topic">Topic: Culture</div></div>
+        <a href="/student-dashboard.html" class="back-btn">← Dashboard</a>
+    </div>
+    <div class="progress-label" id="progress-label">Task 0 of 7</div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-bar" style="width:0%"></div></div>
+
+    <!-- VOCAB -->
+    <div class="vocab-section">
+        <button class="vocab-toggle" onclick="toggleVocab()">
+            <div class="vocab-toggle-left"><h3>📖 Today's Vocabulary</h3><span class="vocab-count">50 words</span></div>
+            <span class="vocab-arrow" id="vocab-arrow">▼</span>
+        </button>
+        <div class="vocab-body" id="vocab-body"><div class="vocab-grid" id="vocab-grid"></div></div>
+    </div>
+
+    <!-- ══ TASK 1 ══ -->
+    <div class="task-card active" id="task1">
+        <div class="task-header">
+            <div class="task-number">1</div>
+            <div><div class="task-title">Mini Reading</div><div class="task-subtitle">Read and answer — NO MORE THAN THREE WORDS from the passage</div></div>
+        </div>
+        <div class="passage-text">
+            <h3>Rites of Passage: How Cultures Mark Growing Up</h3>
+            <p>Across virtually every human society throughout history, certain key moments of transition from one life stage to another have been marked by elaborate ceremonies known as rites of passage. Anthropologist Arnold van Gennep, who first systematically studied these rituals in the early twentieth century, identified a remarkably consistent <span class="highlight">(1) structure</span> underlying them, regardless of the specific culture involved: a separation from one's previous social role, followed by a transitional period, and finally a reincorporation into the community with a new status.</p>
+            <p>Coming-of-age ceremonies represent perhaps the most universally recognised category of rite of passage. In many Indigenous Australian communities, adolescent boys traditionally undergo initiation rituals involving physical endurance, isolation from the community and the transmission of sacred cultural <span class="highlight">(2) knowledge</span> from elders. Similarly, the Jewish bar and bat mitzvah, the Latin American quinceañera, and the Japanese Coming of Age Day all serve a comparable social function: publicly announcing that a young person has acquired adult responsibilities and <span class="highlight">(3) privileges</span> within their community.</p>
+            <p>What distinguishes a genuine rite of passage from an ordinary celebration, anthropologists argue, is the presence of a liminal phase — a period of ambiguous, in-between status during which the participant is neither fully a child nor yet fully an adult. This transitional state is often deliberately uncomfortable or <span class="highlight">(4) disorienting</span>, intended to symbolically dissolve the old identity before the new one can be fully <span class="highlight">(5) established</span>.</p>
+            <p>Modern industrialised societies, some scholars suggest, have largely lost many of their formal rites of passage, leaving young people without a clear, culturally sanctioned marker of when adulthood truly <span class="highlight">(6) begins</span>. Milestones such as obtaining a driving licence, graduating from university or moving into independent housing have partially filled this gap, yet they typically lack the communal ceremony and symbolic intensity that traditional rites once provided. Some psychologists have speculated that this absence may contribute to the prolonged uncertainty many young adults today experience regarding their <span class="highlight">(7) identity</span> and place within society.</p>
+        </div>
+        <h4 style="color:#6b46c1; margin:20px 0 12px;">Answer — NO MORE THAN THREE WORDS from the passage:</h4>
+        <div class="gap-fill-section">
+            <div class="gap-sentence">1. What did Arnold van Gennep identify across cultures regarding rites of passage?<br><input class="gap-input" id="t1q1" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">2. What do adolescent boys receive from elders during Indigenous Australian initiation rituals?<br><input class="gap-input" id="t1q2" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">3. What do coming-of-age ceremonies publicly announce about a young person?<br><input class="gap-input" id="t1q3" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">4. What is a liminal phase, according to anthropologists?<br><input class="gap-input" id="t1q4" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">5. What is the transitional state often intended to symbolically dissolve?<br><input class="gap-input" id="t1q5" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">6. What have modern milestones partially filled, despite lacking ceremony?<br><input class="gap-input" id="t1q6" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">7. What may the absence of formal rites of passage contribute to in young adults?<br><input class="gap-input" id="t1q7" placeholder="___" style="width:300px; margin-top:8px;"></div>
+        </div>
+        <div class="btn-row">
+            <button class="check-btn" id="check1" onclick="checkTask1()" disabled>Check Answers</button>
+            <button class="next-btn" id="next1" disabled onclick="goToTask(2)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns1" onclick="toggleAnswers('ans1')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans1">
+            <p><strong>Answers:</strong> 1-(a) consistent structure, 2-sacred cultural knowledge, 3-adult responsibilities and privileges, 4-(a period of) ambiguous in-between status, 5-the old identity, 6-this gap, 7-prolonged uncertainty</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 2 ══ -->
+    <div class="task-card" id="task2">
+        <div class="task-header">
+            <div class="task-number">2</div>
+            <div><div class="task-title">Article Reading</div><div class="task-subtitle">Read the article and study the vocabulary</div></div>
+        </div>
+        <div class="pdf-links">
+            <a class="pdf-link" href="article 2.pdf" target="_blank"><span class="pdf-icon">📄</span> Culture — Article</a>
+            <a class="pdf-link" href="vocab 2.pdf" target="_blank"><span class="pdf-icon">📘</span> Culture — Vocabulary</a>
+        </div>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(1)">← Previous</button>
+            <button class="next-btn" onclick="goToTask(3)">Next Task →</button>
+        </div>
+    </div>
+
+    <!-- ══ TASK 3 ══ -->
+    <div class="task-card" id="task3">
+        <div class="task-header">
+            <div class="task-number">3</div>
+            <div><div class="task-title">Practice Reading</div><div class="task-subtitle">IELTS-style reading test</div></div>
+        </div>
+        <a class="html-link-btn" href="Reading (26).html" target="_blank">📖 Open Practice Reading</a>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(2)">← Previous</button>
+            <button class="next-btn" onclick="goToTask(4)">Next Task →</button>
+        </div>
+    </div>
+
+    <!-- ══ TASK 4 ══ -->
+    <div class="task-card" id="task4">
+        <div class="task-header">
+            <div class="task-number">4</div>
+            <div><div class="task-title">Listening Mini Task</div><div class="task-subtitle">Listen to a talk about early child development and complete the table</div></div>
+        </div>
+        <div class="audio-player">
+            <p>🎧 Track 2A — Early Development in Children</p>
+            <audio controls src="track2a.mp3"></audio>
+        </div>
+        <p style="color:#555; margin-bottom:15px; font-weight:600;">Complete the table. Write NO MORE THAN TWO WORDS for each answer.</p>
+        <table class="dev-table">
+            <thead><tr><th>Stage</th><th>Social/Emotional</th><th>Physical</th><th>Cognitive/Communicative</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td class="label-cell">Infant</td>
+                    <td>likes to mimic; tries to see how parents react to their <input class="dev-input" id="t4g1" placeholder="(1)"></td>
+                    <td>can sit and stand without help</td>
+                    <td>can use basic words and <input class="dev-input" id="t4g2" placeholder="(2)"><br>uses objects for their intended purpose</td>
+                </tr>
+                <tr>
+                    <td class="label-cell"><input class="dev-input" id="t4g3" placeholder="(3)"></td>
+                    <td>is more <input class="dev-input" id="t4g4" placeholder="(4)"><br>takes turns</td>
+                    <td>can run; <input class="dev-input" id="t4g5" placeholder="(5)"> things; ride a tricycle</td>
+                    <td>greater understanding of language; uses <input class="dev-input" id="t4g6" placeholder="(6)"> in play</td>
+                </tr>
+                <tr>
+                    <td class="label-cell">Middle childhood</td>
+                    <td>the <input class="dev-input" id="t4g7" placeholder="(7)" style="width:90px;"> <input class="dev-input" id="t4g7b" placeholder="(7 cont.)" style="width:90px;"> has a greater impact on development; some children appear grown up, others are <input class="dev-input" id="t4g8" placeholder="(8)"></td>
+                    <td>growth is not as <input class="dev-input" id="t4g9" placeholder="(9)"> as in earlier stages; <input class="dev-input" id="t4g10" placeholder="(10)"> and <input class="dev-input" id="t4g11" placeholder="(11)"> are the same size as in adulthood</td>
+                    <td>good reading and writing <input class="dev-input" id="t4g12" placeholder="(12)"></td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(3)">← Previous</button>
+            <button class="check-btn" id="check4" onclick="checkTask4()" disabled>Check Answers</button>
+            <button class="next-btn" id="next4" disabled onclick="goToTask(5)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns4" onclick="toggleAnswers('ans4')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans4">
+            <p><strong>Answers:</strong> 1-behaviour, 2-gestures, 3-Toddler, 4-independent, 5-climb, 6-make-believe/imagination, 7-outside world, 8-immature, 9-rapid, 10-teeth/eyes, 11-eyes/teeth, 12-skills</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 5 ══ -->
+    <div class="task-card" id="task5">
+        <div class="task-header">
+            <div class="task-number">5</div>
+            <div><div class="task-title">Video Watching Task</div><div class="task-subtitle">Watch "The History of the Hamburger" and answer questions</div></div>
+        </div>
+        <div class="video-fallback">
+            <p>▶ <a href="https://www.youtube.com/watch?v=LcoJI1OHfwU" target="_blank">Click here to open the video in a new tab</a> if it doesn't play below.</p>
+        </div>
+        <div class="video-container">
+            <iframe src="https://www.youtube.com/embed/LcoJI1OHfwU" frameborder="0" allowfullscreen></iframe>
+        </div>
+
+        <h4 style="color:#6b46c1; margin:20px 0 12px;">Part 1 — Multiple Choice Questions</h4>
+        <div class="question-block">
+            <div class="question-text">1. According to the video, the earliest written version of the hamburger can be traced back to...</div>
+            <div class="options">
+                <label><input type="radio" name="t5q1" value="A"> A. Ancient Greece</label>
+                <label><input type="radio" name="t5q1" value="B"> B. Ancient Rome</label>
+                <label><input type="radio" name="t5q1" value="C"> C. Medieval England</label>
+                <label><input type="radio" name="t5q1" value="D"> D. Germany</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q1"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">2. Isicia Omentata was made using...</div>
+            <div class="options">
+                <label><input type="radio" name="t5q2" value="A"> A. Beef and cheese</label>
+                <label><input type="radio" name="t5q2" value="B"> B. Chicken and herbs</label>
+                <label><input type="radio" name="t5q2" value="C"> C. Minced pork, wine, pepper and garum</label>
+                <label><input type="radio" name="t5q2" value="D"> D. Lamb and onions</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q2"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">3. What was garum?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q3" value="A"> A. A type of bread</label>
+                <label><input type="radio" name="t5q3" value="B"> B. A fish sauce</label>
+                <label><input type="radio" name="t5q3" value="C"> C. A cooking oil</label>
+                <label><input type="radio" name="t5q3" value="D"> D. A spice mixture</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q3"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">4. Why was the Hamburg steak called "Hamburg"?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q4" value="A"> A. It was invented in Hamburg.</label>
+                <label><input type="radio" name="t5q4" value="B"> B. It was named after the German port famous for exporting quality beef.</label>
+                <label><input type="radio" name="t5q4" value="C"> C. It was popular among German soldiers.</label>
+                <label><input type="radio" name="t5q4" value="D"> D. It was first sold on ships.</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q4"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">5. What invention made hamburgers easier to produce?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q5" value="A"> A. Refrigeration</label>
+                <label><input type="radio" name="t5q5" value="B"> B. The meat grinder (mincing machine)</label>
+                <label><input type="radio" name="t5q5" value="C"> C. Gas ovens</label>
+                <label><input type="radio" name="t5q5" value="D"> D. Canned food</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q5"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">6. Who were the first customers to regularly buy hamburgers in bread rolls?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q6" value="A"> A. Wealthy businessmen</label>
+                <label><input type="radio" name="t5q6" value="B"> B. Factory workers</label>
+                <label><input type="radio" name="t5q6" value="C"> C. Roman soldiers</label>
+                <label><input type="radio" name="t5q6" value="D"> D. Farmers</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q6"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">7. Why did White Castle become successful?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q7" value="A"> A. It sold luxury burgers.</label>
+                <label><input type="radio" name="t5q7" value="B"> B. It imported beef from Europe.</label>
+                <label><input type="radio" name="t5q7" value="C"> C. It promoted clean and hygienic food.</label>
+                <label><input type="radio" name="t5q7" value="D"> D. It invented ketchup.</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q7"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">8. When burgers first arrived in Britain, they were...</div>
+            <div class="options">
+                <label><input type="radio" name="t5q8" value="A"> A. Served with chips in paper bags.</label>
+                <label><input type="radio" name="t5q8" value="B"> B. Cooked over barbecues.</label>
+                <label><input type="radio" name="t5q8" value="C"> C. Served on plates with knife and fork.</label>
+                <label><input type="radio" name="t5q8" value="D"> D. Sold only in supermarkets.</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q8"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">9. The horsemeat scandal mainly showed that...</div>
+            <div class="options">
+                <label><input type="radio" name="t5q9" value="A"> A. People preferred horse meat.</label>
+                <label><input type="radio" name="t5q9" value="B"> B. Some cheap burgers contained poor-quality ingredients.</label>
+                <label><input type="radio" name="t5q9" value="C"> C. Burgers became healthier.</label>
+                <label><input type="radio" name="t5q9" value="D"> D. Beef prices had fallen.</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q9"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">10. What is the main message of the video?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q10" value="A"> A. Hamburgers are a completely American invention.</label>
+                <label><input type="radio" name="t5q10" value="B"> B. Hamburgers have a long international history before becoming an American icon.</label>
+                <label><input type="radio" name="t5q10" value="C"> C. Roman burgers were identical to modern burgers.</label>
+                <label><input type="radio" name="t5q10" value="D"> D. Fast food only became popular after World War II.</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q10"></div>
+        </div>
+
+        <h4 style="color:#6b46c1; margin:20px 0 12px;">Part 2 — Gap Filling</h4>
+        <div class="word-box">
+            <strong>Word Box:</strong> ubiquitous &nbsp;|&nbsp; collapse &nbsp;|&nbsp; repertoire &nbsp;|&nbsp; garnishing &nbsp;|&nbsp; successor &nbsp;|&nbsp; offcuts &nbsp;|&nbsp; relish &nbsp;|&nbsp; curiosity &nbsp;|&nbsp; hygienically &nbsp;|&nbsp; rationing &nbsp;|&nbsp; boomed &nbsp;|&nbsp; quintessentially &nbsp;|&nbsp; prototype &nbsp;|&nbsp; patty
+        </div>
+        <div class="gap-fill-section">
+            <div class="gap-sentence">1. Many people believe the hamburger is a <input class="gap-input" id="t5g1" placeholder="___" style="width:170px;"> American invention.</div>
+            <div class="gap-sentence">2. The idea of making a meat <input class="gap-input" id="t5g2" placeholder="___" style="width:170px;"> goes back hundreds of years.</div>
+            <div class="gap-sentence">3. Garum was <input class="gap-input" id="t5g3" placeholder="___" style="width:170px;"> in Roman cuisine.</div>
+            <div class="gap-sentence">4. The recipe survived the <input class="gap-input" id="t5g4" placeholder="___" style="width:170px;"> of the Roman Empire.</div>
+            <div class="gap-sentence">5. Kebobs eventually became part of the European culinary <input class="gap-input" id="t5g5" placeholder="___" style="width:170px;">.</div>
+            <div class="gap-sentence">6. Meatballs were often used for <input class="gap-input" id="t5g6" placeholder="___" style="width:170px;"> large dishes.</div>
+            <div class="gap-sentence">7. The Hamburg Sausage wasn't very different from its eventual <input class="gap-input" id="t5g7" placeholder="___" style="width:170px;">.</div>
+            <div class="gap-sentence">8. Hamburg steaks were made using cheaper <input class="gap-input" id="t5g8" placeholder="___" style="width:170px;"> rather than expensive steaks.</div>
+            <div class="gap-sentence">9. Bread rolls were often served with <input class="gap-input" id="t5g9" placeholder="___" style="width:170px;"> and pickles.</div>
+            <div class="gap-sentence">10. The hamburger could have remained nothing more than an urban <input class="gap-input" id="t5g10" placeholder="___" style="width:170px;">.</div>
+            <div class="gap-sentence">11. White Castle advertised its burgers as being <input class="gap-input" id="t5g11" placeholder="___" style="width:170px;"> produced.</div>
+            <div class="gap-sentence">12. Britain had only recently come out of food <input class="gap-input" id="t5g12" placeholder="___" style="width:170px;"> when Wimpy arrived.</div>
+            <div class="gap-sentence">13. After the horsemeat scandal, expensive gourmet burgers <input class="gap-input" id="t5g13" placeholder="___" style="width:170px;">.</div>
+            <div class="gap-sentence">14. The earliest Roman burger could be seen as a <input class="gap-input" id="t5g14" placeholder="___" style="width:170px;"> of today's hamburger.</div>
+            <div class="gap-sentence">15. Despite changing eating habits, burger consumption remains <input class="gap-input" id="t5g15" placeholder="___" style="width:170px;"> around the world.</div>
+        </div>
+
+        <h4 style="color:#6b46c1; margin:20px 0 12px;">Part 3 — Vocabulary Matching</h4>
+        <table class="matching-table">
+            <thead><tr><th>#</th><th>Word</th><th>Definition</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td><strong>quintessentially</strong></td><td><select class="match-select" id="t5m1"><option value="">— select —</option><option value="A">A. the soft remains after something is cut</option><option value="B">B. a mixture of ground meat shaped into a flat round piece</option><option value="C">C. very typical or perfect example of something</option><option value="D">D. the thin membrane surrounding the organs of animals</option><option value="E">E. found everywhere</option><option value="F">F. the complete collection of things available</option><option value="G">G. someone or something that replaces another</option><option value="H">H. to decorate or add food to improve appearance</option><option value="I">I. produced in a clean and sanitary way</option><option value="J">J. a sauce served alongside food</option><option value="K">K. a new method or idea</option><option value="L">L. something unusual that attracts interest</option><option value="M">M. a period when food supplies are officially limited</option><option value="N">N. to grow or increase rapidly</option><option value="O">O. the earliest model from which others develop</option></select></td></tr>
+                <tr><td>2</td><td><strong>innovation</strong></td><td><select class="match-select" id="t5m2"><option value="">— select —</option><option value="A">A. the soft remains after something is cut</option><option value="B">B. a mixture of ground meat shaped into a flat round piece</option><option value="C">C. very typical or perfect example of something</option><option value="D">D. the thin membrane surrounding the organs of animals</option><option value="E">E. found everywhere</option><option value="F">F. the complete collection of things available</option><option value="G">G. someone or something that replaces another</option><option value="H">H. to decorate or add food to improve appearance</option><option value="I">I. produced in a clean and sanitary way</option><option value="J">J. a sauce served alongside food</option><option value="K">K. a new method or idea</option><option value="L">L. something unusual that attracts interest</option><option value="M">M. a period when food supplies are officially limited</option><option value="N">N. to grow or increase rapidly</option><option value="O">O. the earliest model from which others develop</option></select></td></tr>
+                <tr><td>3</td><td><strong>ubiquitous</strong></td><td><select class="match-select" id="t5m3"><option value="">— select —</option><option value="A">A. the soft remains after something is cut</option><option value="B">B. a mixture of ground meat shaped into a flat round piece</option><option value="C">C. very typical or perfect example of something</option><option value="D">D. the thin membrane surrounding the organs of animals</option><option value="E">E. found everywhere</option><option value="F">F. the complete collection of things available</option><option value="G">G. someone or something that replaces another</option><option value="H">H. to decorate or add food to improve appearance</option><option value="I">I. produced in a clean and sanitary way</option><option value="J">J. a sauce served alongside food</option><option value="K">K. a new method or idea</option><option value="L">L. something unusual that attracts interest</option><option value="M">M. a period when food supplies are officially limited</option><option value="N">N. to grow or increase rapidly</option><option value="O">O. the earliest model from which others develop</option></select></td></tr>
+                <tr><td>4</td><td><strong>caul fat</strong></td><td><select class="match-select" id="t5m4"><option value="">— select —</option><option value="A">A. the soft remains after something is cut</option><option value="B">B. a mixture of ground meat shaped into a flat round piece</option><option value="C">C. very typical or perfect example of something</option><option value="D">D. the thin membrane surrounding the organs of animals</option><option value="E">E. found everywhere</option><option value="F">F. the complete collection of things available</option><option value="G">G. someone or something that replaces another</option><option value="H">H. to decorate or add food to improve appearance</option><option value="I">I. produced in a clean and sanitary way</option><option value="J">J. a sauce served alongside food</option><option value="K">K. a new method or idea</option><option value="L">L. something unusual that attracts interest</option><option value="M">M. a period when food supplies are officially limited</option><option value="N">N. to grow or increase rapidly</option><option value="O">O. the earliest model from which others develop</option></select></td></tr>
+                <tr><td>5</td><td><strong>repertoire</strong></td><td><select class="match-select" id="t5m5"><option value="">— select —</option><option value="A">A. the soft remains after something is cut</option><option value="B">B. a mixture of ground meat shaped into a flat round piece</option><option value="C">C. very typical or perfect example of something</option><option value="D">D. the thin membrane surrounding the organs of animals</option><option value="E">E. found everywhere</option><option value="F">F. the complete collection of things available</option><option value="G">G. someone or something that replaces another</option><option value="H">H. to decorate or add food to improve appearance</option><option value="I">I. produced in a clean and sanitary way</option><option value="J">J. a sauce served alongside food</option><option value="K">K. a new method or idea</option><option value="L">L. something unusual that attracts interest</option><option value="M">M. a period when food supplies are officially limited</option><option value="N">N. to grow or increase rapidly</option><option value="O">O. the earliest model from which others develop</option></select></td></tr>
+                <tr><td>6</td><td><strong>garnish</strong></td><td><select class="match-select" id="t5m6"><option value="">— select —</option><option value="A">A. the soft remains after something is cut</option><option value="B">B. a mixture of ground meat shaped into a flat round piece</option><option value="C">C. very typical or perfect example of something</option><option value="D">D. the thin membrane surrounding the organs of animals</option><option value="E">E. found everywhere</option><option value="F">F. the complete collection of things available</option><option value="G">G. someone or something that replaces another</option><option value="H">H. to decorate or add food to improve appearance</option><option value="I">I. produced in a clean and sanitary way</option><option value="J">J. a sauce served alongside food</option><option value="K">K. a new method or idea</option><option value="L">L. something unusual that attracts interest</option><option value="M">M. a period when food supplies are officially limited</option><option value="N">N. to grow or increase rapidly</option><option value="O">O. the earliest model from which others develop</option></select></td></tr>
+                <tr><td>7</td><td><strong>successor</strong></td><td><select class="match-select" id="t5m7"><option value="">— select —</option><option value="A">A. the soft remains after something is cut</option><option value="B">B. a mixture of ground meat shaped into a flat round piece</option><option value="C">C. very typical or perfect example of something</option><option value="D">D. the thin membrane surrounding the organs of animals</option><option value="E">E. found everywhere</option><option value="F">F. the complete collection of things available</option><option value="G">G. someone or something that replaces another</option><option value="H">H. to decorate or add food to improve appearance</option><option value="I">I. produced in a clean and sanitary way</option><option value="J">J. a sauce served alongside food</option><option value="K">K. a new method or idea</option><option value="L">L. something unusual that attracts interest</option><option value="M">M. a period when food supplies are officially limited</option><option value="N">N. to grow or increase rapidly</option><option value="O">O. the earliest model from which others develop</option></select></td></tr>
+                <tr><td>8</td><td><strong>offcuts</strong></td><td><select class="match-select" id="t5m8"><option value="">— select —</option><option value="A">A. the soft remains after something is cut</option><option value="B">B. a mixture of ground meat shaped into a flat round piece</option><option value="C">C. very typical or perfect example of something</option><option value="D">D. the thin membrane surrounding the organs of animals</option><option value="E">E. found everywhere</option><option value="F">F. the complete collection of things available</option><option value="G">G. someone or something that replaces another</option><option value="H">H. to decorate or add food to improve appearance</option><option value="I">I. produced in a clean and sanitary way</option><option value="J">J. a sauce served alongside food</option><option value="K">K. a new method or idea</option><option value="L">L. something unusual that attracts interest</option><option value="M">M. a period when food supplies are officially limited</option><option value="N">N. to grow or increase rapidly</option><option value="O">O. the earliest model from which others develop</option></select></td></tr>
+                <tr><td>9</td><td><strong>relish</strong></td><td><select class="match-select" id="t5m9"><option value="">— select —</option><option value="A">A. the soft remains after something is cut</option><option value="B">B. a mixture of ground meat shaped into a flat round piece</option><option value="C">C. very typical or perfect example of something</option><option value="D">D. the thin membrane surrounding the organs of animals</option><option value="E">E. found everywhere</option><option value="F">F. the complete collection of things available</option><option value="G">G. someone or something that replaces another</option><option value="H">H. to decorate or add food to improve appearance</option><option value="I">I. produced in a clean and sanitary way</option><option value="J">J. a sauce served alongside food</option><option value="K">K. a new method or idea</option><option value="L">L. something unusual that attracts interest</option><option value="M">M. a period when food supplies are officially limited</option><option value="N">N. to grow or increase rapidly</option><option value="O">O. the earliest model from which others develop</option></select></td></tr>
+                <tr><td>10</td><td><strong>curiosity</strong></td><td><select class="match-select" id="t5m10"><option value="">— select —</option><option value="A">A. the soft remains after something is cut</option><option value="B">B. a mixture of ground meat shaped into a flat round piece</option><option value="C">C. very typical or perfect example of something</option><option value="D">D. the thin membrane surrounding the organs of animals</option><option value="E">E. found everywhere</option><option value="F">F. the complete collection of things available</option><option value="G">G. someone or something that replaces another</option><option value="H">H. to decorate or add food to improve appearance</option><option value="I">I. produced in a clean and sanitary way</option><option value="J">J. a sauce served alongside food</option><option value="K">K. a new method or idea</option><option value="L">L. something unusual that attracts interest</option><option value="M">M. a period when food supplies are officially limited</option><option value="N">N. to grow or increase rapidly</option><option value="O">O. the earliest model from which others develop</option></select></td></tr>
+                <tr><td>11</td><td><strong>hygienically</strong></td><td><select class="match-select" id="t5m11"><option value="">— select —</option><option value="A">A. the soft remains after something is cut</option><option value="B">B. a mixture of ground meat shaped into a flat round piece</option><option value="C">C. very typical or perfect example of something</option><option value="D">D. the thin membrane surrounding the organs of animals</option><option value="E">E. found everywhere</option><option value="F">F. the complete collection of things available</option><option value="G">G. someone or something that replaces another</option><option value="H">H. to decorate or add food to improve appearance</option><option value="I">I. produced in a clean and sanitary way</option><option value="J">J. a sauce served alongside food</option><option value="K">K. a new method or idea</option><option value="L">L. something unusual that attracts interest</option><option value="M">M. a period when food supplies are officially limited</option><option value="N">N. to grow or increase rapidly</option><option value="O">O. the earliest model from which others develop</option></select></td></tr>
+                <tr><td>12</td><td><strong>rationing</strong></td><td><select class="match-select" id="t5m12"><option value="">— select —</option><option value="A">A. the soft remains after something is cut</option><option value="B">B. a mixture of ground meat shaped into a flat round piece</option><option value="C">C. very typical or perfect example of something</option><option value="D">D. the thin membrane surrounding the organs of animals</option><option value="E">E. found everywhere</option><option value="F">F. the complete collection of things available</option><option value="G">G. someone or something that replaces another</option><option value="H">H. to decorate or add food to improve appearance</option><option value="I">I. produced in a clean and sanitary way</option><option value="J">J. a sauce served alongside food</option><option value="K">K. a new method or idea</option><option value="L">L. something unusual that attracts interest</option><option value="M">M. a period when food supplies are officially limited</option><option value="N">N. to grow or increase rapidly</option><option value="O">O. the earliest model from which others develop</option></select></td></tr>
+                <tr><td>13</td><td><strong>boom</strong></td><td><select class="match-select" id="t5m13"><option value="">— select —</option><option value="A">A. the soft remains after something is cut</option><option value="B">B. a mixture of ground meat shaped into a flat round piece</option><option value="C">C. very typical or perfect example of something</option><option value="D">D. the thin membrane surrounding the organs of animals</option><option value="E">E. found everywhere</option><option value="F">F. the complete collection of things available</option><option value="G">G. someone or something that replaces another</option><option value="H">H. to decorate or add food to improve appearance</option><option value="I">I. produced in a clean and sanitary way</option><option value="J">J. a sauce served alongside food</option><option value="K">K. a new method or idea</option><option value="L">L. something unusual that attracts interest</option><option value="M">M. a period when food supplies are officially limited</option><option value="N">N. to grow or increase rapidly</option><option value="O">O. the earliest model from which others develop</option></select></td></tr>
+                <tr><td>14</td><td><strong>patty</strong></td><td><select class="match-select" id="t5m14"><option value="">— select —</option><option value="A">A. the soft remains after something is cut</option><option value="B">B. a mixture of ground meat shaped into a flat round piece</option><option value="C">C. very typical or perfect example of something</option><option value="D">D. the thin membrane surrounding the organs of animals</option><option value="E">E. found everywhere</option><option value="F">F. the complete collection of things available</option><option value="G">G. someone or something that replaces another</option><option value="H">H. to decorate or add food to improve appearance</option><option value="I">I. produced in a clean and sanitary way</option><option value="J">J. a sauce served alongside food</option><option value="K">K. a new method or idea</option><option value="L">L. something unusual that attracts interest</option><option value="M">M. a period when food supplies are officially limited</option><option value="N">N. to grow or increase rapidly</option><option value="O">O. the earliest model from which others develop</option></select></td></tr>
+                <tr><td>15</td><td><strong>prototype</strong></td><td><select class="match-select" id="t5m15"><option value="">— select —</option><option value="A">A. the soft remains after something is cut</option><option value="B">B. a mixture of ground meat shaped into a flat round piece</option><option value="C">C. very typical or perfect example of something</option><option value="D">D. the thin membrane surrounding the organs of animals</option><option value="E">E. found everywhere</option><option value="F">F. the complete collection of things available</option><option value="G">G. someone or something that replaces another</option><option value="H">H. to decorate or add food to improve appearance</option><option value="I">I. produced in a clean and sanitary way</option><option value="J">J. a sauce served alongside food</option><option value="K">K. a new method or idea</option><option value="L">L. something unusual that attracts interest</option><option value="M">M. a period when food supplies are officially limited</option><option value="N">N. to grow or increase rapidly</option><option value="O">O. the earliest model from which others develop</option></select></td></tr>
+            </tbody>
+        </table>
+
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(4)">← Previous</button>
+            <button class="check-btn" id="check5" onclick="checkTask5()" disabled>Check Answers</button>
+            <button class="next-btn" id="next5" disabled onclick="goToTask(6)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns5" onclick="toggleAnswers('ans5')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans5">
+            <p><strong>MCQ:</strong> 1-B, 2-C, 3-B, 4-B, 5-B, 6-B, 7-C, 8-C, 9-B, 10-B</p>
+            <p><strong>Gap Fill:</strong> 1-quintessentially, 2-patty, 3-ubiquitous, 4-collapse, 5-repertoire, 6-garnishing, 7-successor, 8-offcuts, 9-relish, 10-curiosity, 11-hygienically, 12-rationing, 13-boomed, 14-prototype, 15-ubiquitous</p>
+            <p><strong>Matching:</strong> 1-C, 2-K, 3-E, 4-D, 5-F, 6-H, 7-G, 8-A, 9-J, 10-L, 11-I, 12-M, 13-N, 14-B, 15-O</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 6 ══ -->
+    <div class="task-card" id="task6">
+        <div class="task-header">
+            <div class="task-number">6</div>
+            <div><div class="task-title">Dictation + Comprehension</div><div class="task-subtitle">Listen, complete the gaps, then answer questions</div></div>
+        </div>
+        <div class="audio-player">
+            <p>🎧 Nostalgia and Christmas Memories — BBC Learning English</p>
+            <audio controls src="christmas.mp3"></audio>
+        </div>
+        <h4 style="color:#6b46c1; margin-bottom:12px;">Part 1 — Dictation (ONE WORD ONLY)</h4>
+        <div class="gap-fill-section" id="dictation-gaps"></div>
+        <h4 style="color:#6b46c1; margin:20px 0 12px;">Part 2 — Comprehension Questions</h4>
+        <div class="question-block">
+            <div class="question-text">1. What does Neil remember most about Christmas when he was a child?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q1" value="A"> A. Visiting relatives every year</label>
+                <label><input type="radio" name="t6q1" value="B"> B. Living in Canada where it always snowed</label>
+                <label><input type="radio" name="t6q1" value="C"> C. Receiving expensive presents</label>
+                <label><input type="radio" name="t6q1" value="D"> D. Decorating a huge Christmas tree</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q1"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">2. What Christmas tradition did Daryl O'Connor continue with his own children?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q2" value="A"> A. Singing Christmas songs together</label>
+                <label><input type="radio" name="t6q2" value="B"> B. Opening presents at midnight</label>
+                <label><input type="radio" name="t6q2" value="C"> C. Queuing on the stairs while he checked for Santa</label>
+                <label><input type="radio" name="t6q2" value="D"> D. Baking Christmas cookies</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q2"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">3. According to Catherine Loveday, what is the main function of memory?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q3" value="A"> A. To remember every detail accurately</label>
+                <label><input type="radio" name="t6q3" value="B"> B. To help us pass exams</label>
+                <label><input type="radio" name="t6q3" value="C"> C. Accuracy is less important than how memories help us now</label>
+                <label><input type="radio" name="t6q3" value="D"> D. To preserve historical facts</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q3"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">4. What does the expression "rose-tinted" mean?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q4" value="A"> A. Remembering only the negative parts of something</label>
+                <label><input type="radio" name="t6q4" value="B"> B. Seeing only the positive aspects of something</label>
+                <label><input type="radio" name="t6q4" value="C"> C. Forgetting important memories completely</label>
+                <label><input type="radio" name="t6q4" value="D"> D. Remembering events exactly as they happened</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q4"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">5. Which food has become a popular Christmas meal in Japan?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q5" value="A"> A. Turkey ramen</label>
+                <label><input type="radio" name="t6q5" value="B"> B. Takeaway pizza</label>
+                <label><input type="radio" name="t6q5" value="C"> C. Fried chicken</label>
+                <label><input type="radio" name="t6q5" value="D"> D. Roast beef</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q5"></div>
+        </div>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(5)">← Previous</button>
+            <button class="check-btn" id="check6" onclick="checkTask6()" disabled>Check Answers</button>
+            <button class="next-btn" id="next6" disabled onclick="goToTask(7)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns6" onclick="toggleAnswers('ans6')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans6">
+            <p><strong>Dictation:</strong> 1-memories, 2-performance, 3-snowing, 4-today, 5-nostalgia, 6-sprouts, 7-chicken, 8-traditions, 9-snack, 10-indeed, 11-queue, 12-children, 13-Dying, 14-something, 15-rose-tinted, 16-accuracy, 17-wrong, 18-adjust, 19-positive, 20-purpose, 21-describe, 22-past, 23-correct, 24-sadness, 25-yes, 26-want, 27-positive, 28-something, 29-describe, 30-sad</p>
+            <p><strong>MCQ:</strong> 1-B, 2-C, 3-C, 4-B, 5-C</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 7 ══ -->
+    <div class="task-card" id="task7">
+        <div class="task-header">
+            <div class="task-number">7</div>
+            <div><div class="task-title">Practice Listening</div><div class="task-subtitle">Full IELTS-style listening test</div></div>
+        </div>
+        <a class="html-link-btn" href="Listening (26).html" target="_blank">🎧 Open Practice Listening</a>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(6)">← Previous</button>
+            <button class="next-btn" onclick="finishDay()">Finish Day 2 ✓</button>
+        </div>
+    </div>
+
+    <!-- COMPLETION -->
+    <div class="completion-screen" id="completion-screen">
+        <div class="icon">🎉</div>
+        <h2>Day 2 Complete!</h2>
+        <p>Great work! You've completed all tasks for Week 6, Day 2.</p>
+        <div style="margin:30px 0; text-align:left;">
+            <h3 style="color:#6b46c1; border-bottom:2px solid #6b46c1; padding-bottom:10px; margin-bottom:15px;">📋 Review Your Work</h3>
+            <p style="color:#888; margin-bottom:20px; font-size:0.9rem;">Click any task below to go back and review it.</p>
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:15px;">
+                <div onclick="reviewTask(1)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#6b46c1;font-size:1.1rem;margin-bottom:5px;">Task 1</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Mini Reading</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(2)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#6b46c1;font-size:1.1rem;margin-bottom:5px;">Task 2</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Article Reading</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(3)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#6b46c1;font-size:1.1rem;margin-bottom:5px;">Task 3</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Reading</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(4)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#6b46c1;font-size:1.1rem;margin-bottom:5px;">Task 4</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Child Development</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(5)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#6b46c1;font-size:1.1rem;margin-bottom:5px;">Task 5</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Video + Vocab</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(6)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#6b46c1;font-size:1.1rem;margin-bottom:5px;">Task 6</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Dictation + MCQ</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(7)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#6b46c1;font-size:1.1rem;margin-bottom:5px;">Task 7</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Listening</div><div style="font-size:1.4rem;">✅</div></div>
+            </div>
+        </div>
+        <a href="/student-dashboard.html" class="dashboard-btn">← Back to Dashboard</a>
+    </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://nbfceuhuauizyucugejr.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_0mFIGJkA_DKZfUiDAWFdrA_nXt0hF6H';
+const dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const WEEK = 6, DAY = 2, TOTAL_TASKS = 7;
+let studentId = null, currentTask = 1;
+let taskStartTime = Date.now(), saveTimeout = null;
+
+const dictationAnswers = ['memories','performance','snowing','today','nostalgia','sprouts','chicken','traditions','snack','indeed','queue','children','Dying','something','rose-tinted','accuracy','wrong','adjust','positive','purpose','describe','past','correct','sadness','yes','want','positive','something','describe','sad'];
+
+const dictationScripts = [
+    "lots of people have many happy <input class='gap-input' id='d1' placeholder='(1)'> about Christmas.",
+    "My cousins and I used to always put on a Christmas <input class='gap-input' id='d2' placeholder='(2)'> for the family.",
+    "I lived in Canada when I was a kid and it was always <input class='gap-input' id='d3' placeholder='(3)'>.",
+    "or more magical than Christmas feels <input class='gap-input' id='d4' placeholder='(4)'>.",
+    "It's a strange feeling we call <input class='gap-input' id='d5' placeholder='(5)'>.",
+    "and all the roast potatoes and Brussels <input class='gap-input' id='d6' placeholder='(6)'>.",
+    "I think the answer is fried <input class='gap-input' id='d7' placeholder='(7)'>.",
+    "people often create family <input class='gap-input' id='d8' placeholder='(8)'> that they repeat every year.",
+    "putting out a <input class='gap-input' id='d9' placeholder='(9)'> for Father Christmas.",
+    "Well, <input class='gap-input' id='d10' placeholder='(10)'> it does, Claudia.",
+    "we would have to <input class='gap-input' id='d11' placeholder='(11)'> up on the stairs.",
+    "I have repeated that exact same thing for my <input class='gap-input' id='d12' placeholder='(12)'>.",
+    "<input class='gap-input' id='d13' placeholder='(13)'> for their presents!",
+    "We use the phrase dying for when someone really wants <input class='gap-input' id='d14' placeholder='(14)'>.",
+    "they're often going to be <input class='gap-input' id='d15' placeholder='(15)'> and made more positive.",
+    "The function of memory is not about <input class='gap-input' id='d16' placeholder='(16)'>.",
+    "It doesn't matter if some of the details are <input class='gap-input' id='d17' placeholder='(17)'>.",
+    "it's actually better for us to reframe our memories and slightly <input class='gap-input' id='d18' placeholder='(18)'> them.",
+    "we only see the <input class='gap-input' id='d19' placeholder='(19)'> things about it.",
+    "Function means the <input class='gap-input' id='d20' placeholder='(20)'> of something.",
+    "Frame can be used as a verb to mean how we think of or <input class='gap-input' id='d21' placeholder='(21)'> something.",
+    "based on what things were actually like in the <input class='gap-input' id='d22' placeholder='(22)'>.",
+    "You are absolutely <input class='gap-input' id='d23' placeholder='(23)'>.",
+    "a feeling of happiness and also some <input class='gap-input' id='d24' placeholder='(24)'> when you think about something.",
+    "can be used instead of answering <input class='gap-input' id='d25' placeholder='(25)'>.",
+    "Dying for something means you really <input class='gap-input' id='d26' placeholder='(26)'> something.",
+    "Rose-tinted means seeing only the <input class='gap-input' id='d27' placeholder='(27)'> parts of something.",
+    "Function means the purpose of <input class='gap-input' id='d28' placeholder='(28)'>.",
+    "Frame means how we think of or <input class='gap-input' id='d29' placeholder='(29)'> something.",
+    "Nostalgia can make us feel both happy and <input class='gap-input' id='d30' placeholder='(30)'> at the same time.",
+];
+
+const vocab = [
+    {word:"1. Rite of passage (n)", def:"A ceremony marking a transition in life"},
+    {word:"2. Anthropologist (n)", def:"A person who studies human societies and cultures"},
+    {word:"3. Initiation (n)", def:"A ceremony admitting someone into a group"},
+    {word:"4. Liminal (adj)", def:"Relating to a transitional or in-between state"},
+    {word:"5. Adolescent (n)", def:"A young person in the process of developing into an adult"},
+    {word:"6. Endurance (n)", def:"The ability to withstand hardship"},
+    {word:"7. Coming-of-age (n)", def:"The transition into adulthood"},
+    {word:"8. Communal (adj)", def:"Shared by a group of people"},
+    {word:"9. Sanctioned (adj)", def:"Officially approved or permitted"},
+    {word:"10. Milestone (n)", def:"A significant event or stage in development"},
+    {word:"11. Quintessentially (adv)", def:"In a way that is the perfect example of something"},
+    {word:"12. Ubiquitous (adj)", def:"Found everywhere"},
+    {word:"13. Repertoire (n)", def:"The complete collection of things available"},
+    {word:"14. Garnish (v)", def:"To decorate or add food to improve appearance"},
+    {word:"15. Successor (n)", def:"Someone or something that replaces another"},
+    {word:"16. Offcuts (n)", def:"The remains after something is cut"},
+    {word:"17. Relish (n)", def:"A sauce served alongside food"},
+    {word:"18. Curiosity (n)", def:"Something unusual that attracts interest"},
+    {word:"19. Hygienically (adv)", def:"In a clean and sanitary way"},
+    {word:"20. Rationing (n)", def:"A period when food supplies are officially limited"},
+    {word:"21. Boom (v)", def:"To grow or increase rapidly"},
+    {word:"22. Patty (n)", def:"A mixture of ground meat shaped into a flat round piece"},
+    {word:"23. Prototype (n)", def:"The earliest model from which others develop"},
+    {word:"24. Innovation (n)", def:"A new method or idea"},
+    {word:"25. Caul fat (n)", def:"The thin membrane surrounding an animal's organs"},
+    {word:"26. Nostalgia (n)", def:"A sentimental longing for the past"},
+    {word:"27. Tradition (n)", def:"A custom passed down through generations"},
+    {word:"28. Rose-tinted (adj)", def:"Seeing only the positive aspects of something"},
+    {word:"29. Bandwagon (n, idiom)", def:"A popular activity people join because it's trendy"},
+    {word:"30. Mimic (v)", def:"To imitate someone's actions or speech"},
+    {word:"31. Gesture (n)", def:"A movement of the body to express meaning"},
+    {word:"32. Toddler (n)", def:"A young child who has recently learned to walk"},
+    {word:"33. Make-believe (n)", def:"Imaginative pretend play"},
+    {word:"34. Immature (adj)", def:"Not fully developed; childish"},
+    {word:"35. Cognitive (adj)", def:"Relating to mental processes such as thinking"},
+    {word:"36. Function (n)", def:"The purpose or role of something"},
+    {word:"37. Frame (v)", def:"To think of or describe something in a particular way"},
+    {word:"38. Queue (n)", def:"A line of people waiting"},
+    {word:"39. Indeed (adv)", def:"Used to emphasise agreement or confirmation"},
+    {word:"40. Performance (n)", def:"A presentation or show in front of an audience"},
+    {word:"41. Reincorporation (n)", def:"The act of being brought back into a group"},
+    {word:"42. Symbolic (adj)", def:"Representing something else through symbols"},
+    {word:"43. Identity (n)", def:"The characteristics that define who someone is"},
+    {word:"44. Privilege (n)", def:"A special right or advantage"},
+    {word:"45. Industrialised (adj)", def:"Having developed extensive industry"},
+    {word:"46. Disorienting (adj)", def:"Causing confusion or loss of one's sense of direction"},
+    {word:"47. Established (adj)", def:"Securely or permanently set up"},
+    {word:"48. Heritage (n)", def:"Cultural traditions passed down from previous generations"},
+    {word:"49. Ceremony (n)", def:"A formal event marking an important occasion"},
+    {word:"50. Custom (n)", def:"A traditional way of behaving in a society"},
+];
+
+async function initStudent() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('teacher') === 'true') { studentId = 'teacher-preview'; return; }
+    try {
+        const userStr = localStorage.getItem('user');
+        if (!userStr) { window.location.href = '/login.html'; return; }
+        const user = JSON.parse(userStr);
+        const { data, error } = await dbClient.from('students').select('*').eq('username', user.username).single();
+        if (error || !data) return;
+        studentId = data.id;
+    } catch(e) { console.log('Auth error:', e); }
+}
+
+function buildVocab() {
+    document.getElementById('vocab-grid').innerHTML = vocab.map(v =>
+        `<div class="vocab-item"><div class="vocab-word">${v.word}</div><div class="vocab-definition">${v.def}</div></div>`).join('');
+}
+
+function buildDictation() {
+    document.getElementById('dictation-gaps').innerHTML = dictationScripts.map((s, i) =>
+        `<div class="gap-sentence"><strong>${i+1}.</strong> …${s}</div>`).join('');
+}
+
+async function startDay() {
+    document.getElementById('splash-screen').style.display = 'none';
+    document.getElementById('main-content').style.display = 'block';
+    buildVocab(); buildDictation();
+    await initStudent();
+    await restoreProgress();
+    setupLiveValidation();
+}
+
+function goToTask(num) {
+    document.getElementById('task' + currentTask).classList.remove('active');
+    currentTask = num;
+    document.getElementById('task' + num).classList.add('active');
+    document.getElementById('task' + num).scrollIntoView({behavior:'smooth', block:'start'});
+    updateProgress(num); taskStartTime = Date.now(); saveResume(num);
+}
+
+function updateProgress(taskNum) {
+    document.getElementById('progress-bar').style.width = Math.round(((taskNum-1)/TOTAL_TASKS)*100) + '%';
+    document.getElementById('progress-label').textContent = `Task ${taskNum} of ${TOTAL_TASKS}`;
+}
+
+function showSaveIndicator() {
+    const el = document.getElementById('saveIndicator');
+    el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+async function saveResume(taskNum) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try { await dbClient.from('student_resume').upsert({student_id:studentId, week:WEEK, day:DAY, last_task:taskNum, updated_at:new Date().toISOString()}, {onConflict:'student_id'}); } catch(e) {}
+}
+
+function scheduleSave() {
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+        localStorage.setItem(`w${WEEK}d${DAY}_answers`, JSON.stringify(gatherAllAnswers()));
+        showSaveIndicator();
+    }, 800);
+}
+
+function gatherAllAnswers() {
+    const data = {};
+    document.querySelectorAll('.gap-input, .dev-input').forEach(el => { if (el.id) data[el.id] = el.value; });
+    ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10','t6q1','t6q2','t6q3','t6q4','t6q5'].forEach(name => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`); if (sel) data[name] = sel.value;
+    });
+    document.querySelectorAll('select').forEach(el => { if (el.id) data[el.id] = el.value; });
+    return data;
+}
+
+async function restoreProgress() {
+    try {
+        const saved = localStorage.getItem(`w${WEEK}d${DAY}_answers`);
+        if (saved) {
+            const data = JSON.parse(saved);
+            Object.entries(data).forEach(([id, val]) => { const el = document.getElementById(id); if (el && el.tagName === 'INPUT') el.value = val; });
+            ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10','t6q1','t6q2','t6q3','t6q4','t6q5'].forEach(name => {
+                const val = data[name]; if (val) { const r = document.querySelector(`input[name="${name}"][value="${val}"]`); if (r) r.checked = true; }
+            });
+            Object.entries(data).forEach(([id, val]) => { const el = document.getElementById(id); if (el && el.tagName === 'SELECT') el.value = val; });
+        }
+        if (studentId && studentId !== 'teacher-preview') {
+            const { data: taskData } = await dbClient.from('task_progress').select('task_number,status').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY);
+            const completedCount = taskData ? taskData.filter(t => t.status === 'completed').length : 0;
+            if (completedCount >= TOTAL_TASKS) {
+                await restoreAnswersFromSupabase();
+                document.getElementById('task1').classList.remove('active');
+                document.getElementById('completion-screen').style.display = 'block';
+                updateProgress(TOTAL_TASKS); validateAll(); makeReadOnly(); return;
+            }
+            const { data: resume } = await dbClient.from('student_resume').select('last_task').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY).single();
+            if (resume && resume.last_task > 1) {
+                document.getElementById('task1').classList.remove('active');
+                currentTask = resume.last_task;
+                document.getElementById('task' + currentTask).classList.add('active');
+                updateProgress(currentTask);
+            }
+        }
+        validateAll();
+    } catch(e) { console.log('Restore error:', e); }
+}
+
+async function restoreAnswersFromSupabase() {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        const { data: answers } = await dbClient.from('student_answers').select('*').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY);
+        if (!answers || answers.length === 0) return;
+        answers.forEach(a => {
+            const { question_id, student_answer, question_type, is_correct, correct_answer } = a;
+            if (question_type === 'mcq') {
+                const radio = document.querySelector(`input[name="${question_id}"][value="${student_answer}"]`);
+                if (radio) radio.checked = true;
+                const fb = document.getElementById('fb_' + question_id);
+                if (fb) { fb.textContent = is_correct ? '✅ Correct!' : `❌ Incorrect — correct answer: ${correct_answer}`; fb.className = 'answer-feedback ' + (is_correct ? 'correct' : 'incorrect'); }
+            } else if (question_type === 'gap_fill') {
+                const inp = document.getElementById(question_id);
+                if (inp) { inp.value = student_answer || ''; inp.classList.toggle('correct', is_correct); inp.classList.toggle('incorrect', !is_correct); }
+            } else if (question_type === 'matching') {
+                const sel = document.getElementById(question_id);
+                if (sel) { sel.value = student_answer || ''; sel.classList.toggle('correct', is_correct); sel.classList.toggle('incorrect', !is_correct); }
+            }
+        });
+        document.querySelectorAll('.show-answers-btn').forEach(btn => btn.style.display = 'inline-block');
+        document.querySelectorAll('.next-btn').forEach(btn => btn.disabled = false);
+    } catch(e) { console.error('Restore answers error:', e); }
+}
+
+function makeReadOnly() {
+    document.querySelectorAll('.gap-input, .dev-input').forEach(el => { el.disabled = true; el.style.opacity = '0.85'; });
+    document.querySelectorAll('input[type="radio"]').forEach(el => el.disabled = true);
+    document.querySelectorAll('select').forEach(el => { el.disabled = true; });
+    document.querySelectorAll('.check-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.next-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.prev-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.show-answers-btn').forEach(el => el.style.display = 'inline-block');
+}
+
+function setupLiveValidation() {
+    ['t1q1','t1q2','t1q3','t1q4','t1q5','t1q6','t1q7'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', () => { validateTask1Check(); scheduleSave(); }); });
+    ['t4g1','t4g2','t4g3','t4g4','t4g5','t4g6','t4g7','t4g7b','t4g8','t4g9','t4g10','t4g11','t4g12'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', () => { validateTask4Check(); scheduleSave(); }); });
+    ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10'].forEach(name => { document.querySelectorAll(`input[name="${name}"]`).forEach(el => el.addEventListener('change', () => { validateTask5Check(); scheduleSave(); })); });
+    for (let i = 1; i <= 15; i++) { const el = document.getElementById('t5g' + i); if (el) el.addEventListener('input', () => { validateTask5Check(); scheduleSave(); }); }
+    for (let i = 1; i <= 15; i++) { const el = document.getElementById('t5m' + i); if (el) el.addEventListener('change', () => { validateTask5Check(); scheduleSave(); }); }
+    ['t6q1','t6q2','t6q3','t6q4','t6q5'].forEach(name => { document.querySelectorAll(`input[name="${name}"]`).forEach(el => el.addEventListener('change', () => { validateTask6Check(); scheduleSave(); })); });
+    for (let i = 1; i <= 30; i++) { const el = document.getElementById('d' + i); if (el) el.addEventListener('input', () => { validateTask6Check(); scheduleSave(); }); }
+}
+
+function validateAll() { validateTask1Check(); validateTask4Check(); validateTask5Check(); validateTask6Check(); }
+function validateTask1Check() { document.getElementById('check1').disabled = !['t1q1','t1q2','t1q3','t1q4','t1q5','t1q6','t1q7'].every(id => document.getElementById(id)?.value.trim()); }
+function validateTask4Check() {
+    document.getElementById('check4').disabled = !['t4g1','t4g2','t4g3','t4g4','t4g5','t4g6','t4g7','t4g7b','t4g8','t4g9','t4g10','t4g11','t4g12'].every(id => document.getElementById(id)?.value.trim());
+}
+function validateTask5Check() {
+    const allMcq = ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10'].every(name => document.querySelector(`input[name="${name}"]:checked`));
+    const allGaps = Array.from({length:15}, (_,i) => document.getElementById('t5g'+(i+1))?.value.trim()).every(Boolean);
+    const allMatch = Array.from({length:15}, (_,i) => document.getElementById('t5m'+(i+1))?.value).every(Boolean);
+    document.getElementById('check5').disabled = !(allMcq && allGaps && allMatch);
+}
+function validateTask6Check() {
+    const allDict = Array.from({length:30}, (_,i) => document.getElementById('d'+(i+1))?.value.trim()).every(Boolean);
+    const allMcq = ['t6q1','t6q2','t6q3','t6q4','t6q5'].every(name => document.querySelector(`input[name="${name}"]:checked`));
+    document.getElementById('check6').disabled = !(allDict && allMcq);
+}
+
+const t1Accepted = {
+    t1q1:['consistent structure','structure'],
+    t1q2:['sacred cultural knowledge','cultural knowledge'],
+    t1q3:['adult responsibilities and privileges','responsibilities and privileges'],
+    t1q4:['ambiguous, in-between status','in-between status','ambiguous in-between status'],
+    t1q5:['the old identity','old identity'],
+    t1q6:['this gap','gap'],
+    t1q7:['prolonged uncertainty']
+};
+const t4Accepted = {
+    t4g1:['behaviour'],t4g2:['gestures'],t4g3:['toddler'],t4g4:['independent'],
+    t4g5:['climb'],t4g6:['make-believe','imagination'],t4g7:['outside'],t4g7b:['world'],
+    t4g8:['immature'],t4g9:['rapid'],t4g10:['teeth','eyes'],t4g11:['eyes','teeth'],t4g12:['skills']
+};
+const t5McqAnswers = {t5q1:'B',t5q2:'C',t5q3:'B',t5q4:'B',t5q5:'B',t5q6:'B',t5q7:'C',t5q8:'C',t5q9:'B',t5q10:'B'};
+const t5GapAnswers = {t5g1:'quintessentially',t5g2:'patty',t5g3:'ubiquitous',t5g4:'collapse',t5g5:'repertoire',t5g6:'garnishing',t5g7:'successor',t5g8:'offcuts',t5g9:'relish',t5g10:'curiosity',t5g11:'hygienically',t5g12:'rationing',t5g13:'boomed',t5g14:'prototype',t5g15:'ubiquitous'};
+const t5MatchAnswers = {t5m1:'C',t5m2:'K',t5m3:'E',t5m4:'D',t5m5:'F',t5m6:'H',t5m7:'G',t5m8:'A',t5m9:'J',t5m10:'L',t5m11:'I',t5m12:'M',t5m13:'N',t5m14:'B',t5m15:'O'};
+const t6McqAnswers = {t6q1:'B',t6q2:'C',t6q3:'C',t6q4:'B',t6q5:'C'};
+
+function checkTask1() {
+    const answers = [];
+    Object.entries(t1Accepted).forEach(([id, opts]) => {
+        const inp = document.getElementById(id);
+        const val = inp.value.trim().toLowerCase();
+        const ok = opts.some(o => val.includes(o.toLowerCase()));
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:opts[0], is_correct:ok});
+    });
+    document.getElementById('showAns1').style.display = 'inline-block';
+    document.getElementById('next1').disabled = false;
+    saveAnswers(1, answers); saveTaskProgress(1);
+}
+
+function checkTask4() {
+    const answers = [];
+    Object.entries(t4Accepted).forEach(([id, opts]) => {
+        const inp = document.getElementById(id);
+        const val = inp.value.trim().toLowerCase();
+        const ok = opts.some(o => val === o.toLowerCase());
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:opts[0], is_correct:ok});
+    });
+    document.getElementById('showAns4').style.display = 'inline-block';
+    document.getElementById('next4').disabled = false;
+    saveAnswers(4, answers); saveTaskProgress(4);
+}
+
+function checkTask5() {
+    const answers = [];
+    Object.entries(t5McqAnswers).forEach(([name, correct]) => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`);
+        const fb = document.getElementById('fb_' + name);
+        if (!sel) return;
+        const ok = sel.value === correct;
+        fb.textContent = ok ? '✅ Correct!' : `❌ Incorrect — correct answer: ${correct}`;
+        fb.className = 'answer-feedback ' + (ok ? 'correct' : 'incorrect');
+        answers.push({question_id:name, question_type:'mcq', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    Object.entries(t5GapAnswers).forEach(([id, correct]) => {
+        const inp = document.getElementById(id);
+        const val = inp.value.trim().toLowerCase();
+        const ok = val === correct.toLowerCase();
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:correct, is_correct:ok});
+    });
+    Object.entries(t5MatchAnswers).forEach(([id, correct]) => {
+        const sel = document.getElementById(id);
+        const ok = sel.value === correct;
+        sel.classList.toggle('correct', ok); sel.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'matching', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    document.getElementById('showAns5').style.display = 'inline-block';
+    document.getElementById('next5').disabled = false;
+    saveAnswers(5, answers); saveTaskProgress(5);
+}
+
+function checkTask6() {
+    const answers = [];
+    for (let i = 1; i <= 30; i++) {
+        const inp = document.getElementById('d' + i);
+        const val = inp.value.trim().toLowerCase();
+        const correct = dictationAnswers[i-1];
+        const ok = val === correct.toLowerCase();
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:'d'+i, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:correct, is_correct:ok});
+    }
+    Object.entries(t6McqAnswers).forEach(([name, correct]) => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`);
+        const fb = document.getElementById('fb_' + name);
+        if (!sel) return;
+        const ok = sel.value === correct;
+        fb.textContent = ok ? '✅ Correct!' : `❌ Incorrect — correct answer: ${correct}`;
+        fb.className = 'answer-feedback ' + (ok ? 'correct' : 'incorrect');
+        answers.push({question_id:name, question_type:'mcq', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    document.getElementById('showAns6').style.display = 'inline-block';
+    document.getElementById('next6').disabled = false;
+    saveAnswers(6, answers); saveTaskProgress(6);
+}
+
+async function saveAnswers(taskNum, answers) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        const rows = answers.map(a => ({student_id:studentId, week:WEEK, day:DAY, task_number:taskNum, question_id:a.question_id, question_type:a.question_type, student_answer:a.student_answer, correct_answer:a.correct_answer, is_correct:a.is_correct, answered_at:new Date().toISOString()}));
+        await dbClient.from('student_answers').upsert(rows, {onConflict:'student_id,week,day,task_number,question_id'});
+    } catch(e) { console.error('Answer save error:', e); }
+}
+
+async function saveTaskProgress(taskNum) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        await dbClient.from('task_progress').upsert({student_id:studentId, week:WEEK, day:DAY, task_number:taskNum, status:'completed', time_completed:new Date().toISOString(), time_spent_seconds:Math.round((Date.now()-taskStartTime)/1000)}, {onConflict:'student_id,week,day,task_number'});
+    } catch(e) { console.error('Progress save error:', e); }
+}
+
+async function finishDay() {
+    document.getElementById('task7').classList.remove('active');
+    document.getElementById('completion-screen').style.display = 'block';
+    document.getElementById('completion-screen').scrollIntoView({behavior:'smooth'});
+    localStorage.removeItem(`w${WEEK}d${DAY}_answers`);
+    for (let i = 1; i <= TOTAL_TASKS; i++) await saveTaskProgress(i);
+    if (studentId && studentId !== 'teacher-preview') await dbClient.from('student_resume').delete().eq('student_id', studentId);
+    makeReadOnly();
+}
+
+function reviewTask(num) {
+    document.getElementById('completion-screen').style.display = 'none';
+    currentTask = num;
+    document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active'));
+    document.getElementById('task' + num).classList.add('active');
+    document.getElementById('task' + num).scrollIntoView({behavior:'smooth', block:'start'});
+    const existing = document.getElementById('back-to-results');
+    if (!existing) {
+        const btn = document.createElement('button');
+        btn.id = 'back-to-results';
+        btn.textContent = '🏆 Back to Results';
+        btn.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#9f7aea;color:white;border:none;padding:12px 22px;border-radius:50px;cursor:pointer;font-weight:bold;font-size:0.95rem;box-shadow:0 4px 15px rgba(159,122,234,0.4);z-index:9998;';
+        btn.onclick = () => { btn.remove(); document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active')); document.getElementById('completion-screen').style.display = 'block'; document.getElementById('completion-screen').scrollIntoView({behavior:'smooth'}); };
+        document.body.appendChild(btn);
+    }
+}
+
+function toggleVocab() { document.getElementById('vocab-body').classList.toggle('open'); document.getElementById('vocab-arrow').classList.toggle('open'); }
+function toggleAnswers(id) {
+    const div = document.getElementById(id);
+    const btn = div.previousElementSibling;
+    div.style.display = div.style.display === 'block' ? 'none' : 'block';
+    btn.textContent = div.style.display === 'block' ? '▲ Hide Answers' : '▼ Show Answers';
+}
+</script>
+</body>
+</html>
