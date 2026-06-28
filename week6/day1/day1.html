@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEEK 6 - DAY 1 (Culture)</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #faf5ff; color: #333; }
+        #splash-screen { position: fixed; inset: 0; background: linear-gradient(135deg, #9f7aea 0%, #6b46c1 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; color: white; text-align: center; padding: 20px; }
+        #splash-screen h1 { font-size: 3rem; margin-bottom: 10px; }
+        #splash-screen h2 { font-size: 2rem; margin-bottom: 10px; opacity: 0.9; }
+        #splash-screen p { font-size: 1.2rem; margin-bottom: 40px; opacity: 0.8; }
+        .splash-btn { background: white; color: #6b46c1; border: none; padding: 18px 60px; font-size: 1.4rem; font-weight: bold; border-radius: 50px; cursor: pointer; box-shadow: 0 8px 25px rgba(0,0,0,0.2); transition: all 0.3s; }
+        .splash-btn:hover { transform: translateY(-3px); }
+        .main-container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        .day-header { background: linear-gradient(135deg, #9f7aea 0%, #6b46c1 100%); color: white; padding: 25px 30px; border-radius: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; }
+        .day-header h1 { font-size: 1.6rem; }
+        .day-header .topic { opacity: 0.85; font-size: 1rem; margin-top: 4px; }
+        .back-btn { background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; text-decoration: none; font-size: 0.9rem; transition: all 0.3s; }
+        .back-btn:hover { background: white; color: #6b46c1; }
+        .vocab-section { background: white; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-left: 5px solid #9f7aea; overflow: hidden; }
+        .vocab-toggle { width: 100%; background: none; border: none; cursor: pointer; padding: 18px 25px; display: flex; align-items: center; justify-content: space-between; text-align: left; }
+        .vocab-toggle:hover { background: #faf5ff; }
+        .vocab-toggle-left { display: flex; align-items: center; gap: 10px; }
+        .vocab-toggle h3 { color: #6b46c1; font-size: 1.1rem; margin: 0; }
+        .vocab-count { background: #9f7aea; color: white; font-size: 0.75rem; font-weight: bold; padding: 3px 10px; border-radius: 20px; }
+        .vocab-arrow { color: #6b46c1; font-size: 1rem; transition: transform 0.3s; }
+        .vocab-arrow.open { transform: rotate(180deg); }
+        .vocab-body { display: none; padding: 0 25px 20px; }
+        .vocab-body.open { display: block; }
+        .vocab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+        .vocab-item { background: #faf5ff; padding: 10px 14px; border-radius: 8px; }
+        .vocab-word { font-weight: bold; color: #333; font-size: 0.95rem; }
+        .vocab-definition { color: #666; font-size: 0.82rem; margin-top: 2px; }
+        .progress-label { text-align: center; color: #6b46c1; font-size: 0.85rem; margin-bottom: 8px; font-weight: 600; }
+        .progress-bar-wrap { background: #e9d8fd; border-radius: 20px; height: 10px; margin-bottom: 20px; overflow: hidden; }
+        .progress-bar-fill { background: linear-gradient(90deg, #9f7aea, #6b46c1); height: 100%; border-radius: 20px; transition: width 0.5s ease; }
+        .task-card { background: white; border-radius: 15px; padding: 28px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); display: none; }
+        .task-card.active { display: block; }
+        .task-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .task-number { background: linear-gradient(135deg, #9f7aea, #6b46c1); color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; flex-shrink: 0; }
+        .task-title { font-size: 1.3rem; font-weight: bold; color: #333; }
+        .task-subtitle { color: #888; font-size: 0.9rem; margin-top: 2px; }
+        .pdf-links { display: flex; flex-direction: column; gap: 12px; margin: 15px 0; }
+        .pdf-link { display: flex; align-items: center; gap: 12px; background: #faf5ff; padding: 15px 20px; border-radius: 10px; text-decoration: none; color: #333; font-weight: 600; border: 2px solid #e9d8fd; transition: all 0.3s; }
+        .pdf-link:hover { background: #9f7aea; color: white; border-color: #9f7aea; transform: translateX(5px); }
+        .pdf-icon { font-size: 1.5rem; }
+        .html-link-btn { display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #9f7aea, #6b46c1); color: white; padding: 15px 30px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 1rem; transition: all 0.3s; margin: 10px 0; }
+        .html-link-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(159,122,234,0.4); }
+        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; margin: 15px 0; }
+        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .video-fallback { background: #faf5ff; padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align: center; }
+        .video-fallback a { color: #6b46c1; font-weight: bold; }
+        .audio-player { background: #faf5ff; border: 2px solid #e9d8fd; border-radius: 12px; padding: 20px; margin: 15px 0; }
+        .audio-player p { color: #555; margin-bottom: 10px; font-weight: 600; }
+        .audio-player audio { width: 100%; }
+        .passage-text { background: #fdfaff; border: 1px solid #e9d8fd; border-radius: 10px; padding: 25px; margin: 15px 0; line-height: 1.8; font-size: 0.97rem; color: #333; }
+        .passage-text h3 { color: #6b46c1; margin-bottom: 15px; font-size: 1.2rem; }
+        .passage-text p { margin-bottom: 14px; }
+        .highlight { font-style: italic; color: #6b46c1; font-weight: 600; }
+        .question-block { margin-bottom: 20px; padding: 18px; background: #f8f9fa; border-radius: 10px; }
+        .question-text { font-weight: 600; margin-bottom: 12px; color: #333; line-height: 1.5; }
+        .options label { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: background 0.2s; margin-bottom: 5px; }
+        .options label:hover { background: #f3ebff; }
+        .options input[type="radio"] { margin-top: 3px; flex-shrink: 0; }
+        .answer-feedback { margin-top: 8px; font-weight: bold; font-size: 0.9rem; }
+        .answer-feedback.correct { color: #28a745; }
+        .answer-feedback.incorrect { color: #dc3545; }
+        .gap-fill-section { margin-top: 20px; }
+        .gap-sentence { margin-bottom: 14px; line-height: 2; font-size: 1rem; }
+        .gap-input { border: none; border-bottom: 2px solid #9f7aea; padding: 4px 8px; font-size: 0.95rem; width: 200px; background: transparent; outline: none; color: #333; }
+        .gap-input.correct { border-bottom-color: #28a745; background: #d4edda33; }
+        .gap-input.incorrect { border-bottom-color: #dc3545; background: #f8d7da33; }
+        .word-box { background: #faf5ff; border: 2px solid #e9d8fd; border-radius: 10px; padding: 12px 18px; margin-bottom: 15px; }
+        .word-box strong { color: #6b46c1; }
+        .matching-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .matching-table th { background: #9f7aea; color: white; padding: 10px 14px; text-align: left; }
+        .matching-table td { padding: 10px 14px; border-bottom: 1px solid #eee; }
+        .matching-table tr:nth-child(even) td { background: #faf5ff; }
+        .match-select { border: 2px solid #e9d8fd; border-radius: 6px; padding: 5px 8px; font-size: 0.88rem; background: white; width: 100%; max-width: 380px; }
+        .match-select.correct { border-color: #28a745; }
+        .match-select.incorrect { border-color: #dc3545; }
+        .vocab-word-select { border: 2px solid #e9d8fd; border-radius: 6px; padding: 5px 10px; font-size: 0.9rem; background: white; width: 200px; }
+        .vocab-word-select.correct { border-color: #28a745; }
+        .vocab-word-select.incorrect { border-color: #dc3545; }
+        .speakers-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        .speakers-table th { background: #9f7aea; color: white; padding: 12px 16px; text-align: left; }
+        .speakers-table td { padding: 10px 16px; border-bottom: 1px solid #eee; vertical-align: middle; font-size: 0.92rem; }
+        .speakers-table tr:nth-child(even) td { background: #faf5ff; }
+        .topic-select { border: 2px solid #e9d8fd; border-radius: 6px; padding: 5px 10px; font-size: 0.9rem; background: white; width: 90px; }
+        .topic-select.correct { border-color: #28a745; }
+        .topic-select.incorrect { border-color: #dc3545; }
+        .person-select { border: 2px solid #e9d8fd; border-radius: 6px; padding: 5px 10px; font-size: 0.9rem; background: white; width: 130px; }
+        .person-select.correct { border-color: #28a745; }
+        .person-select.incorrect { border-color: #dc3545; }
+        .open-input { border-bottom-color: #9f7aea !important; background: #faf5ff !important; }
+        .questions-box { background: #faf5ff; border: 2px solid #e9d8fd; border-radius: 10px; padding: 15px 20px; margin-bottom: 15px; }
+        .questions-box ol { padding-left: 20px; }
+        .questions-box li { margin-bottom: 6px; color: #333; line-height: 1.6; }
+        .btn-row { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+        .check-btn { background: linear-gradient(135deg, #9f7aea, #6b46c1); color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .check-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(159,122,234,0.4); }
+        .check-btn:disabled { background: #ccc; cursor: not-allowed; transform: none !important; box-shadow: none; }
+        .next-btn { background: #28a745; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .next-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .next-btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(40,167,69,0.4); }
+        .prev-btn { background: #6c757d; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .prev-btn:hover { background: #5a6268; }
+        .show-answers-btn { background: #ffc107; color: #333; border: none; padding: 10px 22px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.88rem; display: none; }
+        .show-answers-btn:hover { background: #e0a800; }
+        .answers-panel { display: none; background: #fffbea; border: 2px solid #ffc107; border-radius: 10px; padding: 15px; margin-top: 12px; }
+        .answers-panel p { margin-bottom: 6px; font-size: 0.9rem; }
+        .completion-screen { text-align: center; padding: 60px 20px; display: none; }
+        .completion-screen .icon { font-size: 5rem; margin-bottom: 20px; }
+        .completion-screen h2 { font-size: 2.2rem; color: #6b46c1; margin-bottom: 10px; }
+        .completion-screen p { color: #666; font-size: 1rem; margin-bottom: 30px; }
+        .dashboard-btn { background: linear-gradient(135deg, #9f7aea, #6b46c1); color: white; padding: 16px 40px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 1.1rem; display: inline-block; transition: all 0.3s; }
+        .dashboard-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(159,122,234,0.4); }
+        .save-indicator { position: fixed; bottom: 20px; right: 20px; background: #9f7aea; color: white; padding: 10px 18px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; opacity: 0; transition: opacity 0.4s; z-index: 9000; pointer-events: none; }
+        .save-indicator.show { opacity: 1; }
+    </style>
+</head>
+<body>
+<div id="splash-screen">
+    <h1>🎭 WEEK 6</h1>
+    <h2>DAY 1</h2>
+    <p>Topic: Culture</p>
+    <button class="splash-btn" onclick="startDay()">LET'S GO!</button>
+</div>
+<div class="save-indicator" id="saveIndicator">✓ Progress saved</div>
+<div class="main-container" id="main-content" style="display:none;">
+    <div class="day-header">
+        <div><h1>🎭 Week 6 — Day 1</h1><div class="topic">Topic: Culture</div></div>
+        <a href="/student-dashboard.html" class="back-btn">← Dashboard</a>
+    </div>
+    <div class="progress-label" id="progress-label">Task 0 of 7</div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-bar" style="width:0%"></div></div>
+
+    <!-- VOCAB -->
+    <div class="vocab-section">
+        <button class="vocab-toggle" onclick="toggleVocab()">
+            <div class="vocab-toggle-left"><h3>📖 Today's Vocabulary</h3><span class="vocab-count">50 words</span></div>
+            <span class="vocab-arrow" id="vocab-arrow">▼</span>
+        </button>
+        <div class="vocab-body" id="vocab-body"><div class="vocab-grid" id="vocab-grid"></div></div>
+    </div>
+
+    <!-- ══ TASK 1 ══ -->
+    <div class="task-card active" id="task1">
+        <div class="task-header">
+            <div class="task-number">1</div>
+            <div><div class="task-title">Mini Reading</div><div class="task-subtitle">Read the passage then complete both parts</div></div>
+        </div>
+        <div class="passage-text">
+            <h3>The Power of Language: Why Words Shape Worlds</h3>
+            <p>Every culture on Earth has developed its own language, and with it, an entirely unique way of slicing up reality into categories that often have no direct equivalent elsewhere. Anthropologists and linguists have long debated the extent to which the structure of a language shapes the way its speakers actually <span class="highlight">(1) perceive</span> the world, rather than simply describing it. While few scholars today accept the strongest version of this idea — that language entirely determines thought — there is growing evidence that the words and grammar available to us do, at the very least, subtly <span class="highlight">(2) influence</span> which aspects of experience we notice and remember most readily.</p>
+            <p>One particularly striking example comes from cultures that have multiple, highly specific words for concepts that other languages compress into a single term. The Inuit languages, for instance, contain numerous distinct words describing different states and types of snow, an environmental feature so central to daily survival that fine-grained linguistic <span class="highlight">(3) distinctions</span> became practically useful. Similarly, some Indigenous Australian languages encode spatial relationships using absolute cardinal directions rather than relative terms like "left" and "right," and speakers of these languages display remarkable, almost intuitive <span class="highlight">(4) navigation</span> skills, even in unfamiliar environments.</p>
+            <p>Cultural traditions, too, are deeply intertwined with language. Oral storytelling traditions, passed down through countless generations without ever being written, encode not just entertaining narratives but also moral lessons, historical events and practical survival knowledge specific to a particular <span class="highlight">(5) community</span>. When a language disappears — and linguists estimate that one is lost roughly every few weeks worldwide — an entire accumulated body of cultural knowledge and a unique way of understanding the world often <span class="highlight">(6) vanishes</span> along with it.</p>
+            <p>This is precisely why efforts to preserve endangered languages have taken on such urgency in recent decades. Linguists, anthropologists and community members increasingly work together on documentation projects, recording elderly native speakers and creating dictionaries and grammars before crucial <span class="highlight">(7) knowledge</span> is lost forever. Beyond pure scientific interest, these preservation efforts also represent a profound act of cultural <span class="highlight">(8) respect</span>, acknowledging that every language embodies an irreplaceable, centuries-old way of experiencing and organising human existence.</p>
+        </div>
+
+        <h4 style="color:#6b46c1; margin:20px 0 10px;">Part 1 — Answer the questions (NO MORE THAN THREE WORDS):</h4>
+        <div class="gap-fill-section">
+            <div class="gap-sentence">1. What do linguists debate regarding the structure of a language?<br><input class="gap-input" id="t1q1" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">2. What environmental feature led Inuit languages to develop many specific words?<br><input class="gap-input" id="t1q2" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">3. What skill do speakers of languages using cardinal directions display?<br><input class="gap-input" id="t1q3" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">4. What do oral storytelling traditions encode besides narratives?<br><input class="gap-input" id="t1q4" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">5. How often does linguists estimate a language is lost worldwide?<br><input class="gap-input" id="t1q5" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">6. What disappears along with a language, according to the passage?<br><input class="gap-input" id="t1q6" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">7. What do preservation efforts represent beyond scientific interest?<br><input class="gap-input" id="t1q7" placeholder="___" style="width:300px; margin-top:8px;"></div>
+        </div>
+
+        <h4 style="color:#6b46c1; margin:20px 0 10px;">Part 2 — Vocabulary in Context: Choose the correct word:</h4>
+        <div class="gap-fill-section">
+            <div class="gap-sentence">1. The way we <select class="vocab-word-select" id="vw1"><option value="">— select —</option><option value="perceive">perceive</option><option value="vanish">vanish</option><option value="respect">respect</option></select> the world can be subtly shaped by language.</div>
+            <div class="gap-sentence">2. Grammar can <select class="vocab-word-select" id="vw2"><option value="">— select —</option><option value="influence">influence</option><option value="distinctions">distinctions</option><option value="community">community</option></select> which details we notice most.</div>
+            <div class="gap-sentence">3. Inuit languages developed fine-grained <select class="vocab-word-select" id="vw3"><option value="">— select —</option><option value="distinctions">distinctions</option><option value="navigation">navigation</option><option value="knowledge">knowledge</option></select> to describe snow.</div>
+            <div class="gap-sentence">4. Speakers using cardinal directions show remarkable <select class="vocab-word-select" id="vw4"><option value="">— select —</option><option value="navigation">navigation</option><option value="respect">respect</option><option value="influence">influence</option></select> skills.</div>
+            <div class="gap-sentence">5. Oral traditions encode knowledge specific to a particular <select class="vocab-word-select" id="vw5"><option value="">— select —</option><option value="community">community</option><option value="distinction">distinction</option><option value="perceive">perceive</option></select>.</div>
+            <div class="gap-sentence">6. When a language disappears, cultural knowledge often <select class="vocab-word-select" id="vw6"><option value="">— select —</option><option value="vanishes">vanishes</option><option value="respects">respects</option><option value="influences">influences</option></select> too.</div>
+            <div class="gap-sentence">7. Preservation projects represent an act of cultural <select class="vocab-word-select" id="vw7"><option value="">— select —</option><option value="respect">respect</option><option value="navigation">navigation</option><option value="community">community</option></select>.</div>
+        </div>
+
+        <div class="btn-row">
+            <button class="check-btn" id="check1" onclick="checkTask1()" disabled>Check Answers</button>
+            <button class="next-btn" id="next1" disabled onclick="goToTask(2)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns1" onclick="toggleAnswers('ans1')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans1">
+            <p><strong>Part 1:</strong> 1-how it shapes thought/perceive the world, 2-snow, 3-navigation skills, 4-moral lessons/historical events/practical survival knowledge, 5-every few weeks, 6-cultural knowledge/(a) unique way of understanding the world, 7-(a profound) act of cultural respect</p>
+            <p><strong>Part 2:</strong> 1-perceive, 2-influence, 3-distinctions, 4-navigation, 5-community, 6-vanishes, 7-respect</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 2 ══ -->
+    <div class="task-card" id="task2">
+        <div class="task-header">
+            <div class="task-number">2</div>
+            <div><div class="task-title">Article Reading</div><div class="task-subtitle">Read the article and study the vocabulary</div></div>
+        </div>
+        <div class="pdf-links">
+            <a class="pdf-link" href="article 1.pdf" target="_blank"><span class="pdf-icon">📄</span> Culture — Article</a>
+            <a class="pdf-link" href="vocab 1.pdf" target="_blank"><span class="pdf-icon">📘</span> Culture — Vocabulary</a>
+        </div>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(1)">← Previous</button>
+            <button class="next-btn" onclick="goToTask(3)">Next Task →</button>
+        </div>
+    </div>
+
+    <!-- ══ TASK 3 ══ -->
+    <div class="task-card" id="task3">
+        <div class="task-header">
+            <div class="task-number">3</div>
+            <div><div class="task-title">Practice Reading</div><div class="task-subtitle">IELTS-style reading test</div></div>
+        </div>
+        <a class="html-link-btn" href="Reading (25).html" target="_blank">📖 Open Practice Reading</a>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(2)">← Previous</button>
+            <button class="next-btn" onclick="goToTask(4)">Next Task →</button>
+        </div>
+    </div>
+
+    <!-- ══ TASK 4 ══ -->
+    <div class="task-card" id="task4">
+        <div class="task-header">
+            <div class="task-number">4</div>
+            <div><div class="task-title">Listening Mini Task</div><div class="task-subtitle">Listen to four speakers and complete the table</div></div>
+        </div>
+        <div class="audio-player">
+            <p>🎧 Track 1A — Four People Discussing Topics</p>
+            <audio controls src="track1a.mp3"></audio>
+        </div>
+        <div class="questions-box">
+            <p style="font-weight:600; color:#6b46c1; margin-bottom:8px;">Topics list:</p>
+            <ol>
+                <li>A study problem</li>
+                <li>Your favourite music</li>
+                <li>Buying something expensive</li>
+                <li>The last film you saw</li>
+            </ol>
+        </div>
+        <p style="color:#555; margin-bottom:15px; font-weight:600;">Listen and write the topic number, the words that helped you decide, and who they would talk to.</p>
+        <table class="speakers-table">
+            <thead>
+                <tr><th>Speaker</th><th>Topic (1–4)</th><th>Words that helped you</th><th>Person/people they'd talk to</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>A</strong></td>
+                    <td><select class="topic-select" id="t4topicA"><option value="">—</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></td>
+                    <td><input class="gap-input open-input" id="t4wordsA" placeholder="write key words..." style="width:100%;"></td>
+                    <td><select class="person-select" id="t4personA"><option value="">— select —</option><option value="classmates">classmates</option><option value="tutor">tutor</option><option value="(big) brother">(big) brother</option><option value="grandad">grandad</option></select></td>
+                </tr>
+                <tr>
+                    <td><strong>B</strong></td>
+                    <td><select class="topic-select" id="t4topicB"><option value="">—</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></td>
+                    <td><input class="gap-input open-input" id="t4wordsB" placeholder="write key words..." style="width:100%;"></td>
+                    <td><select class="person-select" id="t4personB"><option value="">— select —</option><option value="classmates">classmates</option><option value="tutor">tutor</option><option value="(big) brother">(big) brother</option><option value="grandad">grandad</option></select></td>
+                </tr>
+                <tr>
+                    <td><strong>C</strong></td>
+                    <td><select class="topic-select" id="t4topicC"><option value="">—</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></td>
+                    <td><input class="gap-input open-input" id="t4wordsC" placeholder="write key words..." style="width:100%;"></td>
+                    <td><select class="person-select" id="t4personC"><option value="">— select —</option><option value="classmates">classmates</option><option value="tutor">tutor</option><option value="(big) brother">(big) brother</option><option value="grandad">grandad</option></select></td>
+                </tr>
+                <tr>
+                    <td><strong>D</strong></td>
+                    <td><select class="topic-select" id="t4topicD"><option value="">—</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></td>
+                    <td><input class="gap-input open-input" id="t4wordsD" placeholder="write key words..." style="width:100%;"></td>
+                    <td><select class="person-select" id="t4personD"><option value="">— select —</option><option value="classmates">classmates</option><option value="tutor">tutor</option><option value="(big) brother">(big) brother</option><option value="grandad">grandad</option></select></td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(3)">← Previous</button>
+            <button class="check-btn" id="check4" onclick="checkTask4()" disabled>Check Answers</button>
+            <button class="next-btn" id="next4" disabled onclick="goToTask(5)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns4" onclick="toggleAnswers('ans4')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans4">
+            <p><strong>A:</strong> Topic 4 — (movies, latest releases) — classmates</p>
+            <p><strong>B:</strong> Topic 1 — (academically, struggling with an assignment) — tutor</p>
+            <p><strong>C:</strong> Topic 3 — (get a car) — (big) brother</p>
+            <p><strong>D:</strong> Topic 2 — (violin, piano, cello, popular bands, singers, classical music) — grandad</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 5 ══ -->
+    <div class="task-card" id="task5">
+        <div class="task-header">
+            <div class="task-number">5</div>
+            <div><div class="task-title">Video Watching Task</div><div class="task-subtitle">Watch and answer questions</div></div>
+        </div>
+        <div class="video-fallback">
+            <p>▶ <a href="https://www.youtube.com/watch?v=XINQvKbqzq0" target="_blank">Click here to open the video in a new tab</a> if it doesn't play below.</p>
+        </div>
+        <div class="video-container">
+            <iframe src="https://www.youtube.com/embed/XINQvKbqzq0" frameborder="0" allowfullscreen></iframe>
+        </div>
+
+        <h4 style="color:#6b46c1; margin:20px 0 12px;">Part 1 — Multiple Choice Questions</h4>
+        <div class="question-block">
+            <div class="question-text">1. What is the Whorfian hypothesis primarily about?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q1" value="A"> A. Learning languages becomes harder with age.</label>
+                <label><input type="radio" name="t5q1" value="B"> B. Language influences the way people think.</label>
+                <label><input type="radio" name="t5q1" value="C"> C. All languages describe the world in the same way.</label>
+                <label><input type="radio" name="t5q1" value="D"> D. Speaking more languages makes people more intelligent.</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q1"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">2. According to the speakers, different languages:</div>
+            <div class="options">
+                <label><input type="radio" name="t5q2" value="A"> A. Describe reality in identical ways.</label>
+                <label><input type="radio" name="t5q2" value="B"> B. Organise and divide the world differently.</label>
+                <label><input type="radio" name="t5q2" value="C"> C. Have the same grammatical structures.</label>
+                <label><input type="radio" name="t5q2" value="D"> D. Only differ in pronunciation.</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q2"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">3. One speaker says they feel more assertive when speaking:</div>
+            <div class="options">
+                <label><input type="radio" name="t5q3" value="A"> A. German</label>
+                <label><input type="radio" name="t5q3" value="B"> B. Russian</label>
+                <label><input type="radio" name="t5q3" value="C"> C. Dutch</label>
+                <label><input type="radio" name="t5q3" value="D"> D. Korean</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q3"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">4. What role does language play besides communication?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q4" value="A"> A. It replaces memory.</label>
+                <label><input type="radio" name="t5q4" value="B"> B. It organises the world into meaningful categories.</label>
+                <label><input type="radio" name="t5q4" value="C"> C. It eliminates emotions.</label>
+                <label><input type="radio" name="t5q4" value="D"> D. It simplifies grammar.</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q4"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">5. According to the video, languages with grammatical gender can influence how people describe objects by emphasizing:</div>
+            <div class="options">
+                <label><input type="radio" name="t5q5" value="A"> A. Their age only.</label>
+                <label><input type="radio" name="t5q5" value="B"> B. Their colour only.</label>
+                <label><input type="radio" name="t5q5" value="C"> C. Different qualities such as strength or beauty.</label>
+                <label><input type="radio" name="t5q5" value="D"> D. Their price.</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q5"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">6. What is the "thinking for speaking" hypothesis?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q6" value="A"> A. People think before they speak.</label>
+                <label><input type="radio" name="t5q6" value="B"> B. The structure of a language directs speakers' attention to certain aspects of reality while speaking.</label>
+                <label><input type="radio" name="t5q6" value="C"> C. Speaking several languages prevents misunderstandings.</label>
+                <label><input type="radio" name="t5q6" value="D"> D. Grammar has no influence on thought.</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q6"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">7. Why were Himba speakers better at remembering certain colours?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q7" value="A"> A. They have better eyesight.</label>
+                <label><input type="radio" name="t5q7" value="B"> B. They practise colour recognition every day.</label>
+                <label><input type="radio" name="t5q7" value="C"> C. Their language has specific colour categories that English lacks.</label>
+                <label><input type="radio" name="t5q7" value="D"> D. They memorised the colours before the experiment.</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q7"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">8. According to the speaker, the human brain:</div>
+            <div class="options">
+                <label><input type="radio" name="t5q8" value="A"> A. Is fully developed at birth.</label>
+                <label><input type="radio" name="t5q8" value="B"> B. Works the same regardless of language.</label>
+                <label><input type="radio" name="t5q8" value="C"> C. Is shaped by language and environment during development.</label>
+                <label><input type="radio" name="t5q8" value="D"> D. Learns language without cultural influence.</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q8"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">9. What additional benefit of learning another language is highlighted?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q9" value="A"> A. Becoming physically healthier.</label>
+                <label><input type="radio" name="t5q9" value="B"> B. Gaining another perspective on the world.</label>
+                <label><input type="radio" name="t5q9" value="C"> C. Improving mathematical ability.</label>
+                <label><input type="radio" name="t5q9" value="D"> D. Learning grammar rules more quickly.</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q9"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">10. According to the final message of the video, what is probably the one true universal of humanity?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q10" value="A"> A. Intelligence</label>
+                <label><input type="radio" name="t5q10" value="B"> B. Creativity</label>
+                <label><input type="radio" name="t5q10" value="C"> C. Diversity</label>
+                <label><input type="radio" name="t5q10" value="D"> D. Language</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q10"></div>
+        </div>
+
+        <h4 style="color:#6b46c1; margin:20px 0 12px;">Part 2 — Gap Filling</h4>
+        <div class="word-box">
+            <strong>Word Box:</strong> categories &nbsp;|&nbsp; perspective &nbsp;|&nbsp; simulation &nbsp;|&nbsp; masculine &nbsp;|&nbsp; diversity &nbsp;|&nbsp; culture &nbsp;|&nbsp; encoded
+        </div>
+        <div class="gap-fill-section">
+            <div class="gap-sentence">11. Language helps us organise the world into identifiable <input class="gap-input" id="t5g11" placeholder="___">.</div>
+            <div class="gap-sentence">12. Learning another language allows people to gain a different <input class="gap-input" id="t5g12" placeholder="___"> on the world.</div>
+            <div class="gap-sentence">13. Researchers suggest that language involves mental image <input class="gap-input" id="t5g13" placeholder="___"> when we process information.</div>
+            <div class="gap-sentence">14. In some languages, nouns are classified as either feminine or <input class="gap-input" id="t5g14" placeholder="___">.</div>
+            <div class="gap-sentence">15. According to the speaker, colours that are not easily <input class="gap-input" id="t5g15" placeholder="___"> in your native language may be harder to recognise.</div>
+        </div>
+
+        <h4 style="color:#6b46c1; margin:20px 0 12px;">Part 3 — Vocabulary Matching</h4>
+        <table class="matching-table">
+            <thead><tr><th>#</th><th>Word</th><th>Definition</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td><strong>hypothesis</strong></td><td><select class="match-select" id="t5m1"><option value="">— select —</option><option value="A">A. the ability to understand or interpret something</option><option value="B">B. variety or difference within a group</option><option value="C">C. an idea or explanation that can be tested</option><option value="D">D. to form an idea or understand something mentally</option><option value="E">E. a continuous sequence without clear divisions</option><option value="F">F. classified as masculine or feminine</option><option value="G">G. to represent or store information in the mind</option><option value="H">H. relating to thinking and mental processes</option><option value="I">I. a particular way of seeing or understanding something</option><option value="J">J. to imitate or recreate something realistically</option></select></td></tr>
+                <tr><td>2</td><td><strong>conceive</strong></td><td><select class="match-select" id="t5m2"><option value="">— select —</option><option value="A">A. the ability to understand or interpret something</option><option value="B">B. variety or difference within a group</option><option value="C">C. an idea or explanation that can be tested</option><option value="D">D. to form an idea or understand something mentally</option><option value="E">E. a continuous sequence without clear divisions</option><option value="F">F. classified as masculine or feminine</option><option value="G">G. to represent or store information in the mind</option><option value="H">H. relating to thinking and mental processes</option><option value="I">I. a particular way of seeing or understanding something</option><option value="J">J. to imitate or recreate something realistically</option></select></td></tr>
+                <tr><td>3</td><td><strong>continuum</strong></td><td><select class="match-select" id="t5m3"><option value="">— select —</option><option value="A">A. the ability to understand or interpret something</option><option value="B">B. variety or difference within a group</option><option value="C">C. an idea or explanation that can be tested</option><option value="D">D. to form an idea or understand something mentally</option><option value="E">E. a continuous sequence without clear divisions</option><option value="F">F. classified as masculine or feminine</option><option value="G">G. to represent or store information in the mind</option><option value="H">H. relating to thinking and mental processes</option><option value="I">I. a particular way of seeing or understanding something</option><option value="J">J. to imitate or recreate something realistically</option></select></td></tr>
+                <tr><td>4</td><td><strong>perception</strong></td><td><select class="match-select" id="t5m4"><option value="">— select —</option><option value="A">A. the ability to understand or interpret something</option><option value="B">B. variety or difference within a group</option><option value="C">C. an idea or explanation that can be tested</option><option value="D">D. to form an idea or understand something mentally</option><option value="E">E. a continuous sequence without clear divisions</option><option value="F">F. classified as masculine or feminine</option><option value="G">G. to represent or store information in the mind</option><option value="H">H. relating to thinking and mental processes</option><option value="I">I. a particular way of seeing or understanding something</option><option value="J">J. to imitate or recreate something realistically</option></select></td></tr>
+                <tr><td>5</td><td><strong>gendered</strong></td><td><select class="match-select" id="t5m5"><option value="">— select —</option><option value="A">A. the ability to understand or interpret something</option><option value="B">B. variety or difference within a group</option><option value="C">C. an idea or explanation that can be tested</option><option value="D">D. to form an idea or understand something mentally</option><option value="E">E. a continuous sequence without clear divisions</option><option value="F">F. classified as masculine or feminine</option><option value="G">G. to represent or store information in the mind</option><option value="H">H. relating to thinking and mental processes</option><option value="I">I. a particular way of seeing or understanding something</option><option value="J">J. to imitate or recreate something realistically</option></select></td></tr>
+                <tr><td>6</td><td><strong>encode</strong></td><td><select class="match-select" id="t5m6"><option value="">— select —</option><option value="A">A. the ability to understand or interpret something</option><option value="B">B. variety or difference within a group</option><option value="C">C. an idea or explanation that can be tested</option><option value="D">D. to form an idea or understand something mentally</option><option value="E">E. a continuous sequence without clear divisions</option><option value="F">F. classified as masculine or feminine</option><option value="G">G. to represent or store information in the mind</option><option value="H">H. relating to thinking and mental processes</option><option value="I">I. a particular way of seeing or understanding something</option><option value="J">J. to imitate or recreate something realistically</option></select></td></tr>
+                <tr><td>7</td><td><strong>simulate</strong></td><td><select class="match-select" id="t5m7"><option value="">— select —</option><option value="A">A. the ability to understand or interpret something</option><option value="B">B. variety or difference within a group</option><option value="C">C. an idea or explanation that can be tested</option><option value="D">D. to form an idea or understand something mentally</option><option value="E">E. a continuous sequence without clear divisions</option><option value="F">F. classified as masculine or feminine</option><option value="G">G. to represent or store information in the mind</option><option value="H">H. relating to thinking and mental processes</option><option value="I">I. a particular way of seeing or understanding something</option><option value="J">J. to imitate or recreate something realistically</option></select></td></tr>
+                <tr><td>8</td><td><strong>cognitive</strong></td><td><select class="match-select" id="t5m8"><option value="">— select —</option><option value="A">A. the ability to understand or interpret something</option><option value="B">B. variety or difference within a group</option><option value="C">C. an idea or explanation that can be tested</option><option value="D">D. to form an idea or understand something mentally</option><option value="E">E. a continuous sequence without clear divisions</option><option value="F">F. classified as masculine or feminine</option><option value="G">G. to represent or store information in the mind</option><option value="H">H. relating to thinking and mental processes</option><option value="I">I. a particular way of seeing or understanding something</option><option value="J">J. to imitate or recreate something realistically</option></select></td></tr>
+                <tr><td>9</td><td><strong>perspective</strong></td><td><select class="match-select" id="t5m9"><option value="">— select —</option><option value="A">A. the ability to understand or interpret something</option><option value="B">B. variety or difference within a group</option><option value="C">C. an idea or explanation that can be tested</option><option value="D">D. to form an idea or understand something mentally</option><option value="E">E. a continuous sequence without clear divisions</option><option value="F">F. classified as masculine or feminine</option><option value="G">G. to represent or store information in the mind</option><option value="H">H. relating to thinking and mental processes</option><option value="I">I. a particular way of seeing or understanding something</option><option value="J">J. to imitate or recreate something realistically</option></select></td></tr>
+                <tr><td>10</td><td><strong>diversity</strong></td><td><select class="match-select" id="t5m10"><option value="">— select —</option><option value="A">A. the ability to understand or interpret something</option><option value="B">B. variety or difference within a group</option><option value="C">C. an idea or explanation that can be tested</option><option value="D">D. to form an idea or understand something mentally</option><option value="E">E. a continuous sequence without clear divisions</option><option value="F">F. classified as masculine or feminine</option><option value="G">G. to represent or store information in the mind</option><option value="H">H. relating to thinking and mental processes</option><option value="I">I. a particular way of seeing or understanding something</option><option value="J">J. to imitate or recreate something realistically</option></select></td></tr>
+            </tbody>
+        </table>
+
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(4)">← Previous</button>
+            <button class="check-btn" id="check5" onclick="checkTask5()" disabled>Check Answers</button>
+            <button class="next-btn" id="next5" disabled onclick="goToTask(6)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns5" onclick="toggleAnswers('ans5')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans5">
+            <p><strong>MCQ:</strong> 1-B, 2-B, 3-C, 4-B, 5-C, 6-B, 7-C, 8-C, 9-B, 10-C</p>
+            <p><strong>Gap Fill:</strong> 11-categories, 12-perspective, 13-simulation, 14-masculine, 15-encoded</p>
+            <p><strong>Matching:</strong> 1-C, 2-D, 3-E, 4-A, 5-F, 6-G, 7-J, 8-H, 9-I, 10-B</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 6 ══ -->
+    <div class="task-card" id="task6">
+        <div class="task-header">
+            <div class="task-number">6</div>
+            <div><div class="task-title">Dictation + Comprehension</div><div class="task-subtitle">Listen, complete the gaps, then answer questions</div></div>
+        </div>
+        <div class="audio-player">
+            <p>🎧 How Cultures Express Sadness — BBC Learning English</p>
+            <audio controls src="cultures.mp3"></audio>
+        </div>
+        <h4 style="color:#6b46c1; margin-bottom:12px;">Part 1 — Dictation (ONE WORD ONLY)</h4>
+        <div class="gap-fill-section" id="dictation-gaps"></div>
+        <h4 style="color:#6b46c1; margin:20px 0 12px;">Part 2 — Comprehension Questions</h4>
+        <div class="question-block">
+            <div class="question-text">1. Why did Helen Russell become interested in happiness?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q1" value="A"> A. She wanted to become famous.</label>
+                <label><input type="radio" name="t6q1" value="B"> B. Her family encouraged her to write books.</label>
+                <label><input type="radio" name="t6q1" value="C"> C. Her baby sister died when she was very young.</label>
+                <label><input type="radio" name="t6q1" value="D"> D. She moved to Denmark as a child.</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q1"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">2. According to Professor Thomas Dixon, what did the word "sad" originally mean?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q2" value="A"> A. Lonely</label>
+                <label><input type="radio" name="t6q2" value="B"> B. Angry</label>
+                <label><input type="radio" name="t6q2" value="C"> C. Full or fed up</label>
+                <label><input type="radio" name="t6q2" value="D"> D. Weak</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q2"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">3. What does the idiom "a stiff upper lip" mean?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q3" value="A"> A. To smile all the time</label>
+                <label><input type="radio" name="t6q3" value="B"> B. To hide your emotions when upset</label>
+                <label><input type="radio" name="t6q3" value="C"> C. To speak very politely</label>
+                <label><input type="radio" name="t6q3" value="D"> D. To stay physically strong</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q3"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">4. Why did Victorian British men avoid crying?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q4" value="A"> A. They believed it was a sign of weakness.</label>
+                <label><input type="radio" name="t6q4" value="B"> B. They were taught that crying was unhealthy.</label>
+                <label><input type="radio" name="t6q4" value="C"> C. They were never sad.</label>
+                <label><input type="radio" name="t6q4" value="D"> D. They wanted to impress children.</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q4"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">5. According to the programme, what is one healthy way to deal with sadness?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q5" value="A"> A. Drink alcohol to relax.</label>
+                <label><input type="radio" name="t6q5" value="B"> B. Ignore your emotions.</label>
+                <label><input type="radio" name="t6q5" value="C"> C. Talk to someone about your feelings.</label>
+                <label><input type="radio" name="t6q5" value="D"> D. Keep your emotions private.</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q5"></div>
+        </div>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(5)">← Previous</button>
+            <button class="check-btn" id="check6" onclick="checkTask6()" disabled>Check Answers</button>
+            <button class="next-btn" id="next6" disabled onclick="goToTask(7)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns6" onclick="toggleAnswers('ans6')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans6">
+            <p><strong>Dictation:</strong> 1-decision, 2-emotions, 3-culture, 4-dumps, 5-shameful, 6-full, 7-time, 8-melancholy, 9-grief, 10-mourners, 11-uncommon, 12-empire, 13-superior, 14-weakness, 15-wobble, 16-men, 17-depression, 18-blues, 19-blue, 20-dumps, 21-tired, 22-thoughtful, 23-death, 24-emotions, 25-feelings, 26-bottling, 27-emotions, 28-Edwardian, 29-sad, 30-health</p>
+            <p><strong>MCQ:</strong> 1-C, 2-C, 3-B, 4-A, 5-C</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 7 ══ -->
+    <div class="task-card" id="task7">
+        <div class="task-header">
+            <div class="task-number">7</div>
+            <div><div class="task-title">Practice Listening</div><div class="task-subtitle">Full IELTS-style listening test</div></div>
+        </div>
+        <a class="html-link-btn" href="Listening (25).html" target="_blank">🎧 Open Practice Listening</a>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(6)">← Previous</button>
+            <button class="next-btn" onclick="finishDay()">Finish Day 1 ✓</button>
+        </div>
+    </div>
+
+    <!-- COMPLETION -->
+    <div class="completion-screen" id="completion-screen">
+        <div class="icon">🎉</div>
+        <h2>Day 1 Complete!</h2>
+        <p>Great start! You've completed all tasks for Week 6, Day 1.</p>
+        <div style="margin:30px 0; text-align:left;">
+            <h3 style="color:#6b46c1; border-bottom:2px solid #6b46c1; padding-bottom:10px; margin-bottom:15px;">📋 Review Your Work</h3>
+            <p style="color:#888; margin-bottom:20px; font-size:0.9rem;">Click any task below to go back and review it.</p>
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:15px;">
+                <div onclick="reviewTask(1)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#6b46c1;font-size:1.1rem;margin-bottom:5px;">Task 1</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Mini Reading</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(2)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#6b46c1;font-size:1.1rem;margin-bottom:5px;">Task 2</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Article Reading</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(3)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#6b46c1;font-size:1.1rem;margin-bottom:5px;">Task 3</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Reading</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(4)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#6b46c1;font-size:1.1rem;margin-bottom:5px;">Task 4</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Conversation Topics</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(5)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#6b46c1;font-size:1.1rem;margin-bottom:5px;">Task 5</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Video + Vocab</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(6)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#6b46c1;font-size:1.1rem;margin-bottom:5px;">Task 6</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Dictation + MCQ</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(7)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#6b46c1;font-size:1.1rem;margin-bottom:5px;">Task 7</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Listening</div><div style="font-size:1.4rem;">✅</div></div>
+            </div>
+        </div>
+        <a href="/student-dashboard.html" class="dashboard-btn">← Back to Dashboard</a>
+    </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://nbfceuhuauizyucugejr.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_0mFIGJkA_DKZfUiDAWFdrA_nXt0hF6H';
+const dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const WEEK = 6, DAY = 1, TOTAL_TASKS = 7;
+let studentId = null, currentTask = 1;
+let taskStartTime = Date.now(), saveTimeout = null;
+
+const dictationAnswers = ['decision','emotions','culture','dumps','shameful','full','time','melancholy','grief','mourners','uncommon','empire','superior','weakness','wobble','men','depression','blues','blue','dumps','tired','thoughtful','death','emotions','feelings','bottling','emotions','Edwardian','sad','health'];
+
+const dictationScripts = [
+    "Helen remembers making a big <input class='gap-input' id='d1' placeholder='(1)'> – she wanted to be happy.",
+    "expressing your <input class='gap-input' id='d2' placeholder='(2)'> was discouraged.",
+    "how the way people express sadness is influenced by their <input class='gap-input' id='d3' placeholder='(3)'>.",
+    "down in the <input class='gap-input' id='d4' placeholder='(4)'>, meaning that you feel miserable and depressed.",
+    "in Japan, crying is considered weak and <input class='gap-input' id='d5' placeholder='(5)'>.",
+    "The word sad, as you will know, Helen, literally means sated or <input class='gap-input' id='d6' placeholder='(6)'>.",
+    "being unhappy, bored or tired of something which has been going on a long <input class='gap-input' id='d7' placeholder='(7)'>.",
+    "One of the many words describing sadness is <input class='gap-input' id='d8' placeholder='(8)'>, a kind of intense and thoughtful sadness.",
+    "Another is <input class='gap-input' id='d9' placeholder='(9)'> - a strong sadness often caused by the death of someone you love.",
+    "grief can be expressed by professional <input class='gap-input' id='d10' placeholder='(10)'> who are paid to cry by the family.",
+    "big public displays of emotion are <input class='gap-input' id='d11' placeholder='(11)'>.",
+    "It fits with the era of <input class='gap-input' id='d12' placeholder='(12)'>, of white British men going around the world conquering it.",
+    "They believed themselves to be <input class='gap-input' id='d13' placeholder='(13)'>.",
+    "These men believed that to cry was a sign of <input class='gap-input' id='d14' placeholder='(14)'>.",
+    "our top lip starts to <input class='gap-input' id='d15' placeholder='(15)'>, giving rise to the idiom a stiff upper lip.",
+    "it's still hard for some people, especially <input class='gap-input' id='d16' placeholder='(16)'>, to express their feelings.",
+    "this is not so healthy and can even increase feelings of <input class='gap-input' id='d17' placeholder='(17)'>.",
+    "and keep away the <input class='gap-input' id='d18' placeholder='(18)'>.",
+    "I said it was <input class='gap-input' id='d19' placeholder='(19)'>.",
+    "starting with the idiom down in the <input class='gap-input' id='d20' placeholder='(20)'>, meaning miserable and depressed.",
+    "you are unhappy, bored, or <input class='gap-input' id='d21' placeholder='(21)'> of it.",
+    "Melancholy is a type of intense and <input class='gap-input' id='d22' placeholder='(22)'> sadness.",
+    "Grief is a strong sadness usually caused by someone's <input class='gap-input' id='d23' placeholder='(23)'>.",
+    "The adjective repressed means unable to show your true feelings and <input class='gap-input' id='d24' placeholder='(24)'>.",
+    "a stiff upper lip means not to show your <input class='gap-input' id='d25' placeholder='(25)'> when you are upset.",
+    "Hiding your feelings or <input class='gap-input' id='d26' placeholder='(26)'> them up won't make you happy.",
+    "Cultures around the world express <input class='gap-input' id='d27' placeholder='(27)'> differently.",
+    "the Victorian and <input class='gap-input' id='d28' placeholder='(28)'> periods.",
+    "Feeling blue is another idiom meaning to feel <input class='gap-input' id='d29' placeholder='(29)'>.",
+    "Talking honestly about your feelings can improve your mental <input class='gap-input' id='d30' placeholder='(30)'>.",
+];
+
+const vocab = [
+    {word:"1. Hypothesis (n)", def:"An idea or explanation that can be tested"},
+    {word:"2. Conceive (v)", def:"To form an idea or understand mentally"},
+    {word:"3. Continuum (n)", def:"A continuous sequence without clear divisions"},
+    {word:"4. Perception (n)", def:"The way something is understood or interpreted"},
+    {word:"5. Gendered (adj)", def:"Classified as masculine or feminine"},
+    {word:"6. Encode (v)", def:"To represent or store information in the mind"},
+    {word:"7. Simulate (v)", def:"To imitate or recreate something realistically"},
+    {word:"8. Cognitive (adj)", def:"Relating to thinking and mental processes"},
+    {word:"9. Perspective (n)", def:"A particular way of seeing or understanding something"},
+    {word:"10. Diversity (n)", def:"Variety or difference within a group"},
+    {word:"11. Linguist (n)", def:"A person who studies language scientifically"},
+    {word:"12. Indigenous (adj)", def:"Originating naturally in a particular place"},
+    {word:"13. Cardinal direction (n)", def:"North, south, east, west"},
+    {word:"14. Endangered language (n)", def:"A language at risk of no longer being spoken"},
+    {word:"15. Oral tradition (n)", def:"Cultural material passed down by speech"},
+    {word:"16. Anthropologist (n)", def:"A person who studies human societies and cultures"},
+    {word:"17. Distinction (n)", def:"A difference between similar things"},
+    {word:"18. Navigation (n)", def:"The process of finding one's way"},
+    {word:"19. Survival (n)", def:"The state of continuing to live or exist"},
+    {word:"20. Preservation (n)", def:"The act of keeping something safe from harm"},
+    {word:"21. Decision (n)", def:"A choice made after consideration"},
+    {word:"22. Emotion (n)", def:"A strong feeling such as joy or sadness"},
+    {word:"23. Culture (n)", def:"The customs and beliefs of a particular group"},
+    {word:"24. Down in the dumps (idiom)", def:"Feeling miserable and depressed"},
+    {word:"25. Shameful (adj)", def:"Causing feelings of shame or disgrace"},
+    {word:"26. Melancholy (n)", def:"A deep, thoughtful sadness"},
+    {word:"27. Grief (n)", def:"Intense sorrow, often caused by loss"},
+    {word:"28. Mourner (n)", def:"A person who is sad about someone's death"},
+    {word:"29. Empire (n)", def:"A group of countries under one ruler or authority"},
+    {word:"30. Superior (adj)", def:"Higher in status or quality than others"},
+    {word:"31. Weakness (n)", def:"A lack of strength or power"},
+    {word:"32. Stiff upper lip (idiom)", def:"To hide one's emotions when upset"},
+    {word:"33. Repressed (adj)", def:"Unable to express one's true feelings"},
+    {word:"34. Depression (n)", def:"A mental health condition involving persistent sadness"},
+    {word:"35. The blues (idiom)", def:"A feeling of sadness or low mood"},
+    {word:"36. Bottle up (phrasal verb)", def:"To suppress one's emotions instead of expressing them"},
+    {word:"37. Victorian (adj)", def:"Relating to the period of Queen Victoria's reign"},
+    {word:"38. Edwardian (adj)", def:"Relating to the period of King Edward VII's reign"},
+    {word:"39. Restraint (n)", def:"Self-control over one's emotions or behaviour"},
+    {word:"40. Mental health (n)", def:"A person's psychological and emotional wellbeing"},
+    {word:"41. Flamenco (n)", def:"A passionate style of Spanish dance and music"},
+    {word:"42. Tradition (n)", def:"A custom passed down through generations"},
+    {word:"43. Heritage (n)", def:"Cultural traditions passed down from previous generations"},
+    {word:"44. Storytelling (n)", def:"The activity of telling or writing stories"},
+    {word:"45. Assertive (adj)", def:"Confident and direct in expressing oneself"},
+    {word:"46. Identity (n)", def:"The characteristics that define who someone is"},
+    {word:"47. Multilingual (adj)", def:"Able to speak multiple languages"},
+    {word:"48. Worldview (n)", def:"A particular philosophy or outlook on life"},
+    {word:"49. Universal (n)", def:"A characteristic shared by all humans"},
+    {word:"50. Documentation (n)", def:"The process of recording information systematically"},
+];
+
+async function initStudent() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('teacher') === 'true') { studentId = 'teacher-preview'; return; }
+    try {
+        const userStr = localStorage.getItem('user');
+        if (!userStr) { window.location.href = '/login.html'; return; }
+        const user = JSON.parse(userStr);
+        const { data, error } = await dbClient.from('students').select('*').eq('username', user.username).single();
+        if (error || !data) return;
+        studentId = data.id;
+    } catch(e) { console.log('Auth error:', e); }
+}
+
+function buildVocab() {
+    document.getElementById('vocab-grid').innerHTML = vocab.map(v =>
+        `<div class="vocab-item"><div class="vocab-word">${v.word}</div><div class="vocab-definition">${v.def}</div></div>`).join('');
+}
+
+function buildDictation() {
+    document.getElementById('dictation-gaps').innerHTML = dictationScripts.map((s, i) =>
+        `<div class="gap-sentence"><strong>${i+1}.</strong> …${s}</div>`).join('');
+}
+
+async function startDay() {
+    document.getElementById('splash-screen').style.display = 'none';
+    document.getElementById('main-content').style.display = 'block';
+    buildVocab(); buildDictation();
+    await initStudent();
+    await restoreProgress();
+    setupLiveValidation();
+}
+
+function goToTask(num) {
+    document.getElementById('task' + currentTask).classList.remove('active');
+    currentTask = num;
+    document.getElementById('task' + num).classList.add('active');
+    document.getElementById('task' + num).scrollIntoView({behavior:'smooth', block:'start'});
+    updateProgress(num); taskStartTime = Date.now(); saveResume(num);
+}
+
+function updateProgress(taskNum) {
+    document.getElementById('progress-bar').style.width = Math.round(((taskNum-1)/TOTAL_TASKS)*100) + '%';
+    document.getElementById('progress-label').textContent = `Task ${taskNum} of ${TOTAL_TASKS}`;
+}
+
+function showSaveIndicator() {
+    const el = document.getElementById('saveIndicator');
+    el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+async function saveResume(taskNum) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try { await dbClient.from('student_resume').upsert({student_id:studentId, week:WEEK, day:DAY, last_task:taskNum, updated_at:new Date().toISOString()}, {onConflict:'student_id'}); } catch(e) {}
+}
+
+function scheduleSave() {
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+        localStorage.setItem(`w${WEEK}d${DAY}_answers`, JSON.stringify(gatherAllAnswers()));
+        showSaveIndicator();
+    }, 800);
+}
+
+function gatherAllAnswers() {
+    const data = {};
+    document.querySelectorAll('.gap-input').forEach(el => { if (el.id) data[el.id] = el.value; });
+    ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10','t6q1','t6q2','t6q3','t6q4','t6q5'].forEach(name => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`); if (sel) data[name] = sel.value;
+    });
+    document.querySelectorAll('select').forEach(el => { if (el.id) data[el.id] = el.value; });
+    return data;
+}
+
+async function restoreProgress() {
+    try {
+        const saved = localStorage.getItem(`w${WEEK}d${DAY}_answers`);
+        if (saved) {
+            const data = JSON.parse(saved);
+            Object.entries(data).forEach(([id, val]) => { const el = document.getElementById(id); if (el && el.tagName === 'INPUT') el.value = val; });
+            ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10','t6q1','t6q2','t6q3','t6q4','t6q5'].forEach(name => {
+                const val = data[name]; if (val) { const r = document.querySelector(`input[name="${name}"][value="${val}"]`); if (r) r.checked = true; }
+            });
+            Object.entries(data).forEach(([id, val]) => { const el = document.getElementById(id); if (el && el.tagName === 'SELECT') el.value = val; });
+        }
+        if (studentId && studentId !== 'teacher-preview') {
+            const { data: taskData } = await dbClient.from('task_progress').select('task_number,status').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY);
+            const completedCount = taskData ? taskData.filter(t => t.status === 'completed').length : 0;
+            if (completedCount >= TOTAL_TASKS) {
+                await restoreAnswersFromSupabase();
+                document.getElementById('task1').classList.remove('active');
+                document.getElementById('completion-screen').style.display = 'block';
+                updateProgress(TOTAL_TASKS); validateAll(); makeReadOnly(); return;
+            }
+            const { data: resume } = await dbClient.from('student_resume').select('last_task').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY).single();
+            if (resume && resume.last_task > 1) {
+                document.getElementById('task1').classList.remove('active');
+                currentTask = resume.last_task;
+                document.getElementById('task' + currentTask).classList.add('active');
+                updateProgress(currentTask);
+            }
+        }
+        validateAll();
+    } catch(e) { console.log('Restore error:', e); }
+}
+
+async function restoreAnswersFromSupabase() {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        const { data: answers } = await dbClient.from('student_answers').select('*').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY);
+        if (!answers || answers.length === 0) return;
+        answers.forEach(a => {
+            const { question_id, student_answer, question_type, is_correct, correct_answer } = a;
+            if (question_type === 'mcq') {
+                const radio = document.querySelector(`input[name="${question_id}"][value="${student_answer}"]`);
+                if (radio) radio.checked = true;
+                const fb = document.getElementById('fb_' + question_id);
+                if (fb) { fb.textContent = is_correct ? '✅ Correct!' : `❌ Incorrect — correct answer: ${correct_answer}`; fb.className = 'answer-feedback ' + (is_correct ? 'correct' : 'incorrect'); }
+            } else if (question_type === 'gap_fill') {
+                const inp = document.getElementById(question_id);
+                if (inp) { inp.value = student_answer || ''; inp.classList.toggle('correct', is_correct); inp.classList.toggle('incorrect', !is_correct); }
+            } else if (question_type === 'matching') {
+                const sel = document.getElementById(question_id);
+                if (sel) { sel.value = student_answer || ''; sel.classList.toggle('correct', is_correct); sel.classList.toggle('incorrect', !is_correct); }
+            }
+        });
+        document.querySelectorAll('.show-answers-btn').forEach(btn => btn.style.display = 'inline-block');
+        document.querySelectorAll('.next-btn').forEach(btn => btn.disabled = false);
+    } catch(e) { console.error('Restore answers error:', e); }
+}
+
+function makeReadOnly() {
+    document.querySelectorAll('.gap-input').forEach(el => { el.disabled = true; el.style.opacity = '0.85'; });
+    document.querySelectorAll('input[type="radio"]').forEach(el => el.disabled = true);
+    document.querySelectorAll('select').forEach(el => { el.disabled = true; });
+    document.querySelectorAll('.check-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.next-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.prev-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.show-answers-btn').forEach(el => el.style.display = 'inline-block');
+}
+
+function setupLiveValidation() {
+    ['t1q1','t1q2','t1q3','t1q4','t1q5','t1q6','t1q7'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', () => { validateTask1Check(); scheduleSave(); }); });
+    ['vw1','vw2','vw3','vw4','vw5','vw6','vw7'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('change', () => { validateTask1Check(); scheduleSave(); }); });
+    ['t4topicA','t4topicB','t4topicC','t4topicD','t4personA','t4personB','t4personC','t4personD'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('change', () => { validateTask4Check(); scheduleSave(); }); });
+    ['t4wordsA','t4wordsB','t4wordsC','t4wordsD'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', () => { validateTask4Check(); scheduleSave(); }); });
+    ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10'].forEach(name => { document.querySelectorAll(`input[name="${name}"]`).forEach(el => el.addEventListener('change', () => { validateTask5Check(); scheduleSave(); })); });
+    ['t5g11','t5g12','t5g13','t5g14','t5g15'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', () => { validateTask5Check(); scheduleSave(); }); });
+    ['t5m1','t5m2','t5m3','t5m4','t5m5','t5m6','t5m7','t5m8','t5m9','t5m10'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('change', () => { validateTask5Check(); scheduleSave(); }); });
+    ['t6q1','t6q2','t6q3','t6q4','t6q5'].forEach(name => { document.querySelectorAll(`input[name="${name}"]`).forEach(el => el.addEventListener('change', () => { validateTask6Check(); scheduleSave(); })); });
+    for (let i = 1; i <= 30; i++) { const el = document.getElementById('d' + i); if (el) el.addEventListener('input', () => { validateTask6Check(); scheduleSave(); }); }
+}
+
+function validateAll() { validateTask1Check(); validateTask4Check(); validateTask5Check(); validateTask6Check(); }
+function validateTask1Check() {
+    const q = ['t1q1','t1q2','t1q3','t1q4','t1q5','t1q6','t1q7'].every(id => document.getElementById(id)?.value.trim());
+    const v = ['vw1','vw2','vw3','vw4','vw5','vw6','vw7'].every(id => document.getElementById(id)?.value);
+    document.getElementById('check1').disabled = !(q && v);
+}
+function validateTask4Check() {
+    const topics = ['t4topicA','t4topicB','t4topicC','t4topicD'].every(id => document.getElementById(id)?.value);
+    const persons = ['t4personA','t4personB','t4personC','t4personD'].every(id => document.getElementById(id)?.value);
+    const words = ['t4wordsA','t4wordsB','t4wordsC','t4wordsD'].every(id => document.getElementById(id)?.value.trim());
+    document.getElementById('check4').disabled = !(topics && persons && words);
+}
+function validateTask5Check() {
+    const allMcq = ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10'].every(name => document.querySelector(`input[name="${name}"]:checked`));
+    const allGaps = ['t5g11','t5g12','t5g13','t5g14','t5g15'].every(id => document.getElementById(id)?.value.trim());
+    const allMatch = ['t5m1','t5m2','t5m3','t5m4','t5m5','t5m6','t5m7','t5m8','t5m9','t5m10'].every(id => document.getElementById(id)?.value);
+    document.getElementById('check5').disabled = !(allMcq && allGaps && allMatch);
+}
+function validateTask6Check() {
+    const allDict = Array.from({length:30}, (_,i) => document.getElementById('d'+(i+1))?.value.trim()).every(Boolean);
+    const allMcq = ['t6q1','t6q2','t6q3','t6q4','t6q5'].every(name => document.querySelector(`input[name="${name}"]:checked`));
+    document.getElementById('check6').disabled = !(allDict && allMcq);
+}
+
+const t1Accepted = {
+    t1q1:['perceive'],
+    t1q2:['influence'],
+    t1q3:['distinctions'],
+    t1q4:['navigation'],
+    t1q5:['community'],
+    t1q6:['vanishes'],
+    t1q7:['respect']
+};
+const vwAnswers = {vw1:'perceive',vw2:'influence',vw3:'distinctions',vw4:'navigation',vw5:'community',vw6:'vanishes',vw7:'respect'};
+const t4TopicAnswers = {t4topicA:'4',t4topicB:'1',t4topicC:'3',t4topicD:'2'};
+const t4PersonAnswers = {t4personA:'classmates',t4personB:'tutor',t4personC:'(big) brother',t4personD:'grandad'};
+const t5McqAnswers = {t5q1:'B',t5q2:'B',t5q3:'C',t5q4:'B',t5q5:'C',t5q6:'B',t5q7:'C',t5q8:'C',t5q9:'B',t5q10:'C'};
+const t5GapAnswers = {t5g11:'categories',t5g12:'perspective',t5g13:'simulation',t5g14:'masculine',t5g15:'encoded'};
+const t5MatchAnswers = {t5m1:'C',t5m2:'D',t5m3:'E',t5m4:'A',t5m5:'F',t5m6:'G',t5m7:'J',t5m8:'H',t5m9:'I',t5m10:'B'};
+const t6McqAnswers = {t6q1:'C',t6q2:'C',t6q3:'B',t6q4:'A',t6q5:'C'};
+
+function checkTask1() {
+    const answers = [];
+    Object.entries(t1Accepted).forEach(([id, opts]) => {
+        const inp = document.getElementById(id);
+        const val = inp.value.trim().toLowerCase();
+        const ok = opts.some(o => val.includes(o.toLowerCase()));
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:opts[0], is_correct:ok});
+    });
+    Object.entries(vwAnswers).forEach(([id, correct]) => {
+        const sel = document.getElementById(id);
+        const ok = sel.value === correct;
+        sel.classList.toggle('correct', ok); sel.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'matching', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    document.getElementById('showAns1').style.display = 'inline-block';
+    document.getElementById('next1').disabled = false;
+    saveAnswers(1, answers); saveTaskProgress(1);
+}
+
+function checkTask4() {
+    const answers = [];
+    Object.entries(t4TopicAnswers).forEach(([id, correct]) => {
+        const sel = document.getElementById(id);
+        const ok = sel.value === correct;
+        sel.classList.toggle('correct', ok); sel.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'matching', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    Object.entries(t4PersonAnswers).forEach(([id, correct]) => {
+        const sel = document.getElementById(id);
+        const ok = sel.value === correct;
+        sel.classList.toggle('correct', ok); sel.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'matching', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    ['t4wordsA','t4wordsB','t4wordsC','t4wordsD'].forEach(id => {
+        const inp = document.getElementById(id);
+        inp.classList.add('correct');
+        answers.push({question_id:id, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:'open', is_correct:true});
+    });
+    document.getElementById('showAns4').style.display = 'inline-block';
+    document.getElementById('next4').disabled = false;
+    saveAnswers(4, answers); saveTaskProgress(4);
+}
+
+function checkTask5() {
+    const answers = [];
+    Object.entries(t5McqAnswers).forEach(([name, correct]) => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`);
+        const fb = document.getElementById('fb_' + name);
+        if (!sel) return;
+        const ok = sel.value === correct;
+        fb.textContent = ok ? '✅ Correct!' : `❌ Incorrect — correct answer: ${correct}`;
+        fb.className = 'answer-feedback ' + (ok ? 'correct' : 'incorrect');
+        answers.push({question_id:name, question_type:'mcq', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    Object.entries(t5GapAnswers).forEach(([id, correct]) => {
+        const inp = document.getElementById(id);
+        const val = inp.value.trim().toLowerCase();
+        const ok = val === correct.toLowerCase();
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:correct, is_correct:ok});
+    });
+    Object.entries(t5MatchAnswers).forEach(([id, correct]) => {
+        const sel = document.getElementById(id);
+        const ok = sel.value === correct;
+        sel.classList.toggle('correct', ok); sel.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'matching', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    document.getElementById('showAns5').style.display = 'inline-block';
+    document.getElementById('next5').disabled = false;
+    saveAnswers(5, answers); saveTaskProgress(5);
+}
+
+function checkTask6() {
+    const answers = [];
+    for (let i = 1; i <= 30; i++) {
+        const inp = document.getElementById('d' + i);
+        const val = inp.value.trim().toLowerCase();
+        const correct = dictationAnswers[i-1];
+        const ok = val === correct.toLowerCase();
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:'d'+i, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:correct, is_correct:ok});
+    }
+    Object.entries(t6McqAnswers).forEach(([name, correct]) => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`);
+        const fb = document.getElementById('fb_' + name);
+        if (!sel) return;
+        const ok = sel.value === correct;
+        fb.textContent = ok ? '✅ Correct!' : `❌ Incorrect — correct answer: ${correct}`;
+        fb.className = 'answer-feedback ' + (ok ? 'correct' : 'incorrect');
+        answers.push({question_id:name, question_type:'mcq', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    document.getElementById('showAns6').style.display = 'inline-block';
+    document.getElementById('next6').disabled = false;
+    saveAnswers(6, answers); saveTaskProgress(6);
+}
+
+async function saveAnswers(taskNum, answers) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        const rows = answers.map(a => ({student_id:studentId, week:WEEK, day:DAY, task_number:taskNum, question_id:a.question_id, question_type:a.question_type, student_answer:a.student_answer, correct_answer:a.correct_answer, is_correct:a.is_correct, answered_at:new Date().toISOString()}));
+        await dbClient.from('student_answers').upsert(rows, {onConflict:'student_id,week,day,task_number,question_id'});
+    } catch(e) { console.error('Answer save error:', e); }
+}
+
+async function saveTaskProgress(taskNum) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        await dbClient.from('task_progress').upsert({student_id:studentId, week:WEEK, day:DAY, task_number:taskNum, status:'completed', time_completed:new Date().toISOString(), time_spent_seconds:Math.round((Date.now()-taskStartTime)/1000)}, {onConflict:'student_id,week,day,task_number'});
+    } catch(e) { console.error('Progress save error:', e); }
+}
+
+async function finishDay() {
+    document.getElementById('task7').classList.remove('active');
+    document.getElementById('completion-screen').style.display = 'block';
+    document.getElementById('completion-screen').scrollIntoView({behavior:'smooth'});
+    localStorage.removeItem(`w${WEEK}d${DAY}_answers`);
+    for (let i = 1; i <= TOTAL_TASKS; i++) await saveTaskProgress(i);
+    if (studentId && studentId !== 'teacher-preview') await dbClient.from('student_resume').delete().eq('student_id', studentId);
+    makeReadOnly();
+}
+
+function reviewTask(num) {
+    document.getElementById('completion-screen').style.display = 'none';
+    currentTask = num;
+    document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active'));
+    document.getElementById('task' + num).classList.add('active');
+    document.getElementById('task' + num).scrollIntoView({behavior:'smooth', block:'start'});
+    const existing = document.getElementById('back-to-results');
+    if (!existing) {
+        const btn = document.createElement('button');
+        btn.id = 'back-to-results';
+        btn.textContent = '🏆 Back to Results';
+        btn.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#9f7aea;color:white;border:none;padding:12px 22px;border-radius:50px;cursor:pointer;font-weight:bold;font-size:0.95rem;box-shadow:0 4px 15px rgba(159,122,234,0.4);z-index:9998;';
+        btn.onclick = () => { btn.remove(); document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active')); document.getElementById('completion-screen').style.display = 'block'; document.getElementById('completion-screen').scrollIntoView({behavior:'smooth'}); };
+        document.body.appendChild(btn);
+    }
+}
+
+function toggleVocab() { document.getElementById('vocab-body').classList.toggle('open'); document.getElementById('vocab-arrow').classList.toggle('open'); }
+function toggleAnswers(id) {
+    const div = document.getElementById(id);
+    const btn = div.previousElementSibling;
+    div.style.display = div.style.display === 'block' ? 'none' : 'block';
+    btn.textContent = div.style.display === 'block' ? '▲ Hide Answers' : '▼ Show Answers';
+}
+</script>
+</body>
+</html>
