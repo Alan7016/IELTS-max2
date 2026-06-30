@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEEK 6 - DAY 3 (Culture)</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #faf5ff; color: #333; }
+        #splash-screen { position: fixed; inset: 0; background: linear-gradient(135deg, #9f7aea 0%, #6b46c1 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; color: white; text-align: center; padding: 20px; }
+        #splash-screen h1 { font-size: 3rem; margin-bottom: 10px; }
+        #splash-screen h2 { font-size: 2rem; margin-bottom: 10px; opacity: 0.9; }
+        #splash-screen p { font-size: 1.2rem; margin-bottom: 40px; opacity: 0.8; }
+        .splash-btn { background: white; color: #6b46c1; border: none; padding: 18px 60px; font-size: 1.4rem; font-weight: bold; border-radius: 50px; cursor: pointer; box-shadow: 0 8px 25px rgba(0,0,0,0.2); transition: all 0.3s; }
+        .splash-btn:hover { transform: translateY(-3px); }
+        .main-container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        .day-header { background: linear-gradient(135deg, #9f7aea 0%, #6b46c1 100%); color: white; padding: 25px 30px; border-radius: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; }
+        .day-header h1 { font-size: 1.6rem; }
+        .day-header .topic { opacity: 0.85; font-size: 1rem; margin-top: 4px; }
+        .back-btn { background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; text-decoration: none; font-size: 0.9rem; transition: all 0.3s; }
+        .back-btn:hover { background: white; color: #6b46c1; }
+        .vocab-section { background: white; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-left: 5px solid #9f7aea; overflow: hidden; }
+        .vocab-toggle { width: 100%; background: none; border: none; cursor: pointer; padding: 18px 25px; display: flex; align-items: center; justify-content: space-between; text-align: left; }
+        .vocab-toggle:hover { background: #faf5ff; }
+        .vocab-toggle-left { display: flex; align-items: center; gap: 10px; }
+        .vocab-toggle h3 { color: #6b46c1; font-size: 1.1rem; margin: 0; }
+        .vocab-count { background: #9f7aea; color: white; font-size: 0.75rem; font-weight: bold; padding: 3px 10px; border-radius: 20px; }
+        .vocab-arrow { color: #6b46c1; font-size: 1rem; transition: transform 0.3s; }
+        .vocab-arrow.open { transform: rotate(180deg); }
+        .vocab-body { display: none; padding: 0 25px 20px; }
+        .vocab-body.open { display: block; }
+        .vocab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+        .vocab-item { background: #faf5ff; padding: 10px 14px; border-radius: 8px; }
+        .vocab-word { font-weight: bold; color: #333; font-size: 0.95rem; }
+        .vocab-definition { color: #666; font-size: 0.82rem; margin-top: 2px; }
+        .progress-label { text-align: center; color: #6b46c1; font-size: 0.85rem; margin-bottom: 8px; font-weight: 600; }
+        .progress-bar-wrap { background: #e9d8fd; border-radius: 20px; height: 10px; margin-bottom: 20px; overflow: hidden; }
+        .progress-bar-fill { background: linear-gradient(90deg, #9f7aea, #6b46c1); height: 100%; border-radius: 20px; transition: width 0.5s ease; }
+        .task-card { background: white; border-radius: 15px; padding: 28px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); display: none; }
+        .task-card.active { display: block; }
+        .task-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .task-number { background: linear-gradient(135deg, #9f7aea, #6b46c1); color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; flex-shrink: 0; }
+        .task-title { font-size: 1.3rem; font-weight: bold; color: #333; }
+        .task-subtitle { color: #888; font-size: 0.9rem; margin-top: 2px; }
+        .pdf-links { display: flex; flex-direction: column; gap: 12px; margin: 15px 0; }
+        .pdf-link { display: flex; align-items: center; gap: 12px; background: #faf5ff; padding: 15px 20px; border-radius: 10px; text-decoration: none; color: #333; font-weight: 600; border: 2px solid #e9d8fd; transition: all 0.3s; }
+        .pdf-link:hover { background: #9f7aea; color: white; border-color: #9f7aea; transform: translateX(5px); }
+        .pdf-icon { font-size: 1.5rem; }
+        .html-link-btn { display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #9f7aea, #6b46c1); color: white; padding: 15px 30px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 1rem; transition: all 0.3s; margin: 10px 0; }
+        .html-link-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(159,122,234,0.4); }
+        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; margin: 15px 0; }
+        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .video-fallback { background: #faf5ff; padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align: center; }
+        .video-fallback a { color: #6b46c1; font-weight: bold; }
+        .audio-player { background: #faf5ff; border: 2px solid #e9d8fd; border-radius: 12px; padding: 20px; margin: 15px 0; }
+        .audio-player p { color: #555; margin-bottom: 10px; font-weight: 600; }
+        .audio-player audio { width: 100%; }
+        .passage-text { background: #fdfaff; border: 1px solid #e9d8fd; border-radius: 10px; padding: 25px; margin: 15px 0; line-height: 1.8; font-size: 0.97rem; color: #333; }
+        .passage-text h3 { color: #6b46c1; margin-bottom: 15px; font-size: 1.2rem; }
+        .passage-text p { margin-bottom: 14px; }
+        .highlight { font-style: italic; color: #6b46c1; font-weight: 600; }
+        .question-block { margin-bottom: 20px; padding: 18px; background: #f8f9fa; border-radius: 10px; }
+        .question-text { font-weight: 600; margin-bottom: 12px; color: #333; line-height: 1.5; }
+        .options label { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: background 0.2s; margin-bottom: 5px; }
+        .options label:hover { background: #f3ebff; }
+        .options input[type="radio"] { margin-top: 3px; flex-shrink: 0; }
+        .answer-feedback { margin-top: 8px; font-weight: bold; font-size: 0.9rem; }
+        .answer-feedback.correct { color: #28a745; }
+        .answer-feedback.incorrect { color: #dc3545; }
+        .gap-fill-section { margin-top: 20px; }
+        .gap-sentence { margin-bottom: 14px; line-height: 2; font-size: 1rem; }
+        .gap-input { border: none; border-bottom: 2px solid #9f7aea; padding: 4px 8px; font-size: 0.95rem; width: 200px; background: transparent; outline: none; color: #333; }
+        .gap-input.correct { border-bottom-color: #28a745; background: #d4edda33; }
+        .gap-input.incorrect { border-bottom-color: #dc3545; background: #f8d7da33; }
+        .word-box { background: #faf5ff; border: 2px solid #e9d8fd; border-radius: 10px; padding: 12px 18px; margin-bottom: 15px; }
+        .word-box strong { color: #6b46c1; }
+        .matching-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .matching-table th { background: #9f7aea; color: white; padding: 10px 14px; text-align: left; }
+        .matching-table td { padding: 10px 14px; border-bottom: 1px solid #eee; }
+        .matching-table tr:nth-child(even) td { background: #faf5ff; }
+        .match-select { border: 2px solid #e9d8fd; border-radius: 6px; padding: 5px 8px; font-size: 0.88rem; background: white; width: 100%; max-width: 380px; }
+        .match-select.correct { border-color: #28a745; }
+        .match-select.incorrect { border-color: #dc3545; }
+        .vocab-word-select { border: 2px solid #e9d8fd; border-radius: 6px; padding: 5px 10px; font-size: 0.9rem; background: white; width: 220px; }
+        .vocab-word-select.correct { border-color: #28a745; }
+        .vocab-word-select.incorrect { border-color: #dc3545; }
+        .btn-row { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+        .check-btn { background: linear-gradient(135deg, #9f7aea, #6b46c1); color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .check-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(159,122,234,0.4); }
+        .check-btn:disabled { background: #ccc; cursor: not-allowed; transform: none !important; box-shadow: none; }
+        .next-btn { background: #28a745; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .next-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .next-btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(40,167,69,0.4); }
+        .prev-btn { background: #6c757d; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: all 0.3s; }
+        .prev-btn:hover { background: #5a6268; }
+        .show-answers-btn { background: #ffc107; color: #333; border: none; padding: 10px 22px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.88rem; display: none; }
+        .show-answers-btn:hover { background: #e0a800; }
+        .answers-panel { display: none; background: #fffbea; border: 2px solid #ffc107; border-radius: 10px; padding: 15px; margin-top: 12px; }
+        .answers-panel p { margin-bottom: 6px; font-size: 0.9rem; }
+        .completion-screen { text-align: center; padding: 60px 20px; display: none; }
+        .completion-screen .icon { font-size: 5rem; margin-bottom: 20px; }
+        .completion-screen h2 { font-size: 2.2rem; color: #6b46c1; margin-bottom: 10px; }
+        .completion-screen p { color: #666; font-size: 1rem; margin-bottom: 30px; }
+        .dashboard-btn { background: linear-gradient(135deg, #9f7aea, #6b46c1); color: white; padding: 16px 40px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 1.1rem; display: inline-block; transition: all 0.3s; }
+        .dashboard-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(159,122,234,0.4); }
+        .save-indicator { position: fixed; bottom: 20px; right: 20px; background: #9f7aea; color: white; padding: 10px 18px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; opacity: 0; transition: opacity 0.4s; z-index: 9000; pointer-events: none; }
+        .save-indicator.show { opacity: 1; }
+    </style>
+</head>
+<body>
+<div id="splash-screen">
+    <h1>🎭 WEEK 6</h1>
+    <h2>DAY 3</h2>
+    <p>Topic: Culture</p>
+    <button class="splash-btn" onclick="startDay()">LET'S GO!</button>
+</div>
+<div class="save-indicator" id="saveIndicator">✓ Progress saved</div>
+<div class="main-container" id="main-content" style="display:none;">
+    <div class="day-header">
+        <div><h1>🎭 Week 6 — Day 3</h1><div class="topic">Topic: Culture</div></div>
+        <a href="/student-dashboard.html" class="back-btn">← Dashboard</a>
+    </div>
+    <div class="progress-label" id="progress-label">Task 0 of 7</div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-bar" style="width:0%"></div></div>
+
+    <!-- VOCAB -->
+    <div class="vocab-section">
+        <button class="vocab-toggle" onclick="toggleVocab()">
+            <div class="vocab-toggle-left"><h3>📖 Today's Vocabulary</h3><span class="vocab-count">50 words</span></div>
+            <span class="vocab-arrow" id="vocab-arrow">▼</span>
+        </button>
+        <div class="vocab-body" id="vocab-body"><div class="vocab-grid" id="vocab-grid"></div></div>
+    </div>
+
+    <!-- ══ TASK 1 ══ -->
+    <div class="task-card active" id="task1">
+        <div class="task-header">
+            <div class="task-number">1</div>
+            <div><div class="task-title">Mini Reading</div><div class="task-subtitle">Read and answer — NO MORE THAN THREE WORDS from the passage</div></div>
+        </div>
+        <div class="passage-text">
+            <h3>The Silk Road: History's First Global Network</h3>
+            <p>Long before the age of the internet or international aviation, the ancient world developed its own remarkable system of global connectivity. The Silk Road — a name coined by a German geographer in the nineteenth century — refers not to a single route but to an intricate <span class="highlight">(1) network</span> of overland and maritime trade paths that linked China with Central Asia, the Middle East, Africa and eventually Europe across more than two thousand years of history. At its height, goods, people, ideas and beliefs travelled extraordinary distances along these routes, transforming every civilisation they touched.</p>
+            <p>The origins of the Silk Road lie in the gradual expansion of early empires. The Persian Royal Road, constructed around 500 BCE, created one of the first reliable long-distance communication and trade routes, complete with <span class="highlight">(2) relay</span> stations where messengers and merchants could rest and resupply. Later, Alexander the Great's conquests spread Greek culture and trade networks deep into Central Asia, creating new points of cultural <span class="highlight">(3) contact</span>. It was the Han Emperor of China, however, who initiated formal East-West exchange by sending the diplomat Zhang Qian westward in 138 BCE on a mission that revealed the astonishing richness of civilisations far beyond China's known <span class="highlight">(4) borders</span>.</p>
+            <p>Silk became the defining commodity of these routes — prized by Roman senators and Persian noblemen alike — but the trade was never limited to a single material. Spices, glassware, precious metals, cotton and porcelain all flowed along the same arteries, along with something far less tangible but equally significant: ideas. Buddhism spread from India into East Asia largely through merchants and monks travelling the Silk Road. Islam later followed similar paths. Technologies such as papermaking, printing and the use of gunpowder diffused gradually westward, eventually contributing to the intellectual and technological revolutions that shaped the modern <span class="highlight">(6) world</span>.</p>
+            <p>The decline of the Silk Road came not from any single catastrophe but from a gradual shift in global <span class="highlight">(7) commerce</span>. The development of faster, more reliable maritime routes allowed European traders to bypass the overland paths entirely, while the fragmentation of powerful central empires removed the political stability that had made long-distance land travel relatively <span class="highlight">(8) safe</span>. Yet the legacy of the Silk Road endures — its routes carried not just merchandise but the foundations of the interconnected human civilisation we inhabit today.</p>
+        </div>
+        <h4 style="color:#6b46c1; margin:20px 0 12px;">Answer — NO MORE THAN THREE WORDS from the passage:</h4>
+        <div class="gap-fill-section">
+            <div class="gap-sentence">1. What does the Silk Road refer to, rather than a single route?<br><input class="gap-input" id="t1q1" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">2. What did the Persian Royal Road include to allow merchants to rest?<br><input class="gap-input" id="t1q2" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">3. What did Alexander the Great's conquests create in Central Asia?<br><input class="gap-input" id="t1q3" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">4. Who sent Zhang Qian westward in 138 BCE?<br><input class="gap-input" id="t1q4" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">5. What became the defining commodity of the Silk Road?<br><input class="gap-input" id="t1q5" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">6. Besides goods, what else spread along the Silk Road?<br><input class="gap-input" id="t1q6" placeholder="___" style="width:300px; margin-top:8px;"></div>
+            <div class="gap-sentence">7. What removed the political stability that made land travel safe?<br><input class="gap-input" id="t1q7" placeholder="___" style="width:300px; margin-top:8px;"></div>
+        </div>
+        <div class="btn-row">
+            <button class="check-btn" id="check1" onclick="checkTask1()" disabled>Check Answers</button>
+            <button class="next-btn" id="next1" disabled onclick="goToTask(2)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns1" onclick="toggleAnswers('ans1')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans1">
+            <p><strong>Answers:</strong> 1-(a) network (of trade paths), 2-relay stations, 3-(new points of cultural) contact, 4-the Han Emperor, 5-silk, 6-ideas/Buddhism/technologies, 7-fragmentation of (powerful central) empires</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 2 ══ -->
+    <div class="task-card" id="task2">
+        <div class="task-header">
+            <div class="task-number">2</div>
+            <div><div class="task-title">Article Reading</div><div class="task-subtitle">Read the article and study the vocabulary</div></div>
+        </div>
+        <div class="pdf-links">
+            <a class="pdf-link" href="article 3.pdf" target="_blank"><span class="pdf-icon">📄</span> Culture — Article</a>
+            <a class="pdf-link" href="vocab 3.pdf" target="_blank"><span class="pdf-icon">📘</span> Culture — Vocabulary</a>
+        </div>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(1)">← Previous</button>
+            <button class="next-btn" onclick="goToTask(3)">Next Task →</button>
+        </div>
+    </div>
+
+    <!-- ══ TASK 3 ══ -->
+    <div class="task-card" id="task3">
+        <div class="task-header">
+            <div class="task-number">3</div>
+            <div><div class="task-title">Practice Reading</div><div class="task-subtitle">IELTS-style reading test</div></div>
+        </div>
+        <a class="html-link-btn" href="Reading (27).html" target="_blank">📖 Open Practice Reading</a>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(2)">← Previous</button>
+            <button class="next-btn" onclick="goToTask(4)">Next Task →</button>
+        </div>
+    </div>
+
+    <!-- ══ TASK 4 ══ -->
+    <div class="task-card" id="task4">
+        <div class="task-header">
+            <div class="task-number">4</div>
+            <div><div class="task-title">Vocabulary in Context</div><div class="task-subtitle">Choose the correct word for each sentence</div></div>
+        </div>
+        <div class="gap-fill-section">
+            <div class="gap-sentence">1. The Silk Road was a <select class="vocab-word-select" id="t4v1"><option value="">— select —</option><option value="network">network</option><option value="relay">relay</option><option value="commodity">commodity</option></select> of trade routes, not a single road.</div>
+            <div class="gap-sentence">2. Persian messenger stations were called <select class="vocab-word-select" id="t4v2"><option value="">— select —</option><option value="relay">relay</option><option value="tariff">tariff</option><option value="conquest">conquest</option></select> points.</div>
+            <div class="gap-sentence">3. Zhang Qian worked as an <select class="vocab-word-select" id="t4v3"><option value="">— select —</option><option value="ambassador">ambassador</option><option value="ideology">ideology</option><option value="nomadic">nomadic</option></select> for the Han Emperor.</div>
+            <div class="gap-sentence">4. Silk was the most important <select class="vocab-word-select" id="t4v4"><option value="">— select —</option><option value="commodity">commodity</option><option value="spanning">spanning</option><option value="demise">demise</option></select> traded on the routes.</div>
+            <div class="gap-sentence">5. Religions and <select class="vocab-word-select" id="t4v5"><option value="">— select —</option><option value="ideologies">ideologies</option><option value="artefacts">artefacts</option><option value="maritime">maritime</option></select> spread between civilisations through trade.</div>
+            <div class="gap-sentence">6. The rise of sea trade led to the <select class="vocab-word-select" id="t4v6"><option value="">— select —</option><option value="demise">demise</option><option value="relay">relay</option><option value="pioneering">pioneering</option></select> of the Silk Road.</div>
+            <div class="gap-sentence">7. Today, global <select class="vocab-word-select" id="t4v7"><option value="">— select —</option><option value="interconnectedness">interconnectedness</option><option value="tariff">tariff</option><option value="conquest">conquest</option></select> affects almost every part of our lives.</div>
+        </div>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(3)">← Previous</button>
+            <button class="check-btn" id="check4" onclick="checkTask4()" disabled>Check Answers</button>
+            <button class="next-btn" id="next4" disabled onclick="goToTask(5)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns4" onclick="toggleAnswers('ans4')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans4">
+            <p><strong>Answers:</strong> 1-network, 2-relay, 3-ambassador, 4-commodity, 5-ideologies, 6-demise, 7-interconnectedness</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 5 ══ -->
+    <div class="task-card" id="task5">
+        <div class="task-header">
+            <div class="task-number">5</div>
+            <div><div class="task-title">Video Watching Task</div><div class="task-subtitle">Watch "The Silk Road" and answer questions</div></div>
+        </div>
+        <div class="video-fallback">
+            <p>▶ <a href="https://www.youtube.com/watch?v=vn3e37VWc0k" target="_blank">Click here to open the video in a new tab</a> if it doesn't play below.</p>
+        </div>
+        <div class="video-container">
+            <iframe src="https://www.youtube.com/embed/vn3e37VWc0k?start=35" frameborder="0" allowfullscreen></iframe>
+        </div>
+
+        <h4 style="color:#6b46c1; margin:20px 0 12px;">Part 1 — Multiple Choice Questions</h4>
+        <div class="question-block">
+            <div class="question-text">1. What was the Silk Road?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q1" value="A"> A. A single road connecting China and Europe</label>
+                <label><input type="radio" name="t5q1" value="B"> B. A railway built by the Romans</label>
+                <label><input type="radio" name="t5q1" value="C"> C. A network of trade routes across Eurasia</label>
+                <label><input type="radio" name="t5q1" value="D"> D. A sea route between China and Africa</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q1"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">2. Why were the earliest agricultural civilizations relatively isolated?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q2" value="A"> A. They refused to trade.</label>
+                <label><input type="radio" name="t5q2" value="B"> B. They lacked valuable goods.</label>
+                <label><input type="radio" name="t5q2" value="C"> C. Geography and fear of the unknown limited travel.</label>
+                <label><input type="radio" name="t5q2" value="D"> D. They had no contact with nomadic tribes.</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q2"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">3. How did nomadic tribes contribute to the development of the Silk Road?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q3" value="A"> A. They only attacked settlements.</label>
+                <label><input type="radio" name="t5q3" value="B"> B. They spread goods, ideas and technologies between civilizations.</label>
+                <label><input type="radio" name="t5q3" value="C"> C. They prevented trade between East and West.</label>
+                <label><input type="radio" name="t5q3" value="D"> D. They built the Persian Royal Road.</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q3"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">4. What was the main advantage of the Persian Royal Road?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q4" value="A"> A. It crossed the Himalayas.</label>
+                <label><input type="radio" name="t5q4" value="B"> B. It allowed ships to travel inland.</label>
+                <label><input type="radio" name="t5q4" value="C"> C. Relay stations greatly reduced travel time.</label>
+                <label><input type="radio" name="t5q4" value="D"> D. It connected China directly with Rome.</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q4"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">5. Which event helped extend trade farther east?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q5" value="A"> A. The invention of paper.</label>
+                <label><input type="radio" name="t5q5" value="B"> B. Alexander the Great's conquest of Persia.</label>
+                <label><input type="radio" name="t5q5" value="C"> C. The fall of the Roman Empire.</label>
+                <label><input type="radio" name="t5q5" value="D"> D. The discovery of America.</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q5"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">6. What did Zhang Qian report after returning to China?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q6" value="A"> A. There were no civilizations west of China.</label>
+                <label><input type="radio" name="t5q6" value="B"> B. Western lands contained prosperous civilizations and valuable goods.</label>
+                <label><input type="radio" name="t5q6" value="C"> C. Rome planned to invade China.</label>
+                <label><input type="radio" name="t5q6" value="D"> D. Persia had already conquered India.</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q6"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">7. Which Chinese product became extremely popular in Rome?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q7" value="A"> A. Tea</label>
+                <label><input type="radio" name="t5q7" value="B"> B. Paper</label>
+                <label><input type="radio" name="t5q7" value="C"> C. Silk</label>
+                <label><input type="radio" name="t5q7" value="D"> D. Porcelain</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q7"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">8. Besides goods, what else spread along the Silk Road?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q8" value="A"> A. Only languages</label>
+                <label><input type="radio" name="t5q8" value="B"> B. Religions, ideas, technologies and cultures</label>
+                <label><input type="radio" name="t5q8" value="C"> C. Only military weapons</label>
+                <label><input type="radio" name="t5q8" value="D"> D. Only food and clothing</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q8"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">9. Why did the Silk Road gradually decline?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q9" value="A"> A. All deserts disappeared.</label>
+                <label><input type="radio" name="t5q9" value="B"> B. Trade became illegal.</label>
+                <label><input type="radio" name="t5q9" value="C"> C. Maritime technology made sea routes more efficient.</label>
+                <label><input type="radio" name="t5q9" value="D"> D. China stopped producing silk.</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q9"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">10. What is the main message of the video?</div>
+            <div class="options">
+                <label><input type="radio" name="t5q10" value="A"> A. Globalization began in the 20th century.</label>
+                <label><input type="radio" name="t5q10" value="B"> B. The Silk Road was history's first major global network connecting cultures and economies.</label>
+                <label><input type="radio" name="t5q10" value="C"> C. The Silk Road only benefited China.</label>
+                <label><input type="radio" name="t5q10" value="D"> D. Modern transportation has completely replaced international trade.</label>
+            </div>
+            <div class="answer-feedback" id="fb_t5q10"></div>
+        </div>
+
+        <h4 style="color:#6b46c1; margin:20px 0 12px;">Part 2 — Gap Filling</h4>
+        <div class="word-box">
+            <strong>Word Box:</strong> unprecedented &nbsp;|&nbsp; settlements &nbsp;|&nbsp; nomadic &nbsp;|&nbsp; tariffs &nbsp;|&nbsp; relay &nbsp;|&nbsp; conquest &nbsp;|&nbsp; ambassador &nbsp;|&nbsp; sophisticated &nbsp;|&nbsp; spanning &nbsp;|&nbsp; commodities &nbsp;|&nbsp; ideologies &nbsp;|&nbsp; demise &nbsp;|&nbsp; maritime &nbsp;|&nbsp; interconnectedness &nbsp;|&nbsp; pioneering
+        </div>
+        <div class="gap-fill-section">
+            <div class="gap-sentence">1. The speed of global communication today is <input class="gap-input" id="t5g1" placeholder="___" style="width:180px;"> in history.</div>
+            <div class="gap-sentence">2. The Silk Road gradually connected different <input class="gap-input" id="t5g2" placeholder="___" style="width:180px;"> across Eurasia.</div>
+            <div class="gap-sentence">3. <input class="gap-input" id="t5g3" placeholder="___" style="width:180px;"> tribes travelled across vast areas on horseback.</div>
+            <div class="gap-sentence">4. Some nomads protected merchants in exchange for <input class="gap-input" id="t5g4" placeholder="___" style="width:180px;">.</div>
+            <div class="gap-sentence">5. The Persian Royal Road used <input class="gap-input" id="t5g5" placeholder="___" style="width:180px;"> points to speed up communication.</div>
+            <div class="gap-sentence">6. Alexander the Great's <input class="gap-input" id="t5g6" placeholder="___" style="width:180px;"> helped expand trade networks.</div>
+            <div class="gap-sentence">7. Zhang Qian served as an <input class="gap-input" id="t5g7" placeholder="___" style="width:180px;"> for the Han Emperor.</div>
+            <div class="gap-sentence">8. He described prosperous and <input class="gap-input" id="t5g8" placeholder="___" style="width:180px;"> civilizations beyond China's borders.</div>
+            <div class="gap-sentence">9. Eventually, the Silk Road became an integrated system <input class="gap-input" id="t5g9" placeholder="___" style="width:180px;"> Eurasia.</div>
+            <div class="gap-sentence">10. Along with <input class="gap-input" id="t5g10" placeholder="___" style="width:180px;"> such as silk and jade, many ideas were exchanged.</div>
+            <div class="gap-sentence">11. Religions and <input class="gap-input" id="t5g11" placeholder="___" style="width:180px;"> spread across continents through trade.</div>
+            <div class="gap-sentence">12. The success of the Silk Road eventually contributed to its own <input class="gap-input" id="t5g12" placeholder="___" style="width:180px;">.</div>
+            <div class="gap-sentence">13. New <input class="gap-input" id="t5g13" placeholder="___" style="width:180px;"> technologies made sea travel more practical than land routes.</div>
+            <div class="gap-sentence">14. Today, global <input class="gap-input" id="t5g14" placeholder="___" style="width:180px;"> affects almost every aspect of our lives.</div>
+            <div class="gap-sentence">15. The cultures that developed the Silk Road were truly <input class="gap-input" id="t5g15" placeholder="___" style="width:180px;">.</div>
+        </div>
+
+        <h4 style="color:#6b46c1; margin:20px 0 12px;">Part 3 — Vocabulary Matching</h4>
+        <table class="matching-table">
+            <thead><tr><th>#</th><th>Word</th><th>Definition</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td><strong>unprecedented</strong></td><td><select class="match-select" id="t5m1"><option value="">— select —</option><option value="A">A. a tax charged on imported or exported goods</option><option value="B">B. a person sent to represent a country</option><option value="C">C. happening for the first time or never seen before</option><option value="D">D. travelling from place to place without a permanent home</option><option value="E">E. a place where people establish a community</option><option value="F">F. a station where travellers or messages can be exchanged</option><option value="G">G. taking control of a place through military force</option><option value="H">H. highly advanced or developed</option><option value="I">I. extending across a large area</option><option value="J">J. a product that is bought and sold</option><option value="K">K. a system of beliefs or ideas</option><option value="L">L. the end or decline of something</option><option value="M">M. connected with the sea or shipping</option><option value="N">N. the state of being linked together</option><option value="O">O. introducing new ideas or methods before others</option></select></td></tr>
+                <tr><td>2</td><td><strong>settlement</strong></td><td><select class="match-select" id="t5m2"><option value="">— select —</option><option value="A">A. a tax charged on imported or exported goods</option><option value="B">B. a person sent to represent a country</option><option value="C">C. happening for the first time or never seen before</option><option value="D">D. travelling from place to place without a permanent home</option><option value="E">E. a place where people establish a community</option><option value="F">F. a station where travellers or messages can be exchanged</option><option value="G">G. taking control of a place through military force</option><option value="H">H. highly advanced or developed</option><option value="I">I. extending across a large area</option><option value="J">J. a product that is bought and sold</option><option value="K">K. a system of beliefs or ideas</option><option value="L">L. the end or decline of something</option><option value="M">M. connected with the sea or shipping</option><option value="N">N. the state of being linked together</option><option value="O">O. introducing new ideas or methods before others</option></select></td></tr>
+                <tr><td>3</td><td><strong>nomadic</strong></td><td><select class="match-select" id="t5m3"><option value="">— select —</option><option value="A">A. a tax charged on imported or exported goods</option><option value="B">B. a person sent to represent a country</option><option value="C">C. happening for the first time or never seen before</option><option value="D">D. travelling from place to place without a permanent home</option><option value="E">E. a place where people establish a community</option><option value="F">F. a station where travellers or messages can be exchanged</option><option value="G">G. taking control of a place through military force</option><option value="H">H. highly advanced or developed</option><option value="I">I. extending across a large area</option><option value="J">J. a product that is bought and sold</option><option value="K">K. a system of beliefs or ideas</option><option value="L">L. the end or decline of something</option><option value="M">M. connected with the sea or shipping</option><option value="N">N. the state of being linked together</option><option value="O">O. introducing new ideas or methods before others</option></select></td></tr>
+                <tr><td>4</td><td><strong>tariff</strong></td><td><select class="match-select" id="t5m4"><option value="">— select —</option><option value="A">A. a tax charged on imported or exported goods</option><option value="B">B. a person sent to represent a country</option><option value="C">C. happening for the first time or never seen before</option><option value="D">D. travelling from place to place without a permanent home</option><option value="E">E. a place where people establish a community</option><option value="F">F. a station where travellers or messages can be exchanged</option><option value="G">G. taking control of a place through military force</option><option value="H">H. highly advanced or developed</option><option value="I">I. extending across a large area</option><option value="J">J. a product that is bought and sold</option><option value="K">K. a system of beliefs or ideas</option><option value="L">L. the end or decline of something</option><option value="M">M. connected with the sea or shipping</option><option value="N">N. the state of being linked together</option><option value="O">O. introducing new ideas or methods before others</option></select></td></tr>
+                <tr><td>5</td><td><strong>relay point</strong></td><td><select class="match-select" id="t5m5"><option value="">— select —</option><option value="A">A. a tax charged on imported or exported goods</option><option value="B">B. a person sent to represent a country</option><option value="C">C. happening for the first time or never seen before</option><option value="D">D. travelling from place to place without a permanent home</option><option value="E">E. a place where people establish a community</option><option value="F">F. a station where travellers or messages can be exchanged</option><option value="G">G. taking control of a place through military force</option><option value="H">H. highly advanced or developed</option><option value="I">I. extending across a large area</option><option value="J">J. a product that is bought and sold</option><option value="K">K. a system of beliefs or ideas</option><option value="L">L. the end or decline of something</option><option value="M">M. connected with the sea or shipping</option><option value="N">N. the state of being linked together</option><option value="O">O. introducing new ideas or methods before others</option></select></td></tr>
+                <tr><td>6</td><td><strong>conquest</strong></td><td><select class="match-select" id="t5m6"><option value="">— select —</option><option value="A">A. a tax charged on imported or exported goods</option><option value="B">B. a person sent to represent a country</option><option value="C">C. happening for the first time or never seen before</option><option value="D">D. travelling from place to place without a permanent home</option><option value="E">E. a place where people establish a community</option><option value="F">F. a station where travellers or messages can be exchanged</option><option value="G">G. taking control of a place through military force</option><option value="H">H. highly advanced or developed</option><option value="I">I. extending across a large area</option><option value="J">J. a product that is bought and sold</option><option value="K">K. a system of beliefs or ideas</option><option value="L">L. the end or decline of something</option><option value="M">M. connected with the sea or shipping</option><option value="N">N. the state of being linked together</option><option value="O">O. introducing new ideas or methods before others</option></select></td></tr>
+                <tr><td>7</td><td><strong>ambassador</strong></td><td><select class="match-select" id="t5m7"><option value="">— select —</option><option value="A">A. a tax charged on imported or exported goods</option><option value="B">B. a person sent to represent a country</option><option value="C">C. happening for the first time or never seen before</option><option value="D">D. travelling from place to place without a permanent home</option><option value="E">E. a place where people establish a community</option><option value="F">F. a station where travellers or messages can be exchanged</option><option value="G">G. taking control of a place through military force</option><option value="H">H. highly advanced or developed</option><option value="I">I. extending across a large area</option><option value="J">J. a product that is bought and sold</option><option value="K">K. a system of beliefs or ideas</option><option value="L">L. the end or decline of something</option><option value="M">M. connected with the sea or shipping</option><option value="N">N. the state of being linked together</option><option value="O">O. introducing new ideas or methods before others</option></select></td></tr>
+                <tr><td>8</td><td><strong>sophisticated</strong></td><td><select class="match-select" id="t5m8"><option value="">— select —</option><option value="A">A. a tax charged on imported or exported goods</option><option value="B">B. a person sent to represent a country</option><option value="C">C. happening for the first time or never seen before</option><option value="D">D. travelling from place to place without a permanent home</option><option value="E">E. a place where people establish a community</option><option value="F">F. a station where travellers or messages can be exchanged</option><option value="G">G. taking control of a place through military force</option><option value="H">H. highly advanced or developed</option><option value="I">I. extending across a large area</option><option value="J">J. a product that is bought and sold</option><option value="K">K. a system of beliefs or ideas</option><option value="L">L. the end or decline of something</option><option value="M">M. connected with the sea or shipping</option><option value="N">N. the state of being linked together</option><option value="O">O. introducing new ideas or methods before others</option></select></td></tr>
+                <tr><td>9</td><td><strong>spanning</strong></td><td><select class="match-select" id="t5m9"><option value="">— select —</option><option value="A">A. a tax charged on imported or exported goods</option><option value="B">B. a person sent to represent a country</option><option value="C">C. happening for the first time or never seen before</option><option value="D">D. travelling from place to place without a permanent home</option><option value="E">E. a place where people establish a community</option><option value="F">F. a station where travellers or messages can be exchanged</option><option value="G">G. taking control of a place through military force</option><option value="H">H. highly advanced or developed</option><option value="I">I. extending across a large area</option><option value="J">J. a product that is bought and sold</option><option value="K">K. a system of beliefs or ideas</option><option value="L">L. the end or decline of something</option><option value="M">M. connected with the sea or shipping</option><option value="N">N. the state of being linked together</option><option value="O">O. introducing new ideas or methods before others</option></select></td></tr>
+                <tr><td>10</td><td><strong>commodity</strong></td><td><select class="match-select" id="t5m10"><option value="">— select —</option><option value="A">A. a tax charged on imported or exported goods</option><option value="B">B. a person sent to represent a country</option><option value="C">C. happening for the first time or never seen before</option><option value="D">D. travelling from place to place without a permanent home</option><option value="E">E. a place where people establish a community</option><option value="F">F. a station where travellers or messages can be exchanged</option><option value="G">G. taking control of a place through military force</option><option value="H">H. highly advanced or developed</option><option value="I">I. extending across a large area</option><option value="J">J. a product that is bought and sold</option><option value="K">K. a system of beliefs or ideas</option><option value="L">L. the end or decline of something</option><option value="M">M. connected with the sea or shipping</option><option value="N">N. the state of being linked together</option><option value="O">O. introducing new ideas or methods before others</option></select></td></tr>
+                <tr><td>11</td><td><strong>ideology</strong></td><td><select class="match-select" id="t5m11"><option value="">— select —</option><option value="A">A. a tax charged on imported or exported goods</option><option value="B">B. a person sent to represent a country</option><option value="C">C. happening for the first time or never seen before</option><option value="D">D. travelling from place to place without a permanent home</option><option value="E">E. a place where people establish a community</option><option value="F">F. a station where travellers or messages can be exchanged</option><option value="G">G. taking control of a place through military force</option><option value="H">H. highly advanced or developed</option><option value="I">I. extending across a large area</option><option value="J">J. a product that is bought and sold</option><option value="K">K. a system of beliefs or ideas</option><option value="L">L. the end or decline of something</option><option value="M">M. connected with the sea or shipping</option><option value="N">N. the state of being linked together</option><option value="O">O. introducing new ideas or methods before others</option></select></td></tr>
+                <tr><td>12</td><td><strong>demise</strong></td><td><select class="match-select" id="t5m12"><option value="">— select —</option><option value="A">A. a tax charged on imported or exported goods</option><option value="B">B. a person sent to represent a country</option><option value="C">C. happening for the first time or never seen before</option><option value="D">D. travelling from place to place without a permanent home</option><option value="E">E. a place where people establish a community</option><option value="F">F. a station where travellers or messages can be exchanged</option><option value="G">G. taking control of a place through military force</option><option value="H">H. highly advanced or developed</option><option value="I">I. extending across a large area</option><option value="J">J. a product that is bought and sold</option><option value="K">K. a system of beliefs or ideas</option><option value="L">L. the end or decline of something</option><option value="M">M. connected with the sea or shipping</option><option value="N">N. the state of being linked together</option><option value="O">O. introducing new ideas or methods before others</option></select></td></tr>
+                <tr><td>13</td><td><strong>maritime</strong></td><td><select class="match-select" id="t5m13"><option value="">— select —</option><option value="A">A. a tax charged on imported or exported goods</option><option value="B">B. a person sent to represent a country</option><option value="C">C. happening for the first time or never seen before</option><option value="D">D. travelling from place to place without a permanent home</option><option value="E">E. a place where people establish a community</option><option value="F">F. a station where travellers or messages can be exchanged</option><option value="G">G. taking control of a place through military force</option><option value="H">H. highly advanced or developed</option><option value="I">I. extending across a large area</option><option value="J">J. a product that is bought and sold</option><option value="K">K. a system of beliefs or ideas</option><option value="L">L. the end or decline of something</option><option value="M">M. connected with the sea or shipping</option><option value="N">N. the state of being linked together</option><option value="O">O. introducing new ideas or methods before others</option></select></td></tr>
+                <tr><td>14</td><td><strong>interconnectedness</strong></td><td><select class="match-select" id="t5m14"><option value="">— select —</option><option value="A">A. a tax charged on imported or exported goods</option><option value="B">B. a person sent to represent a country</option><option value="C">C. happening for the first time or never seen before</option><option value="D">D. travelling from place to place without a permanent home</option><option value="E">E. a place where people establish a community</option><option value="F">F. a station where travellers or messages can be exchanged</option><option value="G">G. taking control of a place through military force</option><option value="H">H. highly advanced or developed</option><option value="I">I. extending across a large area</option><option value="J">J. a product that is bought and sold</option><option value="K">K. a system of beliefs or ideas</option><option value="L">L. the end or decline of something</option><option value="M">M. connected with the sea or shipping</option><option value="N">N. the state of being linked together</option><option value="O">O. introducing new ideas or methods before others</option></select></td></tr>
+                <tr><td>15</td><td><strong>pioneering</strong></td><td><select class="match-select" id="t5m15"><option value="">— select —</option><option value="A">A. a tax charged on imported or exported goods</option><option value="B">B. a person sent to represent a country</option><option value="C">C. happening for the first time or never seen before</option><option value="D">D. travelling from place to place without a permanent home</option><option value="E">E. a place where people establish a community</option><option value="F">F. a station where travellers or messages can be exchanged</option><option value="G">G. taking control of a place through military force</option><option value="H">H. highly advanced or developed</option><option value="I">I. extending across a large area</option><option value="J">J. a product that is bought and sold</option><option value="K">K. a system of beliefs or ideas</option><option value="L">L. the end or decline of something</option><option value="M">M. connected with the sea or shipping</option><option value="N">N. the state of being linked together</option><option value="O">O. introducing new ideas or methods before others</option></select></td></tr>
+            </tbody>
+        </table>
+
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(4)">← Previous</button>
+            <button class="check-btn" id="check5" onclick="checkTask5()" disabled>Check Answers</button>
+            <button class="next-btn" id="next5" disabled onclick="goToTask(6)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns5" onclick="toggleAnswers('ans5')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans5">
+            <p><strong>MCQ:</strong> 1-C, 2-C, 3-B, 4-C, 5-B, 6-B, 7-C, 8-B, 9-C, 10-B</p>
+            <p><strong>Gap Fill:</strong> 1-unprecedented, 2-settlements, 3-Nomadic, 4-tariffs, 5-relay, 6-conquest, 7-ambassador, 8-sophisticated, 9-spanning, 10-commodities, 11-ideologies, 12-demise, 13-maritime, 14-interconnectedness, 15-pioneering</p>
+            <p><strong>Matching:</strong> 1-C, 2-E, 3-D, 4-A, 5-F, 6-G, 7-B, 8-H, 9-I, 10-J, 11-K, 12-L, 13-M, 14-N, 15-O</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 6 ══ -->
+    <div class="task-card" id="task6">
+        <div class="task-header">
+            <div class="task-number">6</div>
+            <div><div class="task-title">Dictation + Comprehension</div><div class="task-subtitle">Listen, complete the gaps, then answer questions</div></div>
+        </div>
+        <div class="audio-player">
+            <p>🎧 Ancient Artefacts and Cultural Heritage — BBC Learning English</p>
+            <audio controls src="objects.mp3"></audio>
+        </div>
+        <h4 style="color:#6b46c1; margin-bottom:12px;">Part 1 — Dictation (ONE WORD ONLY)</h4>
+        <div class="gap-fill-section" id="dictation-gaps"></div>
+        <h4 style="color:#6b46c1; margin:20px 0 12px;">Part 2 — Comprehension Questions</h4>
+        <div class="question-block">
+            <div class="question-text">1. Why does Amr Al-Azm describe social media as a "game changer"?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q1" value="A"> A. It makes museums more popular.</label>
+                <label><input type="radio" name="t6q1" value="B"> B. It helps people communicate and trade stolen artefacts more easily.</label>
+                <label><input type="radio" name="t6q1" value="C"> C. It reduces interest in ancient history.</label>
+                <label><input type="radio" name="t6q1" value="D"> D. It prevents artefacts from being stolen.</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q1"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">2. What is a bottleneck according to the programme?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q2" value="A"> A. An old container for storing artefacts</label>
+                <label><input type="radio" name="t6q2" value="B"> B. A museum exhibition</label>
+                <label><input type="radio" name="t6q2" value="C"> C. A problem that delays or prevents progress</label>
+                <label><input type="radio" name="t6q2" value="D"> D. A type of ancient necklace</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q2"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">3. What does repatriation mean?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q3" value="A"> A. Cleaning ancient artefacts</label>
+                <label><input type="radio" name="t6q3" value="B"> B. Selling artefacts at auctions</label>
+                <label><input type="radio" name="t6q3" value="C"> C. Returning artefacts to their country of origin</label>
+                <label><input type="radio" name="t6q3" value="D"> D. Displaying artefacts in museums</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q3"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">4. How does Victoria Reed describe her opinion on repatriation?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q4" value="A"> A. Extremely supportive of returning everything</label>
+                <label><input type="radio" name="t6q4" value="B"> B. Completely against returning artefacts</label>
+                <label><input type="radio" name="t6q4" value="C"> C. Balanced and middle-of-the-road</label>
+                <label><input type="radio" name="t6q4" value="D"> D. Unsure and unwilling to comment</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q4"></div>
+        </div>
+        <div class="question-block">
+            <div class="question-text">5. What did Howard Carter discover in 1922?</div>
+            <div class="options">
+                <label><input type="radio" name="t6q5" value="A"> A. The Rosetta Stone</label>
+                <label><input type="radio" name="t6q5" value="B"> B. The Mask of Tutankhamun</label>
+                <label><input type="radio" name="t6q5" value="C"> C. The Ark of the Covenant</label>
+                <label><input type="radio" name="t6q5" value="D"> D. A Roman coin</label>
+            </div>
+            <div class="answer-feedback" id="fb_t6q5"></div>
+        </div>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(5)">← Previous</button>
+            <button class="check-btn" id="check6" onclick="checkTask6()" disabled>Check Answers</button>
+            <button class="next-btn" id="next6" disabled onclick="goToTask(7)">Next Task →</button>
+        </div>
+        <button class="show-answers-btn" id="showAns6" onclick="toggleAnswers('ans6')">▼ Show Answers</button>
+        <div class="answers-panel" id="ans6">
+            <p><strong>Dictation:</strong> 1-home, 2-London, 3-networks, 4-interesting, 5-force, 6-Tutankhamun, 7-changer, 8-intermediaries, 9-works, 10-gone, 11-progressing, 12-play, 13-Paris, 14-repatriation, 15-middle-of-the-road, 16-extreme, 17-debate, 18-generations, 19-interest, 20-force, 21-changes, 22-progressing, 23-country, 24-extreme, 25-networks, 26-bottleneck, 27-intermediaries, 28-stolen, 29-repatriation, 30-generations</p>
+            <p><strong>MCQ:</strong> 1-B, 2-C, 3-C, 4-C, 5-B</p>
+        </div>
+    </div>
+
+    <!-- ══ TASK 7 ══ -->
+    <div class="task-card" id="task7">
+        <div class="task-header">
+            <div class="task-number">7</div>
+            <div><div class="task-title">Practice Listening</div><div class="task-subtitle">Full IELTS-style listening test</div></div>
+        </div>
+        <a class="html-link-btn" href="Listening (27).html" target="_blank">🎧 Open Practice Listening</a>
+        <div class="btn-row">
+            <button class="prev-btn" onclick="goToTask(6)">← Previous</button>
+            <button class="next-btn" onclick="finishDay()">Finish Day 3 ✓</button>
+        </div>
+    </div>
+
+    <!-- COMPLETION -->
+    <div class="completion-screen" id="completion-screen">
+        <div class="icon">🎉</div>
+        <h2>Day 3 Complete!</h2>
+        <p>Great work! You've completed all tasks for Week 6, Day 3.</p>
+        <div style="margin:30px 0; text-align:left;">
+            <h3 style="color:#6b46c1; border-bottom:2px solid #6b46c1; padding-bottom:10px; margin-bottom:15px;">📋 Review Your Work</h3>
+            <p style="color:#888; margin-bottom:20px; font-size:0.9rem;">Click any task below to go back and review it.</p>
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:15px;">
+                <div onclick="reviewTask(1)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#6b46c1;font-size:1.1rem;margin-bottom:5px;">Task 1</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Mini Reading</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(2)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#6b46c1;font-size:1.1rem;margin-bottom:5px;">Task 2</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Article Reading</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(3)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#6b46c1;font-size:1.1rem;margin-bottom:5px;">Task 3</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Reading</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(4)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#6b46c1;font-size:1.1rem;margin-bottom:5px;">Task 4</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Vocabulary in Context</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(5)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#6b46c1;font-size:1.1rem;margin-bottom:5px;">Task 5</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Video + Vocab</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(6)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#6b46c1;font-size:1.1rem;margin-bottom:5px;">Task 6</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Dictation + MCQ</div><div style="font-size:1.4rem;">✅</div></div>
+                <div onclick="reviewTask(7)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#6b46c1;font-size:1.1rem;margin-bottom:5px;">Task 7</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Listening</div><div style="font-size:1.4rem;">✅</div></div>
+            </div>
+        </div>
+        <a href="/student-dashboard.html" class="dashboard-btn">← Back to Dashboard</a>
+    </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://nbfceuhuauizyucugejr.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_0mFIGJkA_DKZfUiDAWFdrA_nXt0hF6H';
+const dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const WEEK = 6, DAY = 3, TOTAL_TASKS = 7;
+let studentId = null, currentTask = 1;
+let taskStartTime = Date.now(), saveTimeout = null;
+
+const dictationAnswers = ['home','London','networks','interesting','force','Tutankhamun','changer','intermediaries','works','gone','progressing','play','Paris','repatriation','middle-of-the-road','extreme','debate','generations','interest','force','changes','progressing','country','extreme','networks','bottleneck','intermediaries','stolen','repatriation','generations'];
+
+const dictationScripts = [
+    "what is the oldest thing you have at <input class='gap-input' id='d1' placeholder='(1)'>?",
+    "Ryan Keane recently bought in <input class='gap-input' id='d2' placeholder='(2)'>.",
+    "expansive criminal <input class='gap-input' id='d3' placeholder='(3)'> related to antiquities.",
+    "an object made by humans, usually very old, which is historically <input class='gap-input' id='d4' placeholder='(4)'>.",
+    "many artefacts have been looted – or stolen by <input class='gap-input' id='d5' placeholder='(5)'>.",
+    "I think it's the Mask of <input class='gap-input' id='d6' placeholder='(6)'>.",
+    "Social media is the game <input class='gap-input' id='d7' placeholder='(7)'> here.",
+    "you had to go through <input class='gap-input' id='d8' placeholder='(8)'>.",
+    "something new that is introduced into a situation and completely changes how it <input class='gap-input' id='d9' placeholder='(9)'>.",
+    "this problem, or bottleneck, is <input class='gap-input' id='d10' placeholder='(10)'>.",
+    "A bottleneck is a problem that delays a process or stops it from <input class='gap-input' id='d11' placeholder='(11)'>.",
+    "museums have an important role to <input class='gap-input' id='d12' placeholder='(12)'>.",
+    "including the Louvre in <input class='gap-input' id='d13' placeholder='(13)'>.",
+    "returning artefacts to their country of origin, something known as <input class='gap-input' id='d14' placeholder='(14)'>.",
+    "I personally try to maintain a relatively <input class='gap-input' id='d15' placeholder='(15)'> approach.",
+    "you mean it's not <input class='gap-input' id='d16' placeholder='(16)'> and is acceptable to most people.",
+    "remains an ongoing <input class='gap-input' id='d17' placeholder='(17)'>.",
+    "objects of culture and beauty are being preserved for future <input class='gap-input' id='d18' placeholder='(18)'>.",
+    "any object made by humans which is of historical <input class='gap-input' id='d19' placeholder='(19)'>.",
+    "If something is looted, it's stolen by <input class='gap-input' id='d20' placeholder='(20)'>.",
+    "a new element which, when introduced into a situation, completely <input class='gap-input' id='d21' placeholder='(21)'> it.",
+    "A bottleneck is a problem that delays a process or stops it from <input class='gap-input' id='d22' placeholder='(22)'>.",
+    "To repatriate something means to return it to the <input class='gap-input' id='d23' placeholder='(23)'> it came from.",
+    "things which are not <input class='gap-input' id='d24' placeholder='(24)'> and are acceptable to most people.",
+    "Ryan discovered reports of criminal <input class='gap-input' id='d25' placeholder='(25)'> connected with antiquities.",
+    "Social media helped remove the <input class='gap-input' id='d26' placeholder='(26)'> between sellers and buyers.",
+    "People once had to go through <input class='gap-input' id='d27' placeholder='(27)'> to sell stolen artefacts.",
+    "Museums sometimes face accusations of buying <input class='gap-input' id='d28' placeholder='(28)'> objects.",
+    "Victoria supports responsible collecting and judicious <input class='gap-input' id='d29' placeholder='(29)'>.",
+    "Ancient artefacts should be preserved for future <input class='gap-input' id='d30' placeholder='(30)'>.",
+];
+
+const vocab = [
+    {word:"1. Silk Road (n)", def:"Ancient network of trade routes connecting East and West"},
+    {word:"2. Network (n)", def:"A system of interconnected things or people"},
+    {word:"3. Relay station (n)", def:"A point where travellers or messages are exchanged"},
+    {word:"4. Unprecedented (adj)", def:"Never done or seen before"},
+    {word:"5. Settlement (n)", def:"A place where people establish a community"},
+    {word:"6. Nomadic (adj)", def:"Travelling without a permanent home"},
+    {word:"7. Tariff (n)", def:"A tax on imported or exported goods"},
+    {word:"8. Conquest (n)", def:"Taking control of a place through military force"},
+    {word:"9. Ambassador (n)", def:"A person sent to represent their country"},
+    {word:"10. Sophisticated (adj)", def:"Highly advanced or developed"},
+    {word:"11. Spanning (adj)", def:"Extending across a large area"},
+    {word:"12. Commodity (n)", def:"A product that is bought and sold"},
+    {word:"13. Ideology (n)", def:"A system of beliefs or ideas"},
+    {word:"14. Demise (n)", def:"The end or decline of something"},
+    {word:"15. Maritime (adj)", def:"Connected with the sea or shipping"},
+    {word:"16. Interconnectedness (n)", def:"The state of being linked together"},
+    {word:"17. Pioneering (adj)", def:"Introducing new ideas or methods before others"},
+    {word:"18. Artefact (n)", def:"An object made by humans, usually old and historically significant"},
+    {word:"19. Looted (adj)", def:"Stolen, especially during war or unrest"},
+    {word:"20. Game changer (n)", def:"Something that completely changes a situation"},
+    {word:"21. Bottleneck (n)", def:"A problem that delays or prevents progress"},
+    {word:"22. Repatriation (n)", def:"The return of something to its country of origin"},
+    {word:"23. Middle-of-the-road (adj)", def:"Not extreme; acceptable to most people"},
+    {word:"24. Antiquities (n)", def:"Objects from ancient times"},
+    {word:"25. Curator (n)", def:"A person in charge of a museum's collection"},
+    {word:"26. Intermediary (n)", def:"A person who acts as a link between parties"},
+    {word:"27. Controversial (adj)", def:"Causing disagreement or debate"},
+    {word:"28. Overland (adj)", def:"Travelling across land rather than by sea or air"},
+    {word:"29. Diffuse (v)", def:"To spread over a wide area"},
+    {word:"30. Legacy (n)", def:"Something handed down from the past"},
+    {word:"31. Commerce (n)", def:"The buying and selling of goods"},
+    {word:"32. Eurasia (n)", def:"The combined landmass of Europe and Asia"},
+    {word:"33. Diplomat (n)", def:"A person who represents their country in negotiations"},
+    {word:"34. Porcelain (n)", def:"Fine white ceramic material used for pottery"},
+    {word:"35. Buddhism (n)", def:"A religion originating in ancient India"},
+    {word:"36. Islam (n)", def:"The religion revealed to the Prophet Muhammad"},
+    {word:"37. Gunpowder (n)", def:"An explosive substance made of chemicals"},
+    {word:"38. Papermaking (n)", def:"The process of making paper from raw materials"},
+    {word:"39. Fragmentation (n)", def:"The process of breaking into smaller parts"},
+    {word:"40. Civilisation (n)", def:"An advanced human society with culture and laws"},
+    {word:"41. Connectivity (n)", def:"The state of being connected to others"},
+    {word:"42. Garum (n)", def:"A Roman fish sauce used in cooking"},
+    {word:"43. Historically (adv)", def:"In relation to past events"},
+    {word:"44. Criminal network (n)", def:"A group of people organised for illegal purposes"},
+    {word:"45. Responsible collecting (n)", def:"Acquiring objects in an ethical and legal way"},
+    {word:"46. Louvre (n)", def:"A famous art museum in Paris, France"},
+    {word:"47. Judicious (adj)", def:"Having or showing good judgement"},
+    {word:"48. Preservation (n)", def:"The act of keeping something safe"},
+    {word:"49. Cultural heritage (n)", def:"Traditions and artefacts of historical importance"},
+    {word:"50. Debate (n)", def:"A formal discussion of opposing viewpoints"},
+];
+
+async function initStudent() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('teacher') === 'true') { studentId = 'teacher-preview'; return; }
+    try {
+        const userStr = localStorage.getItem('user');
+        if (!userStr) { window.location.href = '/login.html'; return; }
+        const user = JSON.parse(userStr);
+        const { data, error } = await dbClient.from('students').select('*').eq('username', user.username).single();
+        if (error || !data) return;
+        studentId = data.id;
+    } catch(e) { console.log('Auth error:', e); }
+}
+
+function buildVocab() {
+    document.getElementById('vocab-grid').innerHTML = vocab.map(v =>
+        `<div class="vocab-item"><div class="vocab-word">${v.word}</div><div class="vocab-definition">${v.def}</div></div>`).join('');
+}
+
+function buildDictation() {
+    document.getElementById('dictation-gaps').innerHTML = dictationScripts.map((s, i) =>
+        `<div class="gap-sentence"><strong>${i+1}.</strong> …${s}</div>`).join('');
+}
+
+async function startDay() {
+    document.getElementById('splash-screen').style.display = 'none';
+    document.getElementById('main-content').style.display = 'block';
+    buildVocab(); buildDictation();
+    await initStudent();
+    await restoreProgress();
+    setupLiveValidation();
+}
+
+function goToTask(num) {
+    document.getElementById('task' + currentTask).classList.remove('active');
+    currentTask = num;
+    document.getElementById('task' + num).classList.add('active');
+    document.getElementById('task' + num).scrollIntoView({behavior:'smooth', block:'start'});
+    updateProgress(num); taskStartTime = Date.now(); saveResume(num);
+}
+
+function updateProgress(taskNum) {
+    document.getElementById('progress-bar').style.width = Math.round(((taskNum-1)/TOTAL_TASKS)*100) + '%';
+    document.getElementById('progress-label').textContent = `Task ${taskNum} of ${TOTAL_TASKS}`;
+}
+
+function showSaveIndicator() {
+    const el = document.getElementById('saveIndicator');
+    el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+async function saveResume(taskNum) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try { await dbClient.from('student_resume').upsert({student_id:studentId, week:WEEK, day:DAY, last_task:taskNum, updated_at:new Date().toISOString()}, {onConflict:'student_id'}); } catch(e) {}
+}
+
+function scheduleSave() {
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+        localStorage.setItem(`w${WEEK}d${DAY}_answers`, JSON.stringify(gatherAllAnswers()));
+        showSaveIndicator();
+    }, 800);
+}
+
+function gatherAllAnswers() {
+    const data = {};
+    document.querySelectorAll('.gap-input').forEach(el => { if (el.id) data[el.id] = el.value; });
+    ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10','t6q1','t6q2','t6q3','t6q4','t6q5'].forEach(name => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`); if (sel) data[name] = sel.value;
+    });
+    document.querySelectorAll('select').forEach(el => { if (el.id) data[el.id] = el.value; });
+    return data;
+}
+
+async function restoreProgress() {
+    try {
+        const saved = localStorage.getItem(`w${WEEK}d${DAY}_answers`);
+        if (saved) {
+            const data = JSON.parse(saved);
+            Object.entries(data).forEach(([id, val]) => { const el = document.getElementById(id); if (el && el.tagName === 'INPUT') el.value = val; });
+            ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10','t6q1','t6q2','t6q3','t6q4','t6q5'].forEach(name => {
+                const val = data[name]; if (val) { const r = document.querySelector(`input[name="${name}"][value="${val}"]`); if (r) r.checked = true; }
+            });
+            Object.entries(data).forEach(([id, val]) => { const el = document.getElementById(id); if (el && el.tagName === 'SELECT') el.value = val; });
+        }
+        if (studentId && studentId !== 'teacher-preview') {
+            const { data: taskData } = await dbClient.from('task_progress').select('task_number,status').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY);
+            const completedCount = taskData ? taskData.filter(t => t.status === 'completed').length : 0;
+            if (completedCount >= TOTAL_TASKS) {
+                await restoreAnswersFromSupabase();
+                document.getElementById('task1').classList.remove('active');
+                document.getElementById('completion-screen').style.display = 'block';
+                updateProgress(TOTAL_TASKS); validateAll(); makeReadOnly(); return;
+            }
+            const { data: resume } = await dbClient.from('student_resume').select('last_task').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY).single();
+            if (resume && resume.last_task > 1) {
+                document.getElementById('task1').classList.remove('active');
+                currentTask = resume.last_task;
+                document.getElementById('task' + currentTask).classList.add('active');
+                updateProgress(currentTask);
+            }
+        }
+        validateAll();
+    } catch(e) { console.log('Restore error:', e); }
+}
+
+async function restoreAnswersFromSupabase() {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        const { data: answers } = await dbClient.from('student_answers').select('*').eq('student_id', studentId).eq('week', WEEK).eq('day', DAY);
+        if (!answers || answers.length === 0) return;
+        answers.forEach(a => {
+            const { question_id, student_answer, question_type, is_correct, correct_answer } = a;
+            if (question_type === 'mcq') {
+                const radio = document.querySelector(`input[name="${question_id}"][value="${student_answer}"]`);
+                if (radio) radio.checked = true;
+                const fb = document.getElementById('fb_' + question_id);
+                if (fb) { fb.textContent = is_correct ? '✅ Correct!' : `❌ Incorrect — correct answer: ${correct_answer}`; fb.className = 'answer-feedback ' + (is_correct ? 'correct' : 'incorrect'); }
+            } else if (question_type === 'gap_fill') {
+                const inp = document.getElementById(question_id);
+                if (inp) { inp.value = student_answer || ''; inp.classList.toggle('correct', is_correct); inp.classList.toggle('incorrect', !is_correct); }
+            } else if (question_type === 'matching') {
+                const sel = document.getElementById(question_id);
+                if (sel) { sel.value = student_answer || ''; sel.classList.toggle('correct', is_correct); sel.classList.toggle('incorrect', !is_correct); }
+            }
+        });
+        document.querySelectorAll('.show-answers-btn').forEach(btn => btn.style.display = 'inline-block');
+        document.querySelectorAll('.next-btn').forEach(btn => btn.disabled = false);
+    } catch(e) { console.error('Restore answers error:', e); }
+}
+
+function makeReadOnly() {
+    document.querySelectorAll('.gap-input').forEach(el => { el.disabled = true; el.style.opacity = '0.85'; });
+    document.querySelectorAll('input[type="radio"]').forEach(el => el.disabled = true);
+    document.querySelectorAll('select').forEach(el => { el.disabled = true; });
+    document.querySelectorAll('.check-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.next-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.prev-btn').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.show-answers-btn').forEach(el => el.style.display = 'inline-block');
+}
+
+function setupLiveValidation() {
+    ['t1q1','t1q2','t1q3','t1q4','t1q5','t1q6','t1q7'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', () => { validateTask1Check(); scheduleSave(); }); });
+    ['t4v1','t4v2','t4v3','t4v4','t4v5','t4v6','t4v7'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('change', () => { validateTask4Check(); scheduleSave(); }); });
+    ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10'].forEach(name => { document.querySelectorAll(`input[name="${name}"]`).forEach(el => el.addEventListener('change', () => { validateTask5Check(); scheduleSave(); })); });
+    for (let i = 1; i <= 15; i++) { const el = document.getElementById('t5g' + i); if (el) el.addEventListener('input', () => { validateTask5Check(); scheduleSave(); }); }
+    for (let i = 1; i <= 15; i++) { const el = document.getElementById('t5m' + i); if (el) el.addEventListener('change', () => { validateTask5Check(); scheduleSave(); }); }
+    ['t6q1','t6q2','t6q3','t6q4','t6q5'].forEach(name => { document.querySelectorAll(`input[name="${name}"]`).forEach(el => el.addEventListener('change', () => { validateTask6Check(); scheduleSave(); })); });
+    for (let i = 1; i <= 30; i++) { const el = document.getElementById('d' + i); if (el) el.addEventListener('input', () => { validateTask6Check(); scheduleSave(); }); }
+}
+
+function validateAll() { validateTask1Check(); validateTask4Check(); validateTask5Check(); validateTask6Check(); }
+function validateTask1Check() { document.getElementById('check1').disabled = !['t1q1','t1q2','t1q3','t1q4','t1q5','t1q6','t1q7'].every(id => document.getElementById(id)?.value.trim()); }
+function validateTask4Check() { document.getElementById('check4').disabled = !['t4v1','t4v2','t4v3','t4v4','t4v5','t4v6','t4v7'].every(id => document.getElementById(id)?.value); }
+function validateTask5Check() {
+    const allMcq = ['t5q1','t5q2','t5q3','t5q4','t5q5','t5q6','t5q7','t5q8','t5q9','t5q10'].every(name => document.querySelector(`input[name="${name}"]:checked`));
+    const allGaps = Array.from({length:15}, (_,i) => document.getElementById('t5g'+(i+1))?.value.trim()).every(Boolean);
+    const allMatch = Array.from({length:15}, (_,i) => document.getElementById('t5m'+(i+1))?.value).every(Boolean);
+    document.getElementById('check5').disabled = !(allMcq && allGaps && allMatch);
+}
+function validateTask6Check() {
+    const allDict = Array.from({length:30}, (_,i) => document.getElementById('d'+(i+1))?.value.trim()).every(Boolean);
+    const allMcq = ['t6q1','t6q2','t6q3','t6q4','t6q5'].every(name => document.querySelector(`input[name="${name}"]:checked`));
+    document.getElementById('check6').disabled = !(allDict && allMcq);
+}
+
+const t1Accepted = {
+    t1q1:['network','a network'],
+    t1q2:['relay stations'],
+    t1q3:['cultural contact','new points','points of contact'],
+    t1q4:['the Han Emperor','Han Emperor'],
+    t1q5:['silk'],
+    t1q6:['ideas','buddhism','technologies','religions'],
+    t1q7:['fragmentation of','powerful central empires']
+};
+const t4Answers = {t4v1:'network',t4v2:'relay',t4v3:'ambassador',t4v4:'commodity',t4v5:'ideologies',t4v6:'demise',t4v7:'interconnectedness'};
+const t5McqAnswers = {t5q1:'C',t5q2:'C',t5q3:'B',t5q4:'C',t5q5:'B',t5q6:'B',t5q7:'C',t5q8:'B',t5q9:'C',t5q10:'B'};
+const t5GapAnswers = {t5g1:'unprecedented',t5g2:'settlements',t5g3:'Nomadic',t5g4:'tariffs',t5g5:'relay',t5g6:'conquest',t5g7:'ambassador',t5g8:'sophisticated',t5g9:'spanning',t5g10:'commodities',t5g11:'ideologies',t5g12:'demise',t5g13:'maritime',t5g14:'interconnectedness',t5g15:'pioneering'};
+const t5MatchAnswers = {t5m1:'C',t5m2:'E',t5m3:'D',t5m4:'A',t5m5:'F',t5m6:'G',t5m7:'B',t5m8:'H',t5m9:'I',t5m10:'J',t5m11:'K',t5m12:'L',t5m13:'M',t5m14:'N',t5m15:'O'};
+const t6McqAnswers = {t6q1:'B',t6q2:'C',t6q3:'C',t6q4:'C',t6q5:'B'};
+
+function checkTask1() {
+    const answers = [];
+    Object.entries(t1Accepted).forEach(([id, opts]) => {
+        const inp = document.getElementById(id);
+        const val = inp.value.trim().toLowerCase();
+        const ok = opts.some(o => val.includes(o.toLowerCase()));
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:opts[0], is_correct:ok});
+    });
+    document.getElementById('showAns1').style.display = 'inline-block';
+    document.getElementById('next1').disabled = false;
+    saveAnswers(1, answers); saveTaskProgress(1);
+}
+
+function checkTask4() {
+    const answers = [];
+    Object.entries(t4Answers).forEach(([id, correct]) => {
+        const sel = document.getElementById(id);
+        const ok = sel.value === correct;
+        sel.classList.toggle('correct', ok); sel.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'matching', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    document.getElementById('showAns4').style.display = 'inline-block';
+    document.getElementById('next4').disabled = false;
+    saveAnswers(4, answers); saveTaskProgress(4);
+}
+
+function checkTask5() {
+    const answers = [];
+    Object.entries(t5McqAnswers).forEach(([name, correct]) => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`);
+        const fb = document.getElementById('fb_' + name);
+        if (!sel) return;
+        const ok = sel.value === correct;
+        fb.textContent = ok ? '✅ Correct!' : `❌ Incorrect — correct answer: ${correct}`;
+        fb.className = 'answer-feedback ' + (ok ? 'correct' : 'incorrect');
+        answers.push({question_id:name, question_type:'mcq', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    Object.entries(t5GapAnswers).forEach(([id, correct]) => {
+        const inp = document.getElementById(id);
+        const val = inp.value.trim().toLowerCase();
+        const ok = val === correct.toLowerCase();
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:correct, is_correct:ok});
+    });
+    Object.entries(t5MatchAnswers).forEach(([id, correct]) => {
+        const sel = document.getElementById(id);
+        const ok = sel.value === correct;
+        sel.classList.toggle('correct', ok); sel.classList.toggle('incorrect', !ok);
+        answers.push({question_id:id, question_type:'matching', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    document.getElementById('showAns5').style.display = 'inline-block';
+    document.getElementById('next5').disabled = false;
+    saveAnswers(5, answers); saveTaskProgress(5);
+}
+
+function checkTask6() {
+    const answers = [];
+    for (let i = 1; i <= 30; i++) {
+        const inp = document.getElementById('d' + i);
+        const val = inp.value.trim().toLowerCase();
+        const correct = dictationAnswers[i-1];
+        const ok = val === correct.toLowerCase();
+        inp.classList.toggle('correct', ok); inp.classList.toggle('incorrect', !ok);
+        answers.push({question_id:'d'+i, question_type:'gap_fill', student_answer:inp.value.trim(), correct_answer:correct, is_correct:ok});
+    }
+    Object.entries(t6McqAnswers).forEach(([name, correct]) => {
+        const sel = document.querySelector(`input[name="${name}"]:checked`);
+        const fb = document.getElementById('fb_' + name);
+        if (!sel) return;
+        const ok = sel.value === correct;
+        fb.textContent = ok ? '✅ Correct!' : `❌ Incorrect — correct answer: ${correct}`;
+        fb.className = 'answer-feedback ' + (ok ? 'correct' : 'incorrect');
+        answers.push({question_id:name, question_type:'mcq', student_answer:sel.value, correct_answer:correct, is_correct:ok});
+    });
+    document.getElementById('showAns6').style.display = 'inline-block';
+    document.getElementById('next6').disabled = false;
+    saveAnswers(6, answers); saveTaskProgress(6);
+}
+
+async function saveAnswers(taskNum, answers) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        const rows = answers.map(a => ({student_id:studentId, week:WEEK, day:DAY, task_number:taskNum, question_id:a.question_id, question_type:a.question_type, student_answer:a.student_answer, correct_answer:a.correct_answer, is_correct:a.is_correct, answered_at:new Date().toISOString()}));
+        await dbClient.from('student_answers').upsert(rows, {onConflict:'student_id,week,day,task_number,question_id'});
+    } catch(e) { console.error('Answer save error:', e); }
+}
+
+async function saveTaskProgress(taskNum) {
+    if (!studentId || studentId === 'teacher-preview') return;
+    try {
+        await dbClient.from('task_progress').upsert({student_id:studentId, week:WEEK, day:DAY, task_number:taskNum, status:'completed', time_completed:new Date().toISOString(), time_spent_seconds:Math.round((Date.now()-taskStartTime)/1000)}, {onConflict:'student_id,week,day,task_number'});
+    } catch(e) { console.error('Progress save error:', e); }
+}
+
+async function finishDay() {
+    document.getElementById('task7').classList.remove('active');
+    document.getElementById('completion-screen').style.display = 'block';
+    document.getElementById('completion-screen').scrollIntoView({behavior:'smooth'});
+    localStorage.removeItem(`w${WEEK}d${DAY}_answers`);
+    for (let i = 1; i <= TOTAL_TASKS; i++) await saveTaskProgress(i);
+    if (studentId && studentId !== 'teacher-preview') await dbClient.from('student_resume').delete().eq('student_id', studentId);
+    makeReadOnly();
+}
+
+function reviewTask(num) {
+    document.getElementById('completion-screen').style.display = 'none';
+    currentTask = num;
+    document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active'));
+    document.getElementById('task' + num).classList.add('active');
+    document.getElementById('task' + num).scrollIntoView({behavior:'smooth', block:'start'});
+    const existing = document.getElementById('back-to-results');
+    if (!existing) {
+        const btn = document.createElement('button');
+        btn.id = 'back-to-results';
+        btn.textContent = '🏆 Back to Results';
+        btn.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#9f7aea;color:white;border:none;padding:12px 22px;border-radius:50px;cursor:pointer;font-weight:bold;font-size:0.95rem;box-shadow:0 4px 15px rgba(159,122,234,0.4);z-index:9998;';
+        btn.onclick = () => { btn.remove(); document.querySelectorAll('.task-card').forEach(c => c.classList.remove('active')); document.getElementById('completion-screen').style.display = 'block'; document.getElementById('completion-screen').scrollIntoView({behavior:'smooth'}); };
+        document.body.appendChild(btn);
+    }
+}
+
+function toggleVocab() { document.getElementById('vocab-body').classList.toggle('open'); document.getElementById('vocab-arrow').classList.toggle('open'); }
+function toggleAnswers(id) {
+    const div = document.getElementById(id);
+    const btn = div.previousElementSibling;
+    div.style.display = div.style.display === 'block' ? 'none' : 'block';
+    btn.textContent = div.style.display === 'block' ? '▲ Hide Answers' : '▼ Show Answers';
+}
+</script>
+</body>
+</html>
