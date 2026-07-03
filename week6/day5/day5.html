@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEEK 6 - DAY 5 (Culture)</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Segoe UI", sans-serif; background: #faf5ff; color: #333; }
+        #splash { position: fixed; inset: 0; background: linear-gradient(135deg, #9f7aea, #6b46c1); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; color: white; text-align: center; padding: 20px; }
+        #splash h1 { font-size: 3rem; margin-bottom: 10px; }
+        #splash h2 { font-size: 2rem; margin-bottom: 10px; opacity: 0.9; }
+        #splash p { font-size: 1.2rem; margin-bottom: 40px; opacity: 0.8; }
+        .splash-btn { background: white; color: #6b46c1; border: none; padding: 18px 60px; font-size: 1.4rem; font-weight: bold; border-radius: 50px; cursor: pointer; }
+        .wrap { max-width: 900px; margin: 0 auto; padding: 20px; }
+        .hdr { background: linear-gradient(135deg, #9f7aea, #6b46c1); color: white; padding: 25px 30px; border-radius: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; }
+        .hdr h1 { font-size: 1.6rem; }
+        .hdr .topic { opacity: 0.85; font-size: 1rem; margin-top: 4px; }
+        .back-btn { background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 10px 20px; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 0.9rem; }
+        .plabel { text-align: center; color: #6b46c1; font-size: 0.85rem; margin-bottom: 8px; font-weight: 600; }
+        .pwrap { background: #e9d8fd; border-radius: 20px; height: 10px; margin-bottom: 20px; overflow: hidden; }
+        .pfill { background: linear-gradient(90deg, #9f7aea, #6b46c1); height: 100%; border-radius: 20px; transition: width 0.5s; }
+        .vsec { background: white; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-left: 5px solid #9f7aea; overflow: hidden; }
+        .vtog { width: 100%; background: none; border: none; cursor: pointer; padding: 18px 25px; display: flex; align-items: center; justify-content: space-between; }
+        .vtog h3 { color: #6b46c1; font-size: 1.1rem; margin: 0; }
+        .vcount { background: #9f7aea; color: white; font-size: 0.75rem; font-weight: bold; padding: 3px 10px; border-radius: 20px; }
+        .varr { color: #6b46c1; font-size: 1rem; transition: transform 0.3s; }
+        .varr.open { transform: rotate(180deg); }
+        .vbody { display: none; padding: 0 25px 20px; }
+        .vbody.open { display: block; }
+        .vgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+        .vi { background: #faf5ff; padding: 10px 14px; border-radius: 8px; }
+        .vi .vw { font-weight: bold; color: #333; font-size: 0.95rem; }
+        .vi .vd { color: #666; font-size: 0.82rem; margin-top: 2px; }
+        .card { background: white; border-radius: 15px; padding: 28px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); display: none; }
+        .card.active { display: block; }
+        .thdr { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .tnum { background: linear-gradient(135deg, #9f7aea, #6b46c1); color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; flex-shrink: 0; }
+        .ttitle { font-size: 1.3rem; font-weight: bold; color: #333; }
+        .tsub { color: #888; font-size: 0.9rem; margin-top: 2px; }
+        .plink { display: flex; align-items: center; gap: 12px; background: #faf5ff; padding: 15px 20px; border-radius: 10px; text-decoration: none; color: #333; font-weight: 600; border: 2px solid #e9d8fd; transition: all 0.3s; margin-bottom: 12px; }
+        .plink:hover { background: #9f7aea; color: white; }
+        .hlink { display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #9f7aea, #6b46c1); color: white; padding: 15px 30px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 1rem; margin: 10px 0; }
+        .vcont { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; margin: 15px 0; }
+        .vcont iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .vfall { background: #faf5ff; padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align: center; }
+        .vfall a { color: #6b46c1; font-weight: bold; }
+        .aplayer { background: #faf5ff; border: 2px solid #e9d8fd; border-radius: 12px; padding: 20px; margin: 15px 0; }
+        .aplayer p { color: #555; margin-bottom: 10px; font-weight: 600; }
+        .aplayer audio { width: 100%; }
+        .passage { background: #fdfaff; border: 1px solid #e9d8fd; border-radius: 10px; padding: 25px; margin: 15px 0; line-height: 1.8; font-size: 0.97rem; }
+        .passage h3 { color: #6b46c1; margin-bottom: 15px; font-size: 1.2rem; }
+        .passage p { margin-bottom: 14px; }
+        .hl { font-style: italic; color: #6b46c1; font-weight: 600; }
+        .qblock { margin-bottom: 20px; padding: 18px; background: #f8f9fa; border-radius: 10px; }
+        .qt { font-weight: 600; margin-bottom: 12px; color: #333; line-height: 1.5; }
+        .opts label { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; border-radius: 8px; cursor: pointer; margin-bottom: 5px; }
+        .opts label:hover { background: #f3ebff; }
+        .opts input[type=radio] { margin-top: 3px; flex-shrink: 0; }
+        .fb { margin-top: 8px; font-weight: bold; font-size: 0.9rem; }
+        .fb.correct { color: #28a745; }
+        .fb.incorrect { color: #dc3545; }
+        .gsec { margin-top: 20px; }
+        .gs { margin-bottom: 14px; line-height: 2; font-size: 1rem; }
+        .gi { border: none; border-bottom: 2px solid #9f7aea; padding: 4px 8px; font-size: 0.95rem; width: 180px; background: transparent; outline: none; color: #333; }
+        .gi.correct { border-bottom-color: #28a745; background: #d4edda33; }
+        .gi.incorrect { border-bottom-color: #dc3545; background: #f8d7da33; }
+        .wbox { background: #faf5ff; border: 2px solid #e9d8fd; border-radius: 10px; padding: 12px 18px; margin-bottom: 15px; }
+        .wbox strong { color: #6b46c1; }
+        .mtbl { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .mtbl th { background: #9f7aea; color: white; padding: 10px 14px; text-align: left; }
+        .mtbl td { padding: 10px 14px; border-bottom: 1px solid #eee; }
+        .mtbl tr:nth-child(even) td { background: #faf5ff; }
+        .msel { border: 2px solid #e9d8fd; border-radius: 6px; padding: 5px 8px; font-size: 0.88rem; background: white; width: 100%; max-width: 380px; }
+        .msel.correct { border-color: #28a745; }
+        .msel.incorrect { border-color: #dc3545; }
+        .vsel { border: 2px solid #e9d8fd; border-radius: 6px; padding: 5px 10px; font-size: 0.9rem; background: white; width: 230px; }
+        .vsel.correct { border-color: #28a745; }
+        .vsel.incorrect { border-color: #dc3545; }
+        .brow { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+        .chk { background: linear-gradient(135deg, #9f7aea, #6b46c1); color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
+        .chk:disabled { background: #ccc; cursor: not-allowed; }
+        .nxt { background: #28a745; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
+        .nxt:disabled { background: #ccc; cursor: not-allowed; }
+        .prv { background: #6c757d; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
+        .sab { background: #ffc107; color: #333; border: none; padding: 10px 22px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.88rem; display: none; margin-top: 10px; }
+        .apan { display: none; background: #fffbea; border: 2px solid #ffc107; border-radius: 10px; padding: 15px; margin-top: 12px; }
+        .apan p { margin-bottom: 6px; font-size: 0.9rem; }
+        .done { text-align: center; padding: 60px 20px; display: none; }
+        .done .ico { font-size: 5rem; margin-bottom: 20px; }
+        .done h2 { font-size: 2.2rem; color: #6b46c1; margin-bottom: 10px; }
+        .done p { color: #666; font-size: 1rem; margin-bottom: 30px; }
+        .dbbtn { background: linear-gradient(135deg, #9f7aea, #6b46c1); color: white; padding: 16px 40px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 1.1rem; display: inline-block; }
+        .savi { position: fixed; bottom: 20px; right: 20px; background: #9f7aea; color: white; padding: 10px 18px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; opacity: 0; transition: opacity 0.4s; z-index: 9000; pointer-events: none; }
+        .savi.show { opacity: 1; }
+    </style>
+</head>
+<body>
+<div id="splash">
+    <h1>&#127917; WEEK 6</h1>
+    <h2>DAY 5</h2>
+    <p>Topic: Culture Review</p>
+    <button class="splash-btn" onclick="startDay()">LET'S GO!</button>
+</div>
+<div class="savi" id="savi">&#10003; Progress saved</div>
+<div class="wrap" id="mc" style="display:none;">
+    <div class="hdr">
+        <div><h1>&#127917; Week 6 &mdash; Day 5</h1><div class="topic">Topic: Culture Review</div></div>
+        <a href="/student-dashboard.html" class="back-btn">&larr; Dashboard</a>
+    </div>
+    <div class="plabel" id="plabel">Task 0 of 7</div>
+    <div class="pwrap"><div class="pfill" id="pfill" style="width:0%"></div></div>
+    <div class="vsec">
+        <button class="vtog" onclick="toggleVocab()">
+            <div style="display:flex;align-items:center;gap:10px;"><h3>&#128214; Today's Vocabulary</h3><span class="vcount">50 words</span></div>
+            <span class="varr" id="varr">&#9660;</span>
+        </button>
+        <div class="vbody" id="vbody"><div class="vgrid" id="vgrid"></div></div>
+    </div>
+    <!-- TASK 1 -->
+    <div class="card active" id="task1">
+        <div class="thdr"><div class="tnum">1</div><div><div class="ttitle">Mini Reading</div><div class="tsub">Read and answer &mdash; NO MORE THAN THREE WORDS from the passage</div></div></div>
+        <div class="passage">
+            <h3>The Art of Celebration: How Festivals Shape Cultural Identity</h3>
+            <p>Across every human society, from the smallest village to the largest metropolis, people have always found reasons to celebrate. Festivals serve a function far more profound than simple entertainment. They are among the most powerful mechanisms through which cultures transmit their <span class="hl">(1) values</span>, reinforce social bonds and assert collective identity in the face of change.</p>
+            <p>The origins of most major festivals lie in humanity's ancient relationship with the natural world. Harvest celebrations, solstice rituals and lunar festivals all reflect an era when the rhythms of agriculture and the movements of celestial bodies governed the <span class="hl">(2) calendar</span> of human life. Many ancient observances persist &mdash; stripped of their agricultural significance but retained for their social and <span class="hl">(3) symbolic</span> value.</p>
+            <p>What makes festivals significant is their power to create what sociologists call <span class="hl">(4) collective effervescence</span> &mdash; a shared emotional experience. This sense of belonging has been shown to strengthen community ties and even improve individual <span class="hl">(5) wellbeing</span>.</p>
+            <p>Yet festivals are not static. They evolve, migrate and adapt as cultures meet and <span class="hl">(6) transform</span>. Carnival, originally a European Christian tradition, became something entirely new in the Caribbean. Cultural exchange through festivals reveals both the resilience of tradition and the remarkable human capacity for <span class="hl">(7) reinvention</span>.</p>
+        </div>
+        <h4 style="color:#6b46c1;margin:20px 0 12px;">Answer &mdash; NO MORE THAN THREE WORDS:</h4>
+        <div class="gsec">
+            <div class="gs">1. What do festivals serve beyond entertainment?<br><input class="gi" id="t1q1" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">2. What governed the calendar of human life in ancient times?<br><input class="gi" id="t1q2" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">3. Why do ancient festivals persist despite losing agricultural significance?<br><input class="gi" id="t1q3" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">4. What do sociologists call the shared emotional experience at festivals?<br><input class="gi" id="t1q4" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">5. What has collective effervescence been shown to strengthen?<br><input class="gi" id="t1q5" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">6. What does the example of Carnival reveal about cultures?<br><input class="gi" id="t1q6" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">7. What does cultural exchange reveal about human capacity?<br><input class="gi" id="t1q7" placeholder="___" style="width:300px;margin-top:8px;"></div>
+        </div>
+        <div class="brow">
+            <button class="chk" id="check1" onclick="checkTask1()" disabled>Check Answers</button>
+            <button class="nxt" id="next1" disabled onclick="goToTask(2)">Next Task &rarr;</button>
+        </div>
+        <button class="sab" id="showAns1" onclick="toggleAns('ans1')">&#9660; Show Answers</button>
+        <div class="apan" id="ans1"><p><strong>Answers:</strong> 1-a profound function, 2-rhythms of agriculture/celestial bodies, 3-social and symbolic value, 4-collective effervescence, 5-community ties, 6-they evolve/transform, 7-(capacity for) reinvention</p></div>
+    </div>
+
+    <!-- TASK 2 -->
+    <div class="card" id="task2">
+        <div class="thdr"><div class="tnum">2</div><div><div class="ttitle">Article Reading</div><div class="tsub">Read the article and study the vocabulary</div></div></div>
+        <a class="plink" href="article 5.pdf" target="_blank"><span style="font-size:1.5rem;">&#128196;</span> Culture &mdash; Article</a>
+        <a class="plink" href="vocab 5.pdf" target="_blank"><span style="font-size:1.5rem;">&#128216;</span> Culture &mdash; Vocabulary</a>
+        <div class="brow"><button class="prv" onclick="goToTask(1)">&larr; Previous</button><button class="nxt" onclick="goToTask(3)">Next Task &rarr;</button></div>
+    </div>
+
+    <!-- TASK 3 -->
+    <div class="card" id="task3">
+        <div class="thdr"><div class="tnum">3</div><div><div class="ttitle">Practice Reading</div><div class="tsub">IELTS-style reading test</div></div></div>
+        <a class="hlink" href="Reading (29).html" target="_blank">&#128214; Open Practice Reading</a>
+        <div class="brow"><button class="prv" onclick="goToTask(2)">&larr; Previous</button><button class="nxt" onclick="goToTask(4)">Next Task &rarr;</button></div>
+    </div>
+
+    <!-- TASK 4 -->
+    <div class="card" id="task4">
+        <div class="thdr"><div class="tnum">4</div><div><div class="ttitle">Vocabulary in Context</div><div class="tsub">Choose the correct word for each sentence</div></div></div>
+        <div class="gsec">
+            <div class="gs">1. Every year, thousands of people join the <select class="vsel" id="t4v1"><option value="">select</option><option value="communal">communal</option><option value="celestial">celestial</option><option value="agrarian">agrarian</option></select> celebrations.</div>
+            <div class="gs">2. The festival helped <select class="vsel" id="t4v2"><option value="">select</option><option value="reinforce">reinforce</option><option value="migrate">migrate</option><option value="strip">strip</option></select> strong bonds between local communities.</div>
+            <div class="gs">3. Ancient peoples based their calendar on <select class="vsel" id="t4v3"><option value="">select</option><option value="celestial">celestial</option><option value="civic">civic</option><option value="cultural">cultural</option></select> movements.</div>
+            <div class="gs">4. Many people feel a deep <select class="vsel" id="t4v4"><option value="">select</option><option value="reverence">reverence</option><option value="reinvention">reinvention</option><option value="effervescence">effervescence</option></select> for their ancestral traditions.</div>
+            <div class="gs">5. The festival creates a feeling of <select class="vsel" id="t4v5"><option value="">select</option><option value="collective effervescence">collective effervescence</option><option value="cultural transmission">cultural transmission</option><option value="civic pride">civic pride</option></select>, where everyone feels united.</div>
+            <div class="gs">6. The ceremony has <select class="vsel" id="t4v6"><option value="">select</option><option value="symbolic">symbolic</option><option value="agrarian">agrarian</option><option value="metropolitan">metropolitan</option></select> significance even today.</div>
+            <div class="gs">7. Over generations, traditions <select class="vsel" id="t4v7"><option value="">select</option><option value="evolve">evolve</option><option value="reinforce">reinforce</option><option value="assert">assert</option></select> and absorb new influences.</div>
+            <div class="gs">8. Carnival is a remarkable example of cultural <select class="vsel" id="t4v8"><option value="">select</option><option value="reinvention">reinvention</option><option value="isolation">isolation</option><option value="persistence">persistence</option></select>.</div>
+            <div class="gs">9. Festivals help communities <select class="vsel" id="t4v9"><option value="">select</option><option value="assert">assert</option><option value="strip">strip</option><option value="migrate">migrate</option></select> their identity in the face of change.</div>
+            <div class="gs">10. Sociologists study how shared experiences improve individual <select class="vsel" id="t4v10"><option value="">select</option><option value="wellbeing">wellbeing</option><option value="reverence">reverence</option><option value="transmission">transmission</option></select>.</div>
+        </div>
+        <div class="brow"><button class="prv" onclick="goToTask(3)">&larr; Previous</button><button class="chk" id="check4" onclick="checkTask4()" disabled>Check Answers</button><button class="nxt" id="next4" disabled onclick="goToTask(5)">Next Task &rarr;</button></div>
+        <button class="sab" id="showAns4" onclick="toggleAns('ans4')">&#9660; Show Answers</button>
+        <div class="apan" id="ans4"><p><strong>Answers:</strong> 1-communal, 2-reinforce, 3-celestial, 4-reverence, 5-collective effervescence, 6-symbolic, 7-evolve, 8-reinvention, 9-assert, 10-wellbeing</p></div>
+    </div>
+    <!-- TASK 5 -->
+    <div class="card" id="task5">
+        <div class="thdr"><div class="tnum">5</div><div><div class="ttitle">Video Watching Task</div><div class="tsub">Watch and answer questions</div></div></div>
+        <div class="vfall"><p>&#9654; <a href="https://www.youtube.com/watch?v=4VS9cWmmu2k" target="_blank">Open video in new tab</a> if it doesn't play below.</p></div>
+        <div class="vcont"><iframe src="https://www.youtube.com/embed/4VS9cWmmu2k" frameborder="0" allowfullscreen></iframe></div>
+        <h4 style="color:#6b46c1;margin:20px 0 12px;">Part 1 &mdash; Multiple Choice Questions</h4>
+        <div class="qblock"><div class="qt">1. According to the video, what is the main function of festivals?</div><div class="opts"><label><input type="radio" name="t5q1" value="A"> A. To attract tourists and boost the economy</label><label><input type="radio" name="t5q1" value="B"> B. To entertain people on public holidays</label><label><input type="radio" name="t5q1" value="C"> C. To transmit cultural values and reinforce collective identity</label><label><input type="radio" name="t5q1" value="D"> D. To promote religious beliefs</label></div><div class="fb" id="fb_t5q1"></div></div>
+        <div class="qblock"><div class="qt">2. Where do the origins of most major festivals lie?</div><div class="opts"><label><input type="radio" name="t5q2" value="A"> A. In government decisions</label><label><input type="radio" name="t5q2" value="B"> B. In ancient relationships with the natural world</label><label><input type="radio" name="t5q2" value="C"> C. In commercial interests</label><label><input type="radio" name="t5q2" value="D"> D. In military traditions</label></div><div class="fb" id="fb_t5q2"></div></div>
+        <div class="qblock"><div class="qt">3. What term do sociologists use for the shared emotional experience at festivals?</div><div class="opts"><label><input type="radio" name="t5q3" value="A"> A. Social bonding</label><label><input type="radio" name="t5q3" value="B"> B. Cultural transmission</label><label><input type="radio" name="t5q3" value="C"> C. Collective effervescence</label><label><input type="radio" name="t5q3" value="D"> D. Community solidarity</label></div><div class="fb" id="fb_t5q3"></div></div>
+        <div class="qblock"><div class="qt">4. Carnival originated as a tradition of which religion?</div><div class="opts"><label><input type="radio" name="t5q4" value="A"> A. Islam</label><label><input type="radio" name="t5q4" value="B"> B. Judaism</label><label><input type="radio" name="t5q4" value="C"> C. Hinduism</label><label><input type="radio" name="t5q4" value="D"> D. Christianity</label></div><div class="fb" id="fb_t5q4"></div></div>
+        <div class="qblock"><div class="qt">5. How did Caribbean Carnival change from its European origins?</div><div class="opts"><label><input type="radio" name="t5q5" value="A"> A. It became smaller and more private.</label><label><input type="radio" name="t5q5" value="B"> B. It absorbed West African musical and performance traditions.</label><label><input type="radio" name="t5q5" value="C"> C. It was banned and restarted.</label><label><input type="radio" name="t5q5" value="D"> D. It moved indoors.</label></div><div class="fb" id="fb_t5q5"></div></div>
+        <div class="qblock"><div class="qt">6. Where does St Patrick's Day attract the most enthusiasm?</div><div class="opts"><label><input type="radio" name="t5q6" value="A"> A. Dublin and Cork</label><label><input type="radio" name="t5q6" value="B"> B. London and Paris</label><label><input type="radio" name="t5q6" value="C"> C. New York, Boston and Sydney</label><label><input type="radio" name="t5q6" value="D"> D. Rome and Madrid</label></div><div class="fb" id="fb_t5q6"></div></div>
+        <div class="qblock"><div class="qt">7. What has been shown to improve as a result of collective effervescence?</div><div class="opts"><label><input type="radio" name="t5q7" value="A"> A. Economic productivity</label><label><input type="radio" name="t5q7" value="B"> B. Individual wellbeing</label><label><input type="radio" name="t5q7" value="C"> C. Political participation</label><label><input type="radio" name="t5q7" value="D"> D. Academic performance</label></div><div class="fb" id="fb_t5q7"></div></div>
+        <div class="qblock"><div class="qt">8. What does the video say about festivals in the modern world?</div><div class="opts"><label><input type="radio" name="t5q8" value="A"> A. They are becoming less popular.</label><label><input type="radio" name="t5q8" value="B"> B. They are only important in developing countries.</label><label><input type="radio" name="t5q8" value="C"> C. They may be more socially necessary than ever before.</label><label><input type="radio" name="t5q8" value="D"> D. They should only celebrate religious events.</label></div><div class="fb" id="fb_t5q8"></div></div>
+        <div class="qblock"><div class="qt">9. What does the story of festivals reveal about human culture?</div><div class="opts"><label><input type="radio" name="t5q9" value="A"> A. Cultures never change once established.</label><label><input type="radio" name="t5q9" value="B"> B. Festivals are purely commercial events.</label><label><input type="radio" name="t5q9" value="C"> C. Cultures evolve, merge and reinvent themselves over time.</label><label><input type="radio" name="t5q9" value="D"> D. Only ancient festivals deserve respect.</label></div><div class="fb" id="fb_t5q9"></div></div>
+        <div class="qblock"><div class="qt">10. What is the overall message of the video?</div><div class="opts"><label><input type="radio" name="t5q10" value="A"> A. Festivals are expensive and should be reduced.</label><label><input type="radio" name="t5q10" value="B"> B. Festivals are a powerful way for cultures to express, share and reinvent their identities.</label><label><input type="radio" name="t5q10" value="C"> C. Religious festivals are more important than secular ones.</label><label><input type="radio" name="t5q10" value="D"> D. Festivals should remain unchanged to preserve tradition.</label></div><div class="fb" id="fb_t5q10"></div></div>
+        <h4 style="color:#6b46c1;margin:20px 0 12px;">Part 2 &mdash; Gap Filling</h4>
+        <div class="wbox"><strong>Word Box:</strong> communal &nbsp;|&nbsp; celestial &nbsp;|&nbsp; reverence &nbsp;|&nbsp; effervescence &nbsp;|&nbsp; symbolic &nbsp;|&nbsp; evolve &nbsp;|&nbsp; reinvention &nbsp;|&nbsp; assert &nbsp;|&nbsp; wellbeing &nbsp;|&nbsp; agrarian &nbsp;|&nbsp; transmit &nbsp;|&nbsp; civic &nbsp;|&nbsp; static &nbsp;|&nbsp; metropolis &nbsp;|&nbsp; resilience</div>
+        <div class="gsec">
+            <div class="gs">1. Festivals are a powerful way for cultures to <input class="gi" id="t5g1" placeholder="___"> their values.</div>
+            <div class="gs">2. Ancient harvest festivals were rooted in <input class="gi" id="t5g2" placeholder="___"> societies.</div>
+            <div class="gs">3. Solstice rituals were tied to <input class="gi" id="t5g3" placeholder="___"> movements like the sun and moon.</div>
+            <div class="gs">4. Many communities hold their ancestors in great <input class="gi" id="t5g4" placeholder="___">.</div>
+            <div class="gs">5. Shared celebrations create a sense of collective <input class="gi" id="t5g5" placeholder="___">.</div>
+            <div class="gs">6. Many ancient customs retain deep <input class="gi" id="t5g6" placeholder="___"> meaning.</div>
+            <div class="gs">7. Traditions do not stay <input class="gi" id="t5g7" placeholder="___"> &mdash; they change with each generation.</div>
+            <div class="gs">8. Cultures <input class="gi" id="t5g8" placeholder="___"> as they encounter new ideas and people.</div>
+            <div class="gs">9. Carnival is a beautiful example of cultural <input class="gi" id="t5g9" placeholder="___">.</div>
+            <div class="gs">10. Festivals help communities <input class="gi" id="t5g10" placeholder="___"> their collective identity.</div>
+            <div class="gs">11. Participating in festivals improves personal <input class="gi" id="t5g11" placeholder="___">.</div>
+            <div class="gs">12. <input class="gi" id="t5g12" placeholder="___"> celebrations involve whole communities.</div>
+            <div class="gs">13. Many cities hold <input class="gi" id="t5g13" placeholder="___"> festivals to celebrate their local identity.</div>
+            <div class="gs">14. Cultural exchange reveals the <input class="gi" id="t5g14" placeholder="___"> of tradition.</div>
+            <div class="gs">15. From a small village to a large <input class="gi" id="t5g15" placeholder="___">, every society celebrates.</div>
+        </div>
+        <h4 style="color:#6b46c1;margin:20px 0 12px;">Part 3 &mdash; Vocabulary Matching</h4>
+        <table class="mtbl"><thead><tr><th>#</th><th>Word</th><th>Definition</th></tr></thead><tbody>
+        <tr><td>1</td><td><strong>festival</strong></td><td><select class="msel" id="t5m1"><option value="">&#8212; select &#8212;</option><option value="A">A. to send or pass something on to others</option><option value="B">B. relating to farming or rural life</option><option value="C">C. a large organised public celebration</option><option value="D">D. relating to stars, planets and space</option><option value="E">E. deep respect or admiration</option><option value="F">F. the quality of recovering from difficulty</option><option value="G">G. relating to citizens and their community</option><option value="H">H. lively and enthusiastic energy</option><option value="I">I. representing something else through a symbol</option><option value="J">J. to develop or change gradually</option><option value="K">K. the process of creating something new from old</option><option value="L">L. to declare or claim something confidently</option><option value="M">M. the state of being happy and healthy</option><option value="N">N. not changing or developing</option><option value="O">O. a very large city</option></select></td></tr>
+<tr><td>2</td><td><strong>transmit</strong></td><td><select class="msel" id="t5m2"><option value="">&#8212; select &#8212;</option><option value="A">A. to send or pass something on to others</option><option value="B">B. relating to farming or rural life</option><option value="C">C. a large organised public celebration</option><option value="D">D. relating to stars, planets and space</option><option value="E">E. deep respect or admiration</option><option value="F">F. the quality of recovering from difficulty</option><option value="G">G. relating to citizens and their community</option><option value="H">H. lively and enthusiastic energy</option><option value="I">I. representing something else through a symbol</option><option value="J">J. to develop or change gradually</option><option value="K">K. the process of creating something new from old</option><option value="L">L. to declare or claim something confidently</option><option value="M">M. the state of being happy and healthy</option><option value="N">N. not changing or developing</option><option value="O">O. a very large city</option></select></td></tr>
+<tr><td>3</td><td><strong>agrarian</strong></td><td><select class="msel" id="t5m3"><option value="">&#8212; select &#8212;</option><option value="A">A. to send or pass something on to others</option><option value="B">B. relating to farming or rural life</option><option value="C">C. a large organised public celebration</option><option value="D">D. relating to stars, planets and space</option><option value="E">E. deep respect or admiration</option><option value="F">F. the quality of recovering from difficulty</option><option value="G">G. relating to citizens and their community</option><option value="H">H. lively and enthusiastic energy</option><option value="I">I. representing something else through a symbol</option><option value="J">J. to develop or change gradually</option><option value="K">K. the process of creating something new from old</option><option value="L">L. to declare or claim something confidently</option><option value="M">M. the state of being happy and healthy</option><option value="N">N. not changing or developing</option><option value="O">O. a very large city</option></select></td></tr>
+<tr><td>4</td><td><strong>celestial</strong></td><td><select class="msel" id="t5m4"><option value="">&#8212; select &#8212;</option><option value="A">A. to send or pass something on to others</option><option value="B">B. relating to farming or rural life</option><option value="C">C. a large organised public celebration</option><option value="D">D. relating to stars, planets and space</option><option value="E">E. deep respect or admiration</option><option value="F">F. the quality of recovering from difficulty</option><option value="G">G. relating to citizens and their community</option><option value="H">H. lively and enthusiastic energy</option><option value="I">I. representing something else through a symbol</option><option value="J">J. to develop or change gradually</option><option value="K">K. the process of creating something new from old</option><option value="L">L. to declare or claim something confidently</option><option value="M">M. the state of being happy and healthy</option><option value="N">N. not changing or developing</option><option value="O">O. a very large city</option></select></td></tr>
+<tr><td>5</td><td><strong>reverence</strong></td><td><select class="msel" id="t5m5"><option value="">&#8212; select &#8212;</option><option value="A">A. to send or pass something on to others</option><option value="B">B. relating to farming or rural life</option><option value="C">C. a large organised public celebration</option><option value="D">D. relating to stars, planets and space</option><option value="E">E. deep respect or admiration</option><option value="F">F. the quality of recovering from difficulty</option><option value="G">G. relating to citizens and their community</option><option value="H">H. lively and enthusiastic energy</option><option value="I">I. representing something else through a symbol</option><option value="J">J. to develop or change gradually</option><option value="K">K. the process of creating something new from old</option><option value="L">L. to declare or claim something confidently</option><option value="M">M. the state of being happy and healthy</option><option value="N">N. not changing or developing</option><option value="O">O. a very large city</option></select></td></tr>
+<tr><td>6</td><td><strong>resilience</strong></td><td><select class="msel" id="t5m6"><option value="">&#8212; select &#8212;</option><option value="A">A. to send or pass something on to others</option><option value="B">B. relating to farming or rural life</option><option value="C">C. a large organised public celebration</option><option value="D">D. relating to stars, planets and space</option><option value="E">E. deep respect or admiration</option><option value="F">F. the quality of recovering from difficulty</option><option value="G">G. relating to citizens and their community</option><option value="H">H. lively and enthusiastic energy</option><option value="I">I. representing something else through a symbol</option><option value="J">J. to develop or change gradually</option><option value="K">K. the process of creating something new from old</option><option value="L">L. to declare or claim something confidently</option><option value="M">M. the state of being happy and healthy</option><option value="N">N. not changing or developing</option><option value="O">O. a very large city</option></select></td></tr>
+<tr><td>7</td><td><strong>civic</strong></td><td><select class="msel" id="t5m7"><option value="">&#8212; select &#8212;</option><option value="A">A. to send or pass something on to others</option><option value="B">B. relating to farming or rural life</option><option value="C">C. a large organised public celebration</option><option value="D">D. relating to stars, planets and space</option><option value="E">E. deep respect or admiration</option><option value="F">F. the quality of recovering from difficulty</option><option value="G">G. relating to citizens and their community</option><option value="H">H. lively and enthusiastic energy</option><option value="I">I. representing something else through a symbol</option><option value="J">J. to develop or change gradually</option><option value="K">K. the process of creating something new from old</option><option value="L">L. to declare or claim something confidently</option><option value="M">M. the state of being happy and healthy</option><option value="N">N. not changing or developing</option><option value="O">O. a very large city</option></select></td></tr>
+<tr><td>8</td><td><strong>effervescence</strong></td><td><select class="msel" id="t5m8"><option value="">&#8212; select &#8212;</option><option value="A">A. to send or pass something on to others</option><option value="B">B. relating to farming or rural life</option><option value="C">C. a large organised public celebration</option><option value="D">D. relating to stars, planets and space</option><option value="E">E. deep respect or admiration</option><option value="F">F. the quality of recovering from difficulty</option><option value="G">G. relating to citizens and their community</option><option value="H">H. lively and enthusiastic energy</option><option value="I">I. representing something else through a symbol</option><option value="J">J. to develop or change gradually</option><option value="K">K. the process of creating something new from old</option><option value="L">L. to declare or claim something confidently</option><option value="M">M. the state of being happy and healthy</option><option value="N">N. not changing or developing</option><option value="O">O. a very large city</option></select></td></tr>
+<tr><td>9</td><td><strong>symbolic</strong></td><td><select class="msel" id="t5m9"><option value="">&#8212; select &#8212;</option><option value="A">A. to send or pass something on to others</option><option value="B">B. relating to farming or rural life</option><option value="C">C. a large organised public celebration</option><option value="D">D. relating to stars, planets and space</option><option value="E">E. deep respect or admiration</option><option value="F">F. the quality of recovering from difficulty</option><option value="G">G. relating to citizens and their community</option><option value="H">H. lively and enthusiastic energy</option><option value="I">I. representing something else through a symbol</option><option value="J">J. to develop or change gradually</option><option value="K">K. the process of creating something new from old</option><option value="L">L. to declare or claim something confidently</option><option value="M">M. the state of being happy and healthy</option><option value="N">N. not changing or developing</option><option value="O">O. a very large city</option></select></td></tr>
+<tr><td>10</td><td><strong>evolve</strong></td><td><select class="msel" id="t5m10"><option value="">&#8212; select &#8212;</option><option value="A">A. to send or pass something on to others</option><option value="B">B. relating to farming or rural life</option><option value="C">C. a large organised public celebration</option><option value="D">D. relating to stars, planets and space</option><option value="E">E. deep respect or admiration</option><option value="F">F. the quality of recovering from difficulty</option><option value="G">G. relating to citizens and their community</option><option value="H">H. lively and enthusiastic energy</option><option value="I">I. representing something else through a symbol</option><option value="J">J. to develop or change gradually</option><option value="K">K. the process of creating something new from old</option><option value="L">L. to declare or claim something confidently</option><option value="M">M. the state of being happy and healthy</option><option value="N">N. not changing or developing</option><option value="O">O. a very large city</option></select></td></tr>
+<tr><td>11</td><td><strong>reinvention</strong></td><td><select class="msel" id="t5m11"><option value="">&#8212; select &#8212;</option><option value="A">A. to send or pass something on to others</option><option value="B">B. relating to farming or rural life</option><option value="C">C. a large organised public celebration</option><option value="D">D. relating to stars, planets and space</option><option value="E">E. deep respect or admiration</option><option value="F">F. the quality of recovering from difficulty</option><option value="G">G. relating to citizens and their community</option><option value="H">H. lively and enthusiastic energy</option><option value="I">I. representing something else through a symbol</option><option value="J">J. to develop or change gradually</option><option value="K">K. the process of creating something new from old</option><option value="L">L. to declare or claim something confidently</option><option value="M">M. the state of being happy and healthy</option><option value="N">N. not changing or developing</option><option value="O">O. a very large city</option></select></td></tr>
+<tr><td>12</td><td><strong>assert</strong></td><td><select class="msel" id="t5m12"><option value="">&#8212; select &#8212;</option><option value="A">A. to send or pass something on to others</option><option value="B">B. relating to farming or rural life</option><option value="C">C. a large organised public celebration</option><option value="D">D. relating to stars, planets and space</option><option value="E">E. deep respect or admiration</option><option value="F">F. the quality of recovering from difficulty</option><option value="G">G. relating to citizens and their community</option><option value="H">H. lively and enthusiastic energy</option><option value="I">I. representing something else through a symbol</option><option value="J">J. to develop or change gradually</option><option value="K">K. the process of creating something new from old</option><option value="L">L. to declare or claim something confidently</option><option value="M">M. the state of being happy and healthy</option><option value="N">N. not changing or developing</option><option value="O">O. a very large city</option></select></td></tr>
+<tr><td>13</td><td><strong>wellbeing</strong></td><td><select class="msel" id="t5m13"><option value="">&#8212; select &#8212;</option><option value="A">A. to send or pass something on to others</option><option value="B">B. relating to farming or rural life</option><option value="C">C. a large organised public celebration</option><option value="D">D. relating to stars, planets and space</option><option value="E">E. deep respect or admiration</option><option value="F">F. the quality of recovering from difficulty</option><option value="G">G. relating to citizens and their community</option><option value="H">H. lively and enthusiastic energy</option><option value="I">I. representing something else through a symbol</option><option value="J">J. to develop or change gradually</option><option value="K">K. the process of creating something new from old</option><option value="L">L. to declare or claim something confidently</option><option value="M">M. the state of being happy and healthy</option><option value="N">N. not changing or developing</option><option value="O">O. a very large city</option></select></td></tr>
+<tr><td>14</td><td><strong>static</strong></td><td><select class="msel" id="t5m14"><option value="">&#8212; select &#8212;</option><option value="A">A. to send or pass something on to others</option><option value="B">B. relating to farming or rural life</option><option value="C">C. a large organised public celebration</option><option value="D">D. relating to stars, planets and space</option><option value="E">E. deep respect or admiration</option><option value="F">F. the quality of recovering from difficulty</option><option value="G">G. relating to citizens and their community</option><option value="H">H. lively and enthusiastic energy</option><option value="I">I. representing something else through a symbol</option><option value="J">J. to develop or change gradually</option><option value="K">K. the process of creating something new from old</option><option value="L">L. to declare or claim something confidently</option><option value="M">M. the state of being happy and healthy</option><option value="N">N. not changing or developing</option><option value="O">O. a very large city</option></select></td></tr>
+<tr><td>15</td><td><strong>metropolis</strong></td><td><select class="msel" id="t5m15"><option value="">&#8212; select &#8212;</option><option value="A">A. to send or pass something on to others</option><option value="B">B. relating to farming or rural life</option><option value="C">C. a large organised public celebration</option><option value="D">D. relating to stars, planets and space</option><option value="E">E. deep respect or admiration</option><option value="F">F. the quality of recovering from difficulty</option><option value="G">G. relating to citizens and their community</option><option value="H">H. lively and enthusiastic energy</option><option value="I">I. representing something else through a symbol</option><option value="J">J. to develop or change gradually</option><option value="K">K. the process of creating something new from old</option><option value="L">L. to declare or claim something confidently</option><option value="M">M. the state of being happy and healthy</option><option value="N">N. not changing or developing</option><option value="O">O. a very large city</option></select></td></tr>
+</tbody></table>
+        <div class="brow"><button class="prv" onclick="goToTask(4)">&larr; Previous</button><button class="chk" id="check5" onclick="checkTask5()" disabled>Check Answers</button><button class="nxt" id="next5" disabled onclick="goToTask(6)">Next Task &rarr;</button></div>
+        <button class="sab" id="showAns5" onclick="toggleAns('ans5')">&#9660; Show Answers</button>
+        <div class="apan" id="ans5">
+            <p><strong>MCQ:</strong> 1-C, 2-B, 3-C, 4-D, 5-B, 6-C, 7-B, 8-C, 9-C, 10-B</p>
+            <p><strong>Gap Fill:</strong> 1-transmit, 2-agrarian, 3-celestial, 4-reverence, 5-effervescence, 6-symbolic, 7-static, 8-evolve, 9-reinvention, 10-assert, 11-wellbeing, 12-Communal, 13-civic, 14-resilience, 15-metropolis</p>
+            <p><strong>Matching:</strong> 1-C, 2-A, 3-B, 4-D, 5-E, 6-F, 7-G, 8-H, 9-I, 10-J, 11-K, 12-L, 13-M, 14-N, 15-O</p>
+        </div>
+    </div>
+    <!-- TASK 6 -->
+    <div class="card" id="task6">
+        <div class="thdr"><div class="tnum">6</div><div><div class="ttitle">Dictation + Comprehension</div><div class="tsub">Listen, complete the gaps, then answer questions</div></div></div>
+        <div class="aplayer"><p>&#127911; Phrases and Idioms &mdash; BBC Learning English</p><audio controls src="phrases.mp3"></audio></div>
+        <h4 style="color:#6b46c1;margin-bottom:12px;">Part 1 &mdash; Dictation (ONE WORD ONLY)</h4>
+        <div class="gsec" id="dgaps"><div class="gs"><strong>1.</strong> &hellip;In English, what we say and what we mean are sometimes two very different <input class="gi" id="d1" placeholder="(1)"></div>
+<div class="gs"><strong>2.</strong> &hellip;people say, for emphasis or for humour &mdash; something known as <input class="gi" id="d2" placeholder="(2)"></div>
+<div class="gs"><strong>3.</strong> &hellip;Derek's daughter used the word mare to describe her terrible day, and said she'd had a <input class="gi" id="d3" placeholder="(3)"></div>
+<div class="gs"><strong>4.</strong> &hellip;she was using the word mare to describe her terrible day at <input class="gi" id="d4" placeholder="(4)"></div>
+<div class="gs"><strong>5.</strong> &hellip;Her day wasn't really terrible &ndash; more like strange or <input class="gi" id="d5" placeholder="(5)"></div>
+<div class="gs"><strong>6.</strong> &hellip;Can you remember a time when what you said wasn't really what you <input class="gi" id="d6" placeholder="(6)"></div>
+<div class="gs"><strong>7.</strong> &hellip;Sometimes we say Hi, y'alright? but actually we don't really want to hear the <input class="gi" id="d7" placeholder="(7)"></div>
+<div class="gs"><strong>8.</strong> &hellip;If you're having a bad day, they don't want to know. They're just saying <input class="gi" id="d8" placeholder="(8)"></div>
+<div class="gs"><strong>9.</strong> &hellip;What is their literal <input class="gi" id="d9" placeholder="(9)"></div>
+<div class="gs"><strong>10.</strong> &hellip;I'm going to say to over <input class="gi" id="d10" placeholder="(10)"></div>
+<div class="gs"><strong>11.</strong> &hellip;Its opposite, something called <input class="gi" id="d11" placeholder="(11)"></div>
+<div class="gs"><strong>12.</strong> &hellip;instead of saying a meal was awful, you might say it was less than <input class="gi" id="d12" placeholder="(12)"></div>
+<div class="gs"><strong>13.</strong> &hellip;Taking yourself too seriously is a <input class="gi" id="d13" placeholder="(13)"></div>
+<div class="gs"><strong>14.</strong> &hellip;In Britain, this is a no-no &ndash; a way of behaving that is not socially <input class="gi" id="d14" placeholder="(14)"></div>
+<div class="gs"><strong>15.</strong> &hellip;meaning it's not what you're expected to do in a particular social <input class="gi" id="d15" placeholder="(15)"></div>
+<div class="gs"><strong>16.</strong> &hellip;And you said, It's all <input class="gi" id="d16" placeholder="(16)"></div>
+<div class="gs"><strong>17.</strong> &hellip;I'm actually a bit <input class="gi" id="d17" placeholder="(17)"></div>
+<div class="gs"><strong>18.</strong> &hellip;I don't want to have a <input class="gi" id="d18" placeholder="(18)"></div>
+<div class="gs"><strong>19.</strong> &hellip;If someone tells you It's all good, they could actually be feeling slightly annoyed or <input class="gi" id="d19" placeholder="(19)"></div>
+<div class="gs"><strong>20.</strong> &hellip;But instead of arguing, they say something polite and move <input class="gi" id="d20" placeholder="(20)"></div>
+<div class="gs"><strong>21.</strong> &hellip;A lot depends on the <input class="gi" id="d21" placeholder="(21)"></div>
+<div class="gs"><strong>22.</strong> &hellip;Get talking to others in English and if you make a mistake say, No <input class="gi" id="d22" placeholder="(22)"></div>
+<div class="gs"><strong>23.</strong> &hellip;starting with mare, short for <input class="gi" id="d23" placeholder="(23)"></div>
+<div class="gs"><strong>24.</strong> &hellip;If you take yourself too seriously, you consider yourself more important than they really <input class="gi" id="d24" placeholder="(24)"></div>
+<div class="gs"><strong>25.</strong> &hellip;A no-no is a way of behaving that is not socially <input class="gi" id="d25" placeholder="(25)"></div>
+<div class="gs"><strong>26.</strong> &hellip;The done thing is what you're expected to do in a particular social <input class="gi" id="d26" placeholder="(26)"></div>
+<div class="gs"><strong>27.</strong> &hellip;If you're miffed, you're slightly <input class="gi" id="d27" placeholder="(27)"></div>
+<div class="gs"><strong>28.</strong> &hellip;And finally, a barney is a loud argument or <input class="gi" id="d28" placeholder="(28)"></div>
+<div class="gs"><strong>29.</strong> &hellip;Hyperbole is often used for emphasis or <input class="gi" id="d29" placeholder="(29)"></div>
+<div class="gs"><strong>30.</strong> &hellip;Sometimes what people say is different from what they really <input class="gi" id="d30" placeholder="(30)"></div>
+</div>
+        <h4 style="color:#6b46c1;margin:20px 0 12px;">Part 2 &mdash; Comprehension Questions</h4>
+        <div class="qblock"><div class="qt">1. What is hyperbole?</div><div class="opts"><label><input type="radio" name="t6q1" value="A"> A. Speaking very quietly</label><label><input type="radio" name="t6q1" value="B"> B. Deliberately exaggerating for emphasis or humour</label><label><input type="radio" name="t6q1" value="C"> C. Avoiding difficult words</label><label><input type="radio" name="t6q1" value="D"> D. Speaking in another language</label></div><div class="fb" id="fb_t6q1"></div></div>
+        <div class="qblock"><div class="qt">2. What does "I've had a mare" usually mean?</div><div class="opts"><label><input type="radio" name="t6q2" value="A"> A. Someone rode a horse all day.</label><label><input type="radio" name="t6q2" value="B"> B. Someone had a terrible but often not truly disastrous experience.</label><label><input type="radio" name="t6q2" value="C"> C. Someone visited a farm.</label><label><input type="radio" name="t6q2" value="D"> D. Someone couldn't sleep.</label></div><div class="fb" id="fb_t6q2"></div></div>
+        <div class="qblock"><div class="qt">3. Why is taking yourself too seriously a no-no in British culture?</div><div class="opts"><label><input type="radio" name="t6q3" value="A"> A. It is considered rude or socially unacceptable.</label><label><input type="radio" name="t6q3" value="B"> B. It is illegal.</label><label><input type="radio" name="t6q3" value="C"> C. It makes conversations too short.</label><label><input type="radio" name="t6q3" value="D"> D. It is only acceptable at work.</label></div><div class="fb" id="fb_t6q3"></div></div>
+        <div class="qblock"><div class="qt">4. If someone says "It's all good" after you step on their toe, what might they really mean?</div><div class="opts"><label><input type="radio" name="t6q4" value="A"> A. They are genuinely very happy.</label><label><input type="radio" name="t6q4" value="B"> B. They want to continue the conversation.</label><label><input type="radio" name="t6q4" value="C"> C. They may actually feel slightly annoyed but don't want to argue.</label><label><input type="radio" name="t6q4" value="D"> D. They didn't notice what happened.</label></div><div class="fb" id="fb_t6q4"></div></div>
+        <div class="qblock"><div class="qt">5. What does the word "barney" mean?</div><div class="opts"><label><input type="radio" name="t6q5" value="A"> A. A funny joke</label><label><input type="radio" name="t6q5" value="B"> B. A loud argument or quarrel</label><label><input type="radio" name="t6q5" value="C"> C. A friendly conversation</label><label><input type="radio" name="t6q5" value="D"> D. A formal meeting</label></div><div class="fb" id="fb_t6q5"></div></div>
+        <div class="brow"><button class="prv" onclick="goToTask(5)">&larr; Previous</button><button class="chk" id="check6" onclick="checkTask6()" disabled>Check Answers</button><button class="nxt" id="next6" disabled onclick="goToTask(7)">Next Task &rarr;</button></div>
+        <button class="sab" id="showAns6" onclick="toggleAns('ans6')">&#9660; Show Answers</button>
+        <div class="apan" id="ans6">
+            <p><strong>Dictation:</strong> 1-things, 2-hyperbole, 3-mare, 4-work, 5-annoying, 6-meant, 7-answer, 8-hello, 9-meaning, 10-speak, 11-understatement, 12-perfect, 13-no-no, 14-acceptable, 15-situation, 16-good, 17-miffed, 18-barney, 19-hurt, 20-on, 21-situation, 22-worries, 23-nightmare, 24-are, 25-acceptable, 26-situation, 27-annoyed, 28-quarrel, 29-humour, 30-mean</p>
+            <p><strong>MCQ:</strong> 1-B, 2-B, 3-A, 4-C, 5-B</p>
+        </div>
+    </div>
+
+    <!-- TASK 7 -->
+    <div class="card" id="task7">
+        <div class="thdr"><div class="tnum">7</div><div><div class="ttitle">Practice Listening</div><div class="tsub">Full IELTS-style listening test</div></div></div>
+        <a class="hlink" href="Listening (29).html" target="_blank">&#127911; Open Practice Listening</a>
+        <div class="brow"><button class="prv" onclick="goToTask(6)">&larr; Previous</button><button class="nxt" onclick="finishDay()">Finish Week 6 &#10003;</button></div>
+    </div>
+
+    <!-- COMPLETION -->
+    <div class="done" id="donescreen">
+        <div class="ico">&#127881;</div>
+        <h2>Week 6 Complete!</h2>
+        <p>Outstanding! You have completed all 5 days of Week 6: Culture!</p>
+        <div style="margin:30px 0;text-align:left;">
+            <h3 style="color:#6b46c1;border-bottom:2px solid #6b46c1;padding-bottom:10px;margin-bottom:15px;">&#128203; Review Your Work</h3>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:15px;">
+                <div onclick="reviewTask(1)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#6b46c1;margin-bottom:5px;">Task 1</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Mini Reading</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(2)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#6b46c1;margin-bottom:5px;">Task 2</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Article Reading</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(3)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#6b46c1;margin-bottom:5px;">Task 3</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Reading</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(4)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#6b46c1;margin-bottom:5px;">Task 4</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Vocabulary</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(5)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#6b46c1;margin-bottom:5px;">Task 5</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Video + Vocab</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(6)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#6b46c1;margin-bottom:5px;">Task 6</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Dictation + MCQ</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(7)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#6b46c1;margin-bottom:5px;">Task 7</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Listening</div><div style="font-size:1.4rem;">&#9989;</div></div>
+            </div>
+        </div>
+        <a href="/student-dashboard.html" class="dbbtn">&larr; Back to Dashboard</a>
+    </div>
+</div>
+<script>
+const SUPABASE_URL='https://nbfceuhuauizyucugejr.supabase.co';
+const SUPABASE_KEY='sb_publishable_0mFIGJkA_DKZfUiDAWFdrA_nXt0hF6H';
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const WEEK=6,DAY=5,TOTAL=7;
+let sid=null,cur=1,t0=Date.now(),stout=null;
+
+const dictAns=['things','hyperbole','mare','work','annoying','meant','answer','hello','meaning','speak','understatement','perfect','no-no','acceptable','situation','good','miffed','barney','hurt','on','situation','worries','nightmare','are','acceptable','situation','annoyed','quarrel','humour','mean'];
+const vocab=[
+{w:"1. Festival (n)",d:"A large organised public celebration"},
+{w:"2. Transmit (v)",d:"To send or pass something on to others"},
+{w:"3. Collective (adj)",d:"Done by or involving all members of a group"},
+{w:"4. Effervescence (n)",d:"Lively and enthusiastic energy"},
+{w:"5. Symbolic (adj)",d:"Representing something else through a symbol"},
+{w:"6. Reverence (n)",d:"Deep respect or admiration"},
+{w:"7. Reinvention (n)",d:"The process of creating something new from old"},
+{w:"8. Celestial (adj)",d:"Relating to stars, planets and space"},
+{w:"9. Agrarian (adj)",d:"Relating to farming or rural life"},
+{w:"10. Civic (adj)",d:"Relating to citizens and their community"},
+{w:"11. Static (adj)",d:"Not changing or developing"},
+{w:"12. Resilience (n)",d:"The quality of recovering from difficulty"},
+{w:"13. Metropolis (n)",d:"A very large city"},
+{w:"14. Wellbeing (n)",d:"The state of being happy and healthy"},
+{w:"15. Assert (v)",d:"To declare or claim something confidently"},
+{w:"16. Evolve (v)",d:"To develop or change gradually"},
+{w:"17. Solstice (n)",d:"The time when the sun is at its greatest distance from the equator"},
+{w:"18. Communal (adj)",d:"Shared by or done by all members of a community"},
+{w:"19. Hyperbole (n)",d:"Exaggerated statements not meant to be taken literally"},
+{w:"20. Understatement (n)",d:"Saying less than what is true for effect"},
+{w:"21. Idiom (n)",d:"A phrase whose meaning differs from the literal words"},
+{w:"22. Miffed (adj)",d:"Slightly annoyed or offended"},
+{w:"23. Barney (n)",d:"A loud argument or quarrel (British slang)"},
+{w:"24. No-no (n)",d:"Something that is not socially acceptable"},
+{w:"25. Mare (n, slang)",d:"Short for nightmare; a bad or difficult experience"},
+{w:"26. Literal (adj)",d:"Taking words in their most basic sense"},
+{w:"27. Figurative (adj)",d:"Using words in a non-literal, imaginative way"},
+{w:"28. Context (n)",d:"The circumstances that form the setting for an event"},
+{w:"29. Identity (n)",d:"The characteristics that define who someone is"},
+{w:"30. Tradition (n)",d:"A custom passed down through generations"},
+{w:"31. Carnival (n)",d:"A public festival involving processions and entertainment"},
+{w:"32. Diwali (n)",d:"A Hindu festival of lights"},
+{w:"33. Obon (n)",d:"A Japanese Buddhist festival honouring ancestors"},
+{w:"34. Lent (n)",d:"A Christian period of fasting before Easter"},
+{w:"35. Solstice ritual (n)",d:"A ceremony marking the sun's extreme position"},
+{w:"36. Urbanised (adj)",d:"Having developed into or characteristic of a city"},
+{w:"37. Mechanism (n)",d:"A process or system by which something takes place"},
+{w:"38. Profound (adj)",d:"Very great or intense; having deep meaning"},
+{w:"39. Observance (n)",d:"The practice of following a custom or tradition"},
+{w:"40. Ancestral (adj)",d:"Relating to or inherited from ancestors"},
+{w:"41. Sociologist (n)",d:"A person who studies human society"},
+{w:"42. Isolation (n)",d:"The process of being separated from others"},
+{w:"43. Individualisation (n)",d:"The process of becoming more individual and independent"},
+{w:"44. Absorption (n)",d:"The process of taking something in and making it part of something else"},
+{w:"45. Paradoxically (adv)",d:"In a way that seems contradictory but may be true"},
+{w:"46. Enthusiasm (n)",d:"Strong interest or excitement about something"},
+{w:"47. Exchange (n)",d:"The act of giving and receiving something in return"},
+{w:"48. Heritage (n)",d:"Cultural traditions passed down from previous generations"},
+{w:"49. Ritual (n)",d:"A set of actions performed in a fixed order for a ceremony"},
+{w:"50. Cultural identity (n)",d:"The feeling of belonging to a particular group or culture"},
+];
+
+async function initStu(){
+    const p=new URLSearchParams(window.location.search);
+    if(p.get("teacher")==="true"){sid="teacher-preview";return;}
+    try{
+        const u=localStorage.getItem("user");
+        if(!u){window.location.href="/login.html";return;}
+        const pu=JSON.parse(u);
+        const{data,error}=await db.from("students").select("*").eq("username",pu.username).single();
+        if(error||!data)return;
+        sid=data.id;
+    }catch(e){}
+}
+
+function buildVocab(){
+    document.getElementById("vgrid").innerHTML=vocab.map(v=>`<div class="vi"><div class="vw">${v.w}</div><div class="vd">${v.d}</div></div>`).join("");
+}
+
+async function startDay(){
+    document.getElementById("splash").style.display="none";
+    document.getElementById("mc").style.display="block";
+    buildVocab();
+    await initStu();
+    await restoreProgress();
+    setupLive();
+}
+
+function goToTask(n){
+    document.getElementById("task"+cur).classList.remove("active");
+    cur=n;
+    document.getElementById("task"+n).classList.add("active");
+    document.getElementById("task"+n).scrollIntoView({behavior:"smooth",block:"start"});
+    updProg(n);t0=Date.now();saveResume(n);
+}
+function updProg(n){document.getElementById("pfill").style.width=Math.round(((n-1)/TOTAL)*100)+"%";document.getElementById("plabel").textContent="Task "+n+" of "+TOTAL;}
+function showSavi(){const e=document.getElementById("savi");e.classList.add("show");setTimeout(()=>e.classList.remove("show"),2000);}
+async function saveResume(n){if(!sid||sid==="teacher-preview")return;try{await db.from("student_resume").upsert({student_id:sid,week:WEEK,day:DAY,last_task:n,updated_at:new Date().toISOString()},{onConflict:"student_id"});}catch(e){}}
+function scheduleSave(){clearTimeout(stout);stout=setTimeout(()=>{localStorage.setItem("w"+WEEK+"d"+DAY+"_ans",JSON.stringify(gatherAll()));showSavi();},800);}
+
+function gatherAll(){
+    const d={};
+    document.querySelectorAll(".gi").forEach(el=>{if(el.id)d[el.id]=el.value;});
+    ["t5q1","t5q2","t5q3","t5q4","t5q5","t5q6","t5q7","t5q8","t5q9","t5q10","t6q1","t6q2","t6q3","t6q4","t6q5"].forEach(n=>{const s=document.querySelector("input[name='"+n+"']:checked");if(s)d[n]=s.value;});
+    document.querySelectorAll("select").forEach(el=>{if(el.id)d[el.id]=el.value;});
+    return d;
+}
+
+async function restoreProgress(){
+    try{
+        const sv=localStorage.getItem("w"+WEEK+"d"+DAY+"_ans");
+        if(sv){
+            const d=JSON.parse(sv);
+            Object.entries(d).forEach(([id,val])=>{const el=document.getElementById(id);if(el&&el.tagName==="INPUT")el.value=val;});
+            ["t5q1","t5q2","t5q3","t5q4","t5q5","t5q6","t5q7","t5q8","t5q9","t5q10","t6q1","t6q2","t6q3","t6q4","t6q5"].forEach(n=>{const val=d[n];if(val){const r=document.querySelector("input[name='"+n+"'][value='"+val+"']");if(r)r.checked=true;}});
+            Object.entries(d).forEach(([id,val])=>{const el=document.getElementById(id);if(el&&el.tagName==="SELECT")el.value=val;});
+        }
+        if(sid&&sid!=="teacher-preview"){
+            const{data:td}=await db.from("task_progress").select("task_number,status").eq("student_id",sid).eq("week",WEEK).eq("day",DAY);
+            if(td&&td.filter(t=>t.status==="completed").length>=TOTAL){
+                document.getElementById("task1").classList.remove("active");
+                document.getElementById("donescreen").style.display="block";
+                updProg(TOTAL);valAll();makeRO();return;
+            }
+            const{data:res}=await db.from("student_resume").select("last_task").eq("student_id",sid).eq("week",WEEK).eq("day",DAY).single();
+            if(res&&res.last_task>1){document.getElementById("task1").classList.remove("active");cur=res.last_task;document.getElementById("task"+cur).classList.add("active");updProg(cur);}
+        }
+        valAll();
+    }catch(e){}
+}
+
+function makeRO(){
+    document.querySelectorAll(".gi").forEach(el=>{el.disabled=true;el.style.opacity="0.85";});
+    document.querySelectorAll("input[type=radio]").forEach(el=>el.disabled=true);
+    document.querySelectorAll("select").forEach(el=>el.disabled=true);
+    document.querySelectorAll(".chk").forEach(el=>el.style.display="none");
+    document.querySelectorAll(".nxt").forEach(el=>el.style.display="none");
+    document.querySelectorAll(".prv").forEach(el=>el.style.display="none");
+    document.querySelectorAll(".sab").forEach(el=>el.style.display="inline-block");
+}
+
+function setupLive(){
+    ["t1q1","t1q2","t1q3","t1q4","t1q5","t1q6","t1q7"].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener("input",()=>{valT1();scheduleSave();});});
+    for(let i=1;i<=10;i++){const el=document.getElementById("t4v"+i);if(el)el.addEventListener("change",()=>{valT4();scheduleSave();});}
+    ["t5q1","t5q2","t5q3","t5q4","t5q5","t5q6","t5q7","t5q8","t5q9","t5q10"].forEach(n=>{document.querySelectorAll("input[name='"+n+"']").forEach(el=>el.addEventListener("change",()=>{valT5();scheduleSave();}));});
+    for(let i=1;i<=15;i++){const el=document.getElementById("t5g"+i);if(el)el.addEventListener("input",()=>{valT5();scheduleSave();});}
+    for(let i=1;i<=15;i++){const el=document.getElementById("t5m"+i);if(el)el.addEventListener("change",()=>{valT5();scheduleSave();});}
+    ["t6q1","t6q2","t6q3","t6q4","t6q5"].forEach(n=>{document.querySelectorAll("input[name='"+n+"']").forEach(el=>el.addEventListener("change",()=>{valT6();scheduleSave();}));});
+    for(let i=1;i<=30;i++){const el=document.getElementById("d"+i);if(el)el.addEventListener("input",()=>{valT6();scheduleSave();});}
+}
+
+function valAll(){valT1();valT4();valT5();valT6();}
+function valT1(){document.getElementById("check1").disabled=!["t1q1","t1q2","t1q3","t1q4","t1q5","t1q6","t1q7"].every(id=>document.getElementById(id)?.value.trim());}
+function valT4(){document.getElementById("check4").disabled=!Array.from({length:10},(_,i)=>document.getElementById("t4v"+(i+1))?.value).every(Boolean);}
+function valT5(){
+    const mc=["t5q1","t5q2","t5q3","t5q4","t5q5","t5q6","t5q7","t5q8","t5q9","t5q10"].every(n=>document.querySelector("input[name='"+n+"']:checked"));
+    const gf=Array.from({length:15},(_,i)=>document.getElementById("t5g"+(i+1))?.value.trim()).every(Boolean);
+    const mt=Array.from({length:15},(_,i)=>document.getElementById("t5m"+(i+1))?.value).every(Boolean);
+    document.getElementById("check5").disabled=!(mc&&gf&&mt);
+}
+function valT6(){
+    const dc=Array.from({length:30},(_,i)=>document.getElementById("d"+(i+1))?.value.trim()).every(Boolean);
+    const mc=["t6q1","t6q2","t6q3","t6q4","t6q5"].every(n=>document.querySelector("input[name='"+n+"']:checked"));
+    document.getElementById("check6").disabled=!(dc&&mc);
+}
+
+const t1ok={t1q1:["profound function","a profound function"],t1q2:["rhythms of agriculture","celestial bodies","calendar"],t1q3:["social and symbolic value","symbolic value"],t1q4:["collective effervescence"],t1q5:["community ties"],t1q6:["evolve","transform","migrate"],t1q7:["reinvention"]};
+const t4ok={t4v1:"communal",t4v2:"reinforce",t4v3:"celestial",t4v4:"reverence",t4v5:"collective effervescence",t4v6:"symbolic",t4v7:"evolve",t4v8:"reinvention",t4v9:"assert",t4v10:"wellbeing"};
+const t5mcq={t5q1:"C",t5q2:"B",t5q3:"C",t5q4:"D",t5q5:"B",t5q6:"C",t5q7:"B",t5q8:"C",t5q9:"C",t5q10:"B"};
+const t5gap={t5g1:"transmit",t5g2:"agrarian",t5g3:"celestial",t5g4:"reverence",t5g5:"effervescence",t5g6:"symbolic",t5g7:"static",t5g8:"evolve",t5g9:"reinvention",t5g10:"assert",t5g11:"wellbeing",t5g12:"Communal",t5g13:"civic",t5g14:"resilience",t5g15:"metropolis"};
+const t5mat={t5m1:"C",t5m2:"A",t5m3:"B",t5m4:"D",t5m5:"E",t5m6:"F",t5m7:"G",t5m8:"H",t5m9:"I",t5m10:"J",t5m11:"K",t5m12:"L",t5m13:"M",t5m14:"N",t5m15:"O"};
+const t6mcq={t6q1:"B",t6q2:"B",t6q3:"A",t6q4:"C",t6q5:"B"};
+
+function checkTask1(){
+    const ans=[];
+    Object.entries(t1ok).forEach(([id,opts])=>{
+        const inp=document.getElementById(id);
+        const val=inp.value.trim().toLowerCase();
+        const ok=opts.some(o=>val.includes(o.toLowerCase()));
+        inp.classList.toggle("correct",ok);inp.classList.toggle("incorrect",!ok);
+        ans.push({question_id:id,question_type:"gap_fill",student_answer:inp.value.trim(),correct_answer:opts[0],is_correct:ok});
+    });
+    document.getElementById("showAns1").style.display="inline-block";
+    document.getElementById("next1").disabled=false;
+    saveAnswers(1,ans);saveTP(1);
+}
+
+function checkTask4(){
+    const ans=[];
+    Object.entries(t4ok).forEach(([id,correct])=>{
+        const sel=document.getElementById(id);
+        const ok=sel.value===correct;
+        sel.classList.toggle("correct",ok);sel.classList.toggle("incorrect",!ok);
+        ans.push({question_id:id,question_type:"matching",student_answer:sel.value,correct_answer:correct,is_correct:ok});
+    });
+    document.getElementById("showAns4").style.display="inline-block";
+    document.getElementById("next4").disabled=false;
+    saveAnswers(4,ans);saveTP(4);
+}
+
+function checkTask5(){
+    const ans=[];
+    Object.entries(t5mcq).forEach(([n,correct])=>{
+        const sel=document.querySelector("input[name='"+n+"']:checked");
+        const fb=document.getElementById("fb_"+n);
+        if(!sel)return;
+        const ok=sel.value===correct;
+        fb.textContent=ok?"✅ Correct!":"❌ Incorrect — correct answer: "+correct;
+        fb.className="fb "+(ok?"correct":"incorrect");
+        ans.push({question_id:n,question_type:"mcq",student_answer:sel.value,correct_answer:correct,is_correct:ok});
+    });
+    Object.entries(t5gap).forEach(([id,correct])=>{
+        const inp=document.getElementById(id);
+        const ok=inp.value.trim().toLowerCase()===correct.toLowerCase();
+        inp.classList.toggle("correct",ok);inp.classList.toggle("incorrect",!ok);
+        ans.push({question_id:id,question_type:"gap_fill",student_answer:inp.value.trim(),correct_answer:correct,is_correct:ok});
+    });
+    Object.entries(t5mat).forEach(([id,correct])=>{
+        const sel=document.getElementById(id);
+        const ok=sel.value===correct;
+        sel.classList.toggle("correct",ok);sel.classList.toggle("incorrect",!ok);
+        ans.push({question_id:id,question_type:"matching",student_answer:sel.value,correct_answer:correct,is_correct:ok});
+    });
+    document.getElementById("showAns5").style.display="inline-block";
+    document.getElementById("next5").disabled=false;
+    saveAnswers(5,ans);saveTP(5);
+}
+
+function checkTask6(){
+    const ans=[];
+    for(let i=1;i<=30;i++){
+        const inp=document.getElementById("d"+i);
+        const correct=dictAns[i-1];
+        const ok=inp.value.trim().toLowerCase()===correct.toLowerCase();
+        inp.classList.toggle("correct",ok);inp.classList.toggle("incorrect",!ok);
+        ans.push({question_id:"d"+i,question_type:"gap_fill",student_answer:inp.value.trim(),correct_answer:correct,is_correct:ok});
+    }
+    Object.entries(t6mcq).forEach(([n,correct])=>{
+        const sel=document.querySelector("input[name='"+n+"']:checked");
+        const fb=document.getElementById("fb_"+n);
+        if(!sel)return;
+        const ok=sel.value===correct;
+        fb.textContent=ok?"✅ Correct!":"❌ Incorrect — correct answer: "+correct;
+        fb.className="fb "+(ok?"correct":"incorrect");
+        ans.push({question_id:n,question_type:"mcq",student_answer:sel.value,correct_answer:correct,is_correct:ok});
+    });
+    document.getElementById("showAns6").style.display="inline-block";
+    document.getElementById("next6").disabled=false;
+    saveAnswers(6,ans);saveTP(6);
+}
+
+async function saveAnswers(tnum,ans){
+    if(!sid||sid==="teacher-preview")return;
+    try{
+        const rows=ans.map(a=>({student_id:sid,week:WEEK,day:DAY,task_number:tnum,question_id:a.question_id,question_type:a.question_type,student_answer:a.student_answer,correct_answer:a.correct_answer,is_correct:a.is_correct,answered_at:new Date().toISOString()}));
+        await db.from("student_answers").upsert(rows,{onConflict:"student_id,week,day,task_number,question_id"});
+    }catch(e){}
+}
+
+async function saveTP(n){
+    if(!sid||sid==="teacher-preview")return;
+    try{await db.from("task_progress").upsert({student_id:sid,week:WEEK,day:DAY,task_number:n,status:"completed",time_completed:new Date().toISOString(),time_spent_seconds:Math.round((Date.now()-t0)/1000)},{onConflict:"student_id,week,day,task_number"});}catch(e){}
+}
+
+async function finishDay(){
+    document.getElementById("task7").classList.remove("active");
+    document.getElementById("donescreen").style.display="block";
+    document.getElementById("donescreen").scrollIntoView({behavior:"smooth"});
+    localStorage.removeItem("w"+WEEK+"d"+DAY+"_ans");
+    for(let i=1;i<=TOTAL;i++)await saveTP(i);
+    if(sid&&sid!=="teacher-preview")await db.from("student_resume").delete().eq("student_id",sid);
+    makeRO();
+}
+
+function reviewTask(n){
+    document.getElementById("donescreen").style.display="none";
+    cur=n;
+    document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));
+    document.getElementById("task"+n).classList.add("active");
+    document.getElementById("task"+n).scrollIntoView({behavior:"smooth",block:"start"});
+    const ex=document.getElementById("btr");
+    if(!ex){
+        const b=document.createElement("button");b.id="btr";b.textContent="🏆 Back to Results";
+        b.style.cssText="position:fixed;bottom:20px;right:20px;background:#9f7aea;color:white;border:none;padding:12px 22px;border-radius:50px;cursor:pointer;font-weight:bold;font-size:0.95rem;z-index:9998;";
+        b.onclick=()=>{b.remove();document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));document.getElementById("donescreen").style.display="block";document.getElementById("donescreen").scrollIntoView({behavior:"smooth"});};
+        document.body.appendChild(b);
+    }
+}
+
+function toggleVocab(){document.getElementById("vbody").classList.toggle("open");document.getElementById("varr").classList.toggle("open");}
+function toggleAns(id){const d=document.getElementById(id);const b=d.previousElementSibling;d.style.display=d.style.display==="block"?"none":"block";b.textContent=d.style.display==="block"?"▲ Hide Answers":"▼ Show Answers";}
+</script>
+</body>
+</html>
