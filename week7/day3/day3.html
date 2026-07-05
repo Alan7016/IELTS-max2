@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEEK 7 - DAY 3 (Psychology)</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Segoe UI", sans-serif; background: #ebf8ff; color: #333; }
+        #splash { position: fixed; inset: 0; background: linear-gradient(135deg, #4299e1, #2b6cb0); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; color: white; text-align: center; padding: 20px; }
+        #splash h1 { font-size: 3rem; margin-bottom: 10px; }
+        #splash h2 { font-size: 2rem; margin-bottom: 10px; opacity: 0.9; }
+        #splash p { font-size: 1.2rem; margin-bottom: 40px; opacity: 0.8; }
+        .splash-btn { background: white; color: #2b6cb0; border: none; padding: 18px 60px; font-size: 1.4rem; font-weight: bold; border-radius: 50px; cursor: pointer; }
+        .wrap { max-width: 900px; margin: 0 auto; padding: 20px; }
+        .hdr { background: linear-gradient(135deg, #4299e1, #2b6cb0); color: white; padding: 25px 30px; border-radius: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; }
+        .hdr h1 { font-size: 1.6rem; }
+        .hdr .topic { opacity: 0.85; font-size: 1rem; margin-top: 4px; }
+        .back-btn { background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 10px 20px; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 0.9rem; }
+        .plabel { text-align: center; color: #2b6cb0; font-size: 0.85rem; margin-bottom: 8px; font-weight: 600; }
+        .pwrap { background: #bee3f8; border-radius: 20px; height: 10px; margin-bottom: 20px; overflow: hidden; }
+        .pfill { background: linear-gradient(90deg, #4299e1, #2b6cb0); height: 100%; border-radius: 20px; transition: width 0.5s; }
+        .vsec { background: white; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-left: 5px solid #4299e1; overflow: hidden; }
+        .vtog { width: 100%; background: none; border: none; cursor: pointer; padding: 18px 25px; display: flex; align-items: center; justify-content: space-between; }
+        .vtog h3 { color: #2b6cb0; font-size: 1.1rem; margin: 0; }
+        .vcount { background: #4299e1; color: white; font-size: 0.75rem; font-weight: bold; padding: 3px 10px; border-radius: 20px; }
+        .varr { color: #2b6cb0; font-size: 1rem; transition: transform 0.3s; }
+        .varr.open { transform: rotate(180deg); }
+        .vbody { display: none; padding: 0 25px 20px; }
+        .vbody.open { display: block; }
+        .vgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+        .vi { background: #ebf8ff; padding: 10px 14px; border-radius: 8px; }
+        .vi .vw { font-weight: bold; color: #333; font-size: 0.95rem; }
+        .vi .vd { color: #666; font-size: 0.82rem; margin-top: 2px; }
+        .card { background: white; border-radius: 15px; padding: 28px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); display: none; }
+        .card.active { display: block; }
+        .thdr { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .tnum { background: linear-gradient(135deg, #4299e1, #2b6cb0); color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; flex-shrink: 0; }
+        .ttitle { font-size: 1.3rem; font-weight: bold; color: #333; }
+        .tsub { color: #888; font-size: 0.9rem; margin-top: 2px; }
+        .plink { display: flex; align-items: center; gap: 12px; background: #ebf8ff; padding: 15px 20px; border-radius: 10px; text-decoration: none; color: #333; font-weight: 600; border: 2px solid #bee3f8; transition: all 0.3s; margin-bottom: 12px; }
+        .plink:hover { background: #4299e1; color: white; }
+        .hlink { display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #4299e1, #2b6cb0); color: white; padding: 15px 30px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 1rem; margin: 10px 0; }
+        .vcont { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; margin: 15px 0; }
+        .vcont iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .vfall { background: #ebf8ff; padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align: center; }
+        .vfall a { color: #2b6cb0; font-weight: bold; }
+        .aplayer { background: #ebf8ff; border: 2px solid #bee3f8; border-radius: 12px; padding: 20px; margin: 15px 0; }
+        .aplayer p { color: #555; margin-bottom: 10px; font-weight: 600; }
+        .aplayer audio { width: 100%; }
+        .passage { background: #f0f8ff; border: 1px solid #bee3f8; border-radius: 10px; padding: 25px; margin: 15px 0; line-height: 1.8; font-size: 0.97rem; }
+        .passage h3 { color: #2b6cb0; margin-bottom: 15px; font-size: 1.2rem; }
+        .passage p { margin-bottom: 14px; }
+        .hl { font-style: italic; color: #2b6cb0; font-weight: 600; }
+        .qblock { margin-bottom: 20px; padding: 18px; background: #f8f9fa; border-radius: 10px; }
+        .qt { font-weight: 600; margin-bottom: 12px; color: #333; line-height: 1.5; }
+        .opts label { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; border-radius: 8px; cursor: pointer; margin-bottom: 5px; }
+        .opts label:hover { background: #ebf8ff; }
+        .opts input[type=radio] { margin-top: 3px; flex-shrink: 0; }
+        .fb { margin-top: 8px; font-weight: bold; font-size: 0.9rem; }
+        .fb.correct { color: #28a745; }
+        .fb.incorrect { color: #dc3545; }
+        .gsec { margin-top: 20px; }
+        .gs { margin-bottom: 14px; line-height: 2; font-size: 1rem; }
+        .gi { border: none; border-bottom: 2px solid #4299e1; padding: 4px 8px; font-size: 0.95rem; width: 200px; background: transparent; outline: none; color: #333; }
+        .gi.correct { border-bottom-color: #28a745; background: #d4edda33; }
+        .gi.incorrect { border-bottom-color: #dc3545; background: #f8d7da33; }
+        .wbox { background: #ebf8ff; border: 2px solid #bee3f8; border-radius: 10px; padding: 12px 18px; margin-bottom: 15px; }
+        .wbox strong { color: #2b6cb0; }
+        .mtbl { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .mtbl th { background: #4299e1; color: white; padding: 10px 14px; text-align: left; }
+        .mtbl td { padding: 10px 14px; border-bottom: 1px solid #eee; }
+        .mtbl tr:nth-child(even) td { background: #ebf8ff; }
+        .msel { border: 2px solid #bee3f8; border-radius: 6px; padding: 5px 8px; font-size: 0.88rem; background: white; width: 100%; max-width: 380px; }
+        .msel.correct { border-color: #28a745; }
+        .msel.incorrect { border-color: #dc3545; }
+        .vsel { border: 2px solid #bee3f8; border-radius: 6px; padding: 5px 10px; font-size: 0.9rem; background: white; width: 230px; }
+        .vsel.correct { border-color: #28a745; }
+        .vsel.incorrect { border-color: #dc3545; }
+        .brow { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+        .chk { background: linear-gradient(135deg, #4299e1, #2b6cb0); color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
+        .chk:disabled { background: #ccc; cursor: not-allowed; }
+        .nxt { background: #28a745; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
+        .nxt:disabled { background: #ccc; cursor: not-allowed; }
+        .prv { background: #6c757d; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
+        .sab { background: #ffc107; color: #333; border: none; padding: 10px 22px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.88rem; display: none; margin-top: 10px; }
+        .apan { display: none; background: #fffbea; border: 2px solid #ffc107; border-radius: 10px; padding: 15px; margin-top: 12px; }
+        .apan p { margin-bottom: 6px; font-size: 0.9rem; }
+        .done { text-align: center; padding: 60px 20px; display: none; }
+        .done .ico { font-size: 5rem; margin-bottom: 20px; }
+        .done h2 { font-size: 2.2rem; color: #2b6cb0; margin-bottom: 10px; }
+        .done p { color: #666; font-size: 1rem; margin-bottom: 30px; }
+        .dbbtn { background: linear-gradient(135deg, #4299e1, #2b6cb0); color: white; padding: 16px 40px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 1.1rem; display: inline-block; }
+        .savi { position: fixed; bottom: 20px; right: 20px; background: #4299e1; color: white; padding: 10px 18px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; opacity: 0; transition: opacity 0.4s; z-index: 9000; pointer-events: none; }
+        .savi.show { opacity: 1; }
+    </style>
+</head>
+<body>
+<div id="splash">
+    <h1>&#129504; WEEK 7</h1>
+    <h2>DAY 3</h2>
+    <p>Topic: Human Behaviour &amp; Psychology</p>
+    <button class="splash-btn" onclick="startDay()">LET'S GO!</button>
+</div>
+<div class="savi" id="savi">&#10003; Progress saved</div>
+<div class="wrap" id="mc" style="display:none;">
+    <div class="hdr">
+        <div><h1>&#129504; Week 7 &mdash; Day 3</h1><div class="topic">Topic: Human Behaviour &amp; Psychology</div></div>
+        <a href="/student-dashboard.html" class="back-btn">&larr; Dashboard</a>
+    </div>
+    <div class="plabel" id="plabel">Task 0 of 7</div>
+    <div class="pwrap"><div class="pfill" id="pfill" style="width:0%"></div></div>
+    <div class="vsec">
+        <button class="vtog" onclick="toggleVocab()">
+            <div style="display:flex;align-items:center;gap:10px;"><h3>&#128214; Today's Vocabulary</h3><span class="vcount">50 words</span></div>
+            <span class="varr" id="varr">&#9660;</span>
+        </button>
+        <div class="vbody" id="vbody"><div class="vgrid" id="vgrid"></div></div>
+    </div>
+
+    <!-- TASK 1 -->
+    <div class="card active" id="task1">
+        <div class="thdr"><div class="tnum">1</div><div><div class="ttitle">Mini Reading</div><div class="tsub">Read and answer &mdash; NO MORE THAN THREE WORDS from the passage</div></div></div>
+        <div class="passage">
+            <h3>The Bystander Effect: Why We Don't Help</h3>
+            <p>In 1964, a young woman named Kitty Genovese was attacked outside her apartment building in New York City. What made her case particularly disturbing to psychologists was not the attack itself, but the apparent failure of dozens of neighbours to intervene or even call the police. This case inspired one of the most important and troubling concepts in social psychology: the <span class="hl">(1) bystander effect</span> — the finding that individuals are less likely to offer help in an emergency when other people are present.</p>
+            <p>The psychological mechanisms behind the bystander effect are well understood. The first is <span class="hl">(2) diffusion of responsibility</span>: when multiple people witness an emergency, each individual feels less personally obligated to act, assuming that someone else will take charge. The second is <span class="hl">(3) pluralistic ignorance</span>: when people look to others around them for cues about how to respond and, seeing that others appear calm, incorrectly conclude that no emergency exists. Together, these processes can produce a paradox in which the <span class="hl">(4) presence</span> of others — which might seem to make help more likely — actually makes it far less probable.</p>
+            <p>Decades of research have confirmed the bystander effect across many different settings and cultures, though its strength varies considerably. In situations where the emergency is unambiguous, where the bystander has relevant skills or knowledge, or where the victim is clearly <span class="hl">(5) identifiable</span> as an individual rather than an anonymous member of a crowd, people are significantly more likely to intervene. Understanding that the bystander effect is a predictable psychological response — rather than evidence of personal <span class="hl">(6) moral failure</span> — may itself be one of the most effective tools for overcoming it.</p>
+            <p>Research also suggests a powerful antidote to bystander paralysis: <span class="hl">(7) direct address</span>. Experiments have shown that when someone in need specifically points to one individual in a crowd and asks for help, that person almost always responds. The personalisation of the request breaks the diffusion of responsibility and forces a specific individual to acknowledge their own <span class="hl">(8) agency</span> in the situation — transforming a bystander into a helper.</p>
+        </div>
+        <h4 style="color:#2b6cb0;margin:20px 0 12px;">Answer &mdash; NO MORE THAN THREE WORDS:</h4>
+        <div class="gsec">
+            <div class="gs">1. What is the bystander effect?<br><input class="gi" id="t1q1" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">2. What is diffusion of responsibility?<br><input class="gi" id="t1q2" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">3. What is pluralistic ignorance?<br><input class="gi" id="t1q3" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">4. What paradoxically makes help less likely according to the passage?<br><input class="gi" id="t1q4" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">5. When is a bystander more likely to help?<br><input class="gi" id="t1q5" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">6. What does understanding the bystander effect help avoid?<br><input class="gi" id="t1q6" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">7. What research-proven antidote breaks bystander paralysis?<br><input class="gi" id="t1q7" placeholder="___" style="width:300px;margin-top:8px;"></div>
+        </div>
+        <div class="brow">
+            <button class="chk" id="check1" onclick="checkTask1()" disabled>Check Answers</button>
+            <button class="nxt" id="next1" disabled onclick="goToTask(2)">Next Task &rarr;</button>
+        </div>
+        <button class="sab" id="showAns1" onclick="toggleAns('ans1')">&#9660; Show Answers</button>
+        <div class="apan" id="ans1"><p><strong>Answers:</strong> 1-the bystander effect, 2-feeling less personally obligated/assuming someone else will act, 3-looking to others for cues/concluding no emergency, 4-the presence of others, 5-when the victim is identifiable/emergency is unambiguous, 6-(personal) moral failure, 7-direct address</p></div>
+    </div>
+
+    <!-- TASK 2 -->
+    <div class="card" id="task2">
+        <div class="thdr"><div class="tnum">2</div><div><div class="ttitle">Article Reading</div><div class="tsub">Read the article carefully</div></div></div>
+        <a class="plink" href="article 3.pdf" target="_blank"><span style="font-size:1.5rem;">&#128196;</span> Psychology &mdash; Article 3</a>
+        <div class="brow"><button class="prv" onclick="goToTask(1)">&larr; Previous</button><button class="nxt" onclick="goToTask(3)">Next Task &rarr;</button></div>
+    </div>
+
+    <!-- TASK 3 -->
+    <div class="card" id="task3">
+        <div class="thdr"><div class="tnum">3</div><div><div class="ttitle">Practice Reading</div><div class="tsub">IELTS-style reading test</div></div></div>
+        <a class="hlink" href="Reading (32).html" target="_blank">&#128214; Open Practice Reading</a>
+        <div class="brow"><button class="prv" onclick="goToTask(2)">&larr; Previous</button><button class="nxt" onclick="goToTask(4)">Next Task &rarr;</button></div>
+    </div>
+
+    <!-- TASK 4 -->
+    <div class="card" id="task4">
+        <div class="thdr"><div class="tnum">4</div><div><div class="ttitle">Vocabulary in Context</div><div class="tsub">Choose the correct word for each sentence</div></div></div>
+        <div class="gsec">
+            <div class="gs">1. The <select class="vsel" id="t4v1"><option value="">select</option><option value="bystander effect">bystander effect</option><option value="placebo effect">placebo effect</option><option value="halo effect">halo effect</option></select> explains why people in crowds are less likely to help someone in need.</div>
+            <div class="gs">2. When responsibility is shared among many, each person feels less <select class="vsel" id="t4v2"><option value="">select</option><option value="obligated">obligated</option><option value="motivated">motivated</option><option value="confused">confused</option></select> to act.</div>
+            <div class="gs">3. Looking to others for cues in an unclear situation is called <select class="vsel" id="t4v3"><option value="">select</option><option value="pluralistic ignorance">pluralistic ignorance</option><option value="confirmation bias">confirmation bias</option><option value="social proof">social proof</option></select>.</div>
+            <div class="gs">4. The larger the crowd, the greater the <select class="vsel" id="t4v4"><option value="">select</option><option value="diffusion of responsibility">diffusion of responsibility</option><option value="social conformity">social conformity</option><option value="peer pressure">peer pressure</option></select>.</div>
+            <div class="gs">5. The victim's injuries were severe and <select class="vsel" id="t4v5"><option value="">select</option><option value="unambiguous">unambiguous</option><option value="irrelevant">irrelevant</option><option value="invisible">invisible</option></select> — everyone could see she needed help.</div>
+            <div class="gs">6. Pointing directly at one person makes them feel personally <select class="vsel" id="t4v6"><option value="">select</option><option value="accountable">accountable</option><option value="invisible">invisible</option><option value="confused">confused</option></select> for helping.</div>
+            <div class="gs">7. Failing to help is not a sign of <select class="vsel" id="t4v7"><option value="">select</option><option value="moral failure">moral failure</option><option value="social status">social status</option><option value="personal pride">personal pride</option></select> but a predictable psychological response.</div>
+            <div class="gs">8. The witnesses stood frozen in <select class="vsel" id="t4v8"><option value="">select</option><option value="paralysis">paralysis</option><option value="celebration">celebration</option><option value="admiration">admiration</option></select>, unsure whether to intervene.</div>
+            <div class="gs">9. Knowing you have the <select class="vsel" id="t4v9"><option value="">select</option><option value="agency">agency</option><option value="instinct">instinct</option><option value="status">status</option></select> to act can transform you from a bystander into a helper.</div>
+            <div class="gs">10. The emergency was <select class="vsel" id="t4v10"><option value="">select</option><option value="intervene">intervene</option><option value="escalate">escalate</option><option value="resolve">resolve</option></select>d quickly once one person decided to step in.</div>
+        </div>
+        <div class="brow"><button class="prv" onclick="goToTask(3)">&larr; Previous</button><button class="chk" id="check4" onclick="checkTask4()" disabled>Check Answers</button><button class="nxt" id="next4" disabled onclick="goToTask(5)">Next Task &rarr;</button></div>
+        <button class="sab" id="showAns4" onclick="toggleAns('ans4')">&#9660; Show Answers</button>
+        <div class="apan" id="ans4"><p><strong>Answers:</strong> 1-bystander effect, 2-obligated, 3-pluralistic ignorance, 4-diffusion of responsibility, 5-unambiguous, 6-accountable, 7-moral failure, 8-paralysis, 9-agency, 10-intervene</p></div>
+    </div>
+    <!-- TASK 5 -->
+    <div class="card" id="task5">
+        <div class="thdr"><div class="tnum">5</div><div><div class="ttitle">Video Watching Task</div><div class="tsub">Watch "The Bystander Effect" and answer questions</div></div></div>
+        <div class="vfall"><p>&#9654; <a href="https://www.youtube.com/watch?v=iNyUmbmQQZg" target="_blank">Open video in new tab</a> if it doesn't play below.</p></div>
+        <div class="vcont"><iframe src="https://www.youtube.com/embed/iNyUmbmQQZg" frameborder="0" allowfullscreen></iframe></div>
+        <h4 style="color:#2b6cb0;margin:20px 0 12px;">Part 1 &mdash; Multiple Choice Questions</h4>
+        <div class="qblock"><div class="qt">1. What happened in the Kitty Genovese case that shocked psychologists?</div><div class="opts"><label><input type="radio" name="t5q1" value="A"> A. No one witnessed the attack.</label><label><input type="radio" name="t5q1" value="B"> B. Many witnesses failed to help or call the police.</label><label><input type="radio" name="t5q1" value="C"> C. The attacker was never found.</label><label><input type="radio" name="t5q1" value="D"> D. The police arrived immediately.</label></div><div class="fb" id="fb_t5q1"></div></div>
+        <div class="qblock"><div class="qt">2. What is diffusion of responsibility?</div><div class="opts"><label><input type="radio" name="t5q2" value="A"> A. One person taking control of an emergency.</label><label><input type="radio" name="t5q2" value="B"> B. Each person assuming someone else will act.</label><label><input type="radio" name="t5q2" value="C"> C. A group deciding together who should help.</label><label><input type="radio" name="t5q2" value="D"> D. A legal term for shared blame.</label></div><div class="fb" id="fb_t5q2"></div></div>
+        <div class="qblock"><div class="qt">3. What is pluralistic ignorance?</div><div class="opts"><label><input type="radio" name="t5q3" value="A"> A. When people are completely unaware of each other.</label><label><input type="radio" name="t5q3" value="B"> B. When a crowd deliberately ignores a victim.</label><label><input type="radio" name="t5q3" value="C"> C. When people look to others who are also uncertain, and conclude no emergency exists.</label><label><input type="radio" name="t5q3" value="D"> D. When witnesses are too far away to see clearly.</label></div><div class="fb" id="fb_t5q3"></div></div>
+        <div class="qblock"><div class="qt">4. In the smoke-filled room experiment, what did lone participants do?</div><div class="opts"><label><input type="radio" name="t5q4" value="A"> A. They ignored the smoke and continued working.</label><label><input type="radio" name="t5q4" value="B"> B. They immediately left the room.</label><label><input type="radio" name="t5q4" value="C"> C. Most reported the smoke quickly.</label><label><input type="radio" name="t5q4" value="D"> D. They called emergency services immediately.</label></div><div class="fb" id="fb_t5q4"></div></div>
+        <div class="qblock"><div class="qt">5. What happened when participants were in a group during the smoke experiment?</div><div class="opts"><label><input type="radio" name="t5q5" value="A"> A. They all reported the smoke faster.</label><label><input type="radio" name="t5q5" value="B"> B. Most continued working and did not report it.</label><label><input type="radio" name="t5q5" value="C"> C. They voted on whether to report it.</label><label><input type="radio" name="t5q5" value="D"> D. They called the fire brigade together.</label></div><div class="fb" id="fb_t5q5"></div></div>
+        <div class="qblock"><div class="qt">6. What makes someone more likely to help in an emergency?</div><div class="opts"><label><input type="radio" name="t5q6" value="A"> A. Being part of a large, anonymous crowd.</label><label><input type="radio" name="t5q6" value="B"> B. Feeling the same as everyone else around them.</label><label><input type="radio" name="t5q6" value="C"> C. Feeling personally singled out or having relevant skills.</label><label><input type="radio" name="t5q6" value="D"> D. Watching others help first.</label></div><div class="fb" id="fb_t5q6"></div></div>
+        <div class="qblock"><div class="qt">7. What is the most effective way to get help from a bystander?</div><div class="opts"><label><input type="radio" name="t5q7" value="A"> A. Shout as loudly as possible to everyone.</label><label><input type="radio" name="t5q7" value="B"> B. Point to one specific person and ask them directly.</label><label><input type="radio" name="t5q7" value="C"> C. Collapse to attract attention.</label><label><input type="radio" name="t5q7" value="D"> D. Move to a quieter area with fewer people.</label></div><div class="fb" id="fb_t5q7"></div></div>
+        <div class="qblock"><div class="qt">8. Why does direct address work so effectively?</div><div class="opts"><label><input type="radio" name="t5q8" value="A"> A. It embarrasses the person into helping.</label><label><input type="radio" name="t5q8" value="B"> B. It makes the person feel responsible and removes ambiguity.</label><label><input type="radio" name="t5q8" value="C"> C. It legally obligates them to respond.</label><label><input type="radio" name="t5q8" value="D"> D. It creates a sense of competition among bystanders.</label></div><div class="fb" id="fb_t5q8"></div></div>
+        <div class="qblock"><div class="qt">9. The bystander effect is described in the video as...</div><div class="opts"><label><input type="radio" name="t5q9" value="A"> A. a sign of people being selfish and cruel.</label><label><input type="radio" name="t5q9" value="B"> B. an uncommon reaction found only in large cities.</label><label><input type="radio" name="t5q9" value="C"> C. a predictable and well-documented psychological phenomenon.</label><label><input type="radio" name="t5q9" value="D"> D. a recent discovery with limited evidence.</label></div><div class="fb" id="fb_t5q9"></div></div>
+        <div class="qblock"><div class="qt">10. What is the overall message of the video?</div><div class="opts"><label><input type="radio" name="t5q10" value="A"> A. People in crowds are fundamentally uncaring.</label><label><input type="radio" name="t5q10" value="B"> B. Understanding the bystander effect can help us overcome it and act when it matters.</label><label><input type="radio" name="t5q10" value="C"> C. Large cities make people permanently less helpful.</label><label><input type="radio" name="t5q10" value="D"> D. Only trained professionals should respond to emergencies.</label></div><div class="fb" id="fb_t5q10"></div></div>
+
+        <h4 style="color:#2b6cb0;margin:20px 0 12px;">Part 2 &mdash; Gap Filling</h4>
+        <div class="wbox"><strong>Word Box:</strong> bystander effect &nbsp;|&nbsp; diffusion &nbsp;|&nbsp; pluralistic ignorance &nbsp;|&nbsp; agency &nbsp;|&nbsp; unambiguous &nbsp;|&nbsp; identifiable &nbsp;|&nbsp; paralysis &nbsp;|&nbsp; intervene &nbsp;|&nbsp; accountable &nbsp;|&nbsp; escalating &nbsp;|&nbsp; social norm &nbsp;|&nbsp; diffuse &nbsp;|&nbsp; crowd &nbsp;|&nbsp; direct address &nbsp;|&nbsp; witnesses</div>
+        <div class="gsec">
+            <div class="gs">1. The Kitty Genovese case led researchers to study the <input class="gi" id="t5g1" placeholder="___" style="width:180px;">.</div>
+            <div class="gs">2. When many people are present, responsibility tends to <input class="gi" id="t5g2" placeholder="___"> across the group.</div>
+            <div class="gs">3. The <input class="gi" id="t5g3" placeholder="___" style="width:200px;"> of responsibility is the main reason why large crowds help less.</div>
+            <div class="gs">4. Looking to others in an unclear situation and assuming nothing is wrong is called <input class="gi" id="t5g4" placeholder="___" style="width:200px;">.</div>
+            <div class="gs">5. When the danger is clear and <input class="gi" id="t5g5" placeholder="___">, people are far more likely to act.</div>
+            <div class="gs">6. People are more likely to help a victim who is <input class="gi" id="t5g6" placeholder="___"> as an individual.</div>
+            <div class="gs">7. Some bystanders experience a kind of frozen <input class="gi" id="t5g7" placeholder="___"> and cannot bring themselves to act.</div>
+            <div class="gs">8. One bystander finally decided to <input class="gi" id="t5g8" placeholder="___"> and called for help.</div>
+            <div class="gs">9. If you ask one specific person for help, they feel personally <input class="gi" id="t5g9" placeholder="___"> for responding.</div>
+            <div class="gs">10. The situation was clearly <input class="gi" id="t5g10" placeholder="___"> and needed urgent attention.</div>
+            <div class="gs">11. Not helping when others are watching can feel like breaking a <input class="gi" id="t5g11" placeholder="___" style="width:140px;">.</div>
+            <div class="gs">12. The technique of <input class="gi" id="t5g12" placeholder="___" style="width:160px;"> — pointing at one person — is the most effective antidote.</div>
+            <div class="gs">13. Knowing you have the <input class="gi" id="t5g13" placeholder="___"> to act changes you from a bystander into a helper.</div>
+            <div class="gs">14. The street was crowded, but none of the <input class="gi" id="t5g14" placeholder="___"> stepped forward.</div>
+            <div class="gs">15. A large <input class="gi" id="t5g15" placeholder="___"> had gathered, but no one moved to help.</div>
+        </div>
+
+        <h4 style="color:#2b6cb0;margin:20px 0 12px;">Part 3 &mdash; Vocabulary Matching</h4>
+        <table class="mtbl"><thead><tr><th>#</th><th>Word</th><th>Definition</th></tr></thead><tbody>
+        <tr><td>1</td><td><strong>bystander effect</strong></td><td><select class="msel" id="t5m1"><option value="">&#8212; select &#8212;</option><option value="A">A. the reduced likelihood of helping when others are present</option><option value="B">B. the spreading of responsibility across a group</option><option value="C">C. misreading a situation by following others who are also uncertain</option><option value="D">D. the power to act or make decisions independently</option><option value="E">E. clear and impossible to misunderstand</option><option value="F">F. able to be recognised as a specific individual</option><option value="G">G. a state of inability to move or act</option><option value="H">H. to step in to affect the outcome of a situation</option><option value="I">I. morally responsible for one's actions</option><option value="J">J. the presence of many people in one place</option><option value="K">K. growing worse or more serious</option><option value="L">L. a way of behaving seen as the norm in a social group</option><option value="M">M. to reduce in intensity or effect</option><option value="N">N. a tendency to think about events in terms of cause and effect</option><option value="O">O. relating to the presence of other people watching an event</option></select></td></tr>
+<tr><td>2</td><td><strong>diffusion of responsibility</strong></td><td><select class="msel" id="t5m2"><option value="">&#8212; select &#8212;</option><option value="A">A. the reduced likelihood of helping when others are present</option><option value="B">B. the spreading of responsibility across a group</option><option value="C">C. misreading a situation by following others who are also uncertain</option><option value="D">D. the power to act or make decisions independently</option><option value="E">E. clear and impossible to misunderstand</option><option value="F">F. able to be recognised as a specific individual</option><option value="G">G. a state of inability to move or act</option><option value="H">H. to step in to affect the outcome of a situation</option><option value="I">I. morally responsible for one's actions</option><option value="J">J. the presence of many people in one place</option><option value="K">K. growing worse or more serious</option><option value="L">L. a way of behaving seen as the norm in a social group</option><option value="M">M. to reduce in intensity or effect</option><option value="N">N. a tendency to think about events in terms of cause and effect</option><option value="O">O. relating to the presence of other people watching an event</option></select></td></tr>
+<tr><td>3</td><td><strong>pluralistic ignorance</strong></td><td><select class="msel" id="t5m3"><option value="">&#8212; select &#8212;</option><option value="A">A. the reduced likelihood of helping when others are present</option><option value="B">B. the spreading of responsibility across a group</option><option value="C">C. misreading a situation by following others who are also uncertain</option><option value="D">D. the power to act or make decisions independently</option><option value="E">E. clear and impossible to misunderstand</option><option value="F">F. able to be recognised as a specific individual</option><option value="G">G. a state of inability to move or act</option><option value="H">H. to step in to affect the outcome of a situation</option><option value="I">I. morally responsible for one's actions</option><option value="J">J. the presence of many people in one place</option><option value="K">K. growing worse or more serious</option><option value="L">L. a way of behaving seen as the norm in a social group</option><option value="M">M. to reduce in intensity or effect</option><option value="N">N. a tendency to think about events in terms of cause and effect</option><option value="O">O. relating to the presence of other people watching an event</option></select></td></tr>
+<tr><td>4</td><td><strong>agency</strong></td><td><select class="msel" id="t5m4"><option value="">&#8212; select &#8212;</option><option value="A">A. the reduced likelihood of helping when others are present</option><option value="B">B. the spreading of responsibility across a group</option><option value="C">C. misreading a situation by following others who are also uncertain</option><option value="D">D. the power to act or make decisions independently</option><option value="E">E. clear and impossible to misunderstand</option><option value="F">F. able to be recognised as a specific individual</option><option value="G">G. a state of inability to move or act</option><option value="H">H. to step in to affect the outcome of a situation</option><option value="I">I. morally responsible for one's actions</option><option value="J">J. the presence of many people in one place</option><option value="K">K. growing worse or more serious</option><option value="L">L. a way of behaving seen as the norm in a social group</option><option value="M">M. to reduce in intensity or effect</option><option value="N">N. a tendency to think about events in terms of cause and effect</option><option value="O">O. relating to the presence of other people watching an event</option></select></td></tr>
+<tr><td>5</td><td><strong>unambiguous</strong></td><td><select class="msel" id="t5m5"><option value="">&#8212; select &#8212;</option><option value="A">A. the reduced likelihood of helping when others are present</option><option value="B">B. the spreading of responsibility across a group</option><option value="C">C. misreading a situation by following others who are also uncertain</option><option value="D">D. the power to act or make decisions independently</option><option value="E">E. clear and impossible to misunderstand</option><option value="F">F. able to be recognised as a specific individual</option><option value="G">G. a state of inability to move or act</option><option value="H">H. to step in to affect the outcome of a situation</option><option value="I">I. morally responsible for one's actions</option><option value="J">J. the presence of many people in one place</option><option value="K">K. growing worse or more serious</option><option value="L">L. a way of behaving seen as the norm in a social group</option><option value="M">M. to reduce in intensity or effect</option><option value="N">N. a tendency to think about events in terms of cause and effect</option><option value="O">O. relating to the presence of other people watching an event</option></select></td></tr>
+<tr><td>6</td><td><strong>identifiable</strong></td><td><select class="msel" id="t5m6"><option value="">&#8212; select &#8212;</option><option value="A">A. the reduced likelihood of helping when others are present</option><option value="B">B. the spreading of responsibility across a group</option><option value="C">C. misreading a situation by following others who are also uncertain</option><option value="D">D. the power to act or make decisions independently</option><option value="E">E. clear and impossible to misunderstand</option><option value="F">F. able to be recognised as a specific individual</option><option value="G">G. a state of inability to move or act</option><option value="H">H. to step in to affect the outcome of a situation</option><option value="I">I. morally responsible for one's actions</option><option value="J">J. the presence of many people in one place</option><option value="K">K. growing worse or more serious</option><option value="L">L. a way of behaving seen as the norm in a social group</option><option value="M">M. to reduce in intensity or effect</option><option value="N">N. a tendency to think about events in terms of cause and effect</option><option value="O">O. relating to the presence of other people watching an event</option></select></td></tr>
+<tr><td>7</td><td><strong>paralysis</strong></td><td><select class="msel" id="t5m7"><option value="">&#8212; select &#8212;</option><option value="A">A. the reduced likelihood of helping when others are present</option><option value="B">B. the spreading of responsibility across a group</option><option value="C">C. misreading a situation by following others who are also uncertain</option><option value="D">D. the power to act or make decisions independently</option><option value="E">E. clear and impossible to misunderstand</option><option value="F">F. able to be recognised as a specific individual</option><option value="G">G. a state of inability to move or act</option><option value="H">H. to step in to affect the outcome of a situation</option><option value="I">I. morally responsible for one's actions</option><option value="J">J. the presence of many people in one place</option><option value="K">K. growing worse or more serious</option><option value="L">L. a way of behaving seen as the norm in a social group</option><option value="M">M. to reduce in intensity or effect</option><option value="N">N. a tendency to think about events in terms of cause and effect</option><option value="O">O. relating to the presence of other people watching an event</option></select></td></tr>
+<tr><td>8</td><td><strong>intervene</strong></td><td><select class="msel" id="t5m8"><option value="">&#8212; select &#8212;</option><option value="A">A. the reduced likelihood of helping when others are present</option><option value="B">B. the spreading of responsibility across a group</option><option value="C">C. misreading a situation by following others who are also uncertain</option><option value="D">D. the power to act or make decisions independently</option><option value="E">E. clear and impossible to misunderstand</option><option value="F">F. able to be recognised as a specific individual</option><option value="G">G. a state of inability to move or act</option><option value="H">H. to step in to affect the outcome of a situation</option><option value="I">I. morally responsible for one's actions</option><option value="J">J. the presence of many people in one place</option><option value="K">K. growing worse or more serious</option><option value="L">L. a way of behaving seen as the norm in a social group</option><option value="M">M. to reduce in intensity or effect</option><option value="N">N. a tendency to think about events in terms of cause and effect</option><option value="O">O. relating to the presence of other people watching an event</option></select></td></tr>
+<tr><td>9</td><td><strong>accountable</strong></td><td><select class="msel" id="t5m9"><option value="">&#8212; select &#8212;</option><option value="A">A. the reduced likelihood of helping when others are present</option><option value="B">B. the spreading of responsibility across a group</option><option value="C">C. misreading a situation by following others who are also uncertain</option><option value="D">D. the power to act or make decisions independently</option><option value="E">E. clear and impossible to misunderstand</option><option value="F">F. able to be recognised as a specific individual</option><option value="G">G. a state of inability to move or act</option><option value="H">H. to step in to affect the outcome of a situation</option><option value="I">I. morally responsible for one's actions</option><option value="J">J. the presence of many people in one place</option><option value="K">K. growing worse or more serious</option><option value="L">L. a way of behaving seen as the norm in a social group</option><option value="M">M. to reduce in intensity or effect</option><option value="N">N. a tendency to think about events in terms of cause and effect</option><option value="O">O. relating to the presence of other people watching an event</option></select></td></tr>
+<tr><td>10</td><td><strong>crowd</strong></td><td><select class="msel" id="t5m10"><option value="">&#8212; select &#8212;</option><option value="A">A. the reduced likelihood of helping when others are present</option><option value="B">B. the spreading of responsibility across a group</option><option value="C">C. misreading a situation by following others who are also uncertain</option><option value="D">D. the power to act or make decisions independently</option><option value="E">E. clear and impossible to misunderstand</option><option value="F">F. able to be recognised as a specific individual</option><option value="G">G. a state of inability to move or act</option><option value="H">H. to step in to affect the outcome of a situation</option><option value="I">I. morally responsible for one's actions</option><option value="J">J. the presence of many people in one place</option><option value="K">K. growing worse or more serious</option><option value="L">L. a way of behaving seen as the norm in a social group</option><option value="M">M. to reduce in intensity or effect</option><option value="N">N. a tendency to think about events in terms of cause and effect</option><option value="O">O. relating to the presence of other people watching an event</option></select></td></tr>
+<tr><td>11</td><td><strong>escalating</strong></td><td><select class="msel" id="t5m11"><option value="">&#8212; select &#8212;</option><option value="A">A. the reduced likelihood of helping when others are present</option><option value="B">B. the spreading of responsibility across a group</option><option value="C">C. misreading a situation by following others who are also uncertain</option><option value="D">D. the power to act or make decisions independently</option><option value="E">E. clear and impossible to misunderstand</option><option value="F">F. able to be recognised as a specific individual</option><option value="G">G. a state of inability to move or act</option><option value="H">H. to step in to affect the outcome of a situation</option><option value="I">I. morally responsible for one's actions</option><option value="J">J. the presence of many people in one place</option><option value="K">K. growing worse or more serious</option><option value="L">L. a way of behaving seen as the norm in a social group</option><option value="M">M. to reduce in intensity or effect</option><option value="N">N. a tendency to think about events in terms of cause and effect</option><option value="O">O. relating to the presence of other people watching an event</option></select></td></tr>
+<tr><td>12</td><td><strong>social norm</strong></td><td><select class="msel" id="t5m12"><option value="">&#8212; select &#8212;</option><option value="A">A. the reduced likelihood of helping when others are present</option><option value="B">B. the spreading of responsibility across a group</option><option value="C">C. misreading a situation by following others who are also uncertain</option><option value="D">D. the power to act or make decisions independently</option><option value="E">E. clear and impossible to misunderstand</option><option value="F">F. able to be recognised as a specific individual</option><option value="G">G. a state of inability to move or act</option><option value="H">H. to step in to affect the outcome of a situation</option><option value="I">I. morally responsible for one's actions</option><option value="J">J. the presence of many people in one place</option><option value="K">K. growing worse or more serious</option><option value="L">L. a way of behaving seen as the norm in a social group</option><option value="M">M. to reduce in intensity or effect</option><option value="N">N. a tendency to think about events in terms of cause and effect</option><option value="O">O. relating to the presence of other people watching an event</option></select></td></tr>
+<tr><td>13</td><td><strong>diffuse</strong></td><td><select class="msel" id="t5m13"><option value="">&#8212; select &#8212;</option><option value="A">A. the reduced likelihood of helping when others are present</option><option value="B">B. the spreading of responsibility across a group</option><option value="C">C. misreading a situation by following others who are also uncertain</option><option value="D">D. the power to act or make decisions independently</option><option value="E">E. clear and impossible to misunderstand</option><option value="F">F. able to be recognised as a specific individual</option><option value="G">G. a state of inability to move or act</option><option value="H">H. to step in to affect the outcome of a situation</option><option value="I">I. morally responsible for one's actions</option><option value="J">J. the presence of many people in one place</option><option value="K">K. growing worse or more serious</option><option value="L">L. a way of behaving seen as the norm in a social group</option><option value="M">M. to reduce in intensity or effect</option><option value="N">N. a tendency to think about events in terms of cause and effect</option><option value="O">O. relating to the presence of other people watching an event</option></select></td></tr>
+<tr><td>14</td><td><strong>causal thinking</strong></td><td><select class="msel" id="t5m14"><option value="">&#8212; select &#8212;</option><option value="A">A. the reduced likelihood of helping when others are present</option><option value="B">B. the spreading of responsibility across a group</option><option value="C">C. misreading a situation by following others who are also uncertain</option><option value="D">D. the power to act or make decisions independently</option><option value="E">E. clear and impossible to misunderstand</option><option value="F">F. able to be recognised as a specific individual</option><option value="G">G. a state of inability to move or act</option><option value="H">H. to step in to affect the outcome of a situation</option><option value="I">I. morally responsible for one's actions</option><option value="J">J. the presence of many people in one place</option><option value="K">K. growing worse or more serious</option><option value="L">L. a way of behaving seen as the norm in a social group</option><option value="M">M. to reduce in intensity or effect</option><option value="N">N. a tendency to think about events in terms of cause and effect</option><option value="O">O. relating to the presence of other people watching an event</option></select></td></tr>
+<tr><td>15</td><td><strong>bystander</strong></td><td><select class="msel" id="t5m15"><option value="">&#8212; select &#8212;</option><option value="A">A. the reduced likelihood of helping when others are present</option><option value="B">B. the spreading of responsibility across a group</option><option value="C">C. misreading a situation by following others who are also uncertain</option><option value="D">D. the power to act or make decisions independently</option><option value="E">E. clear and impossible to misunderstand</option><option value="F">F. able to be recognised as a specific individual</option><option value="G">G. a state of inability to move or act</option><option value="H">H. to step in to affect the outcome of a situation</option><option value="I">I. morally responsible for one's actions</option><option value="J">J. the presence of many people in one place</option><option value="K">K. growing worse or more serious</option><option value="L">L. a way of behaving seen as the norm in a social group</option><option value="M">M. to reduce in intensity or effect</option><option value="N">N. a tendency to think about events in terms of cause and effect</option><option value="O">O. relating to the presence of other people watching an event</option></select></td></tr>
+</tbody></table>
+        <div class="brow"><button class="prv" onclick="goToTask(4)">&larr; Previous</button><button class="chk" id="check5" onclick="checkTask5()" disabled>Check Answers</button><button class="nxt" id="next5" disabled onclick="goToTask(6)">Next Task &rarr;</button></div>
+        <button class="sab" id="showAns5" onclick="toggleAns('ans5')">&#9660; Show Answers</button>
+        <div class="apan" id="ans5">
+            <p><strong>MCQ:</strong> 1-B, 2-B, 3-C, 4-C, 5-B, 6-C, 7-B, 8-B, 9-C, 10-B</p>
+            <p><strong>Gap Fill:</strong> 1-bystander effect, 2-diffuse, 3-diffusion, 4-pluralistic ignorance, 5-unambiguous, 6-identifiable, 7-paralysis, 8-intervene, 9-accountable, 10-escalating, 11-social norm, 12-direct address, 13-agency, 14-witnesses, 15-crowd</p>
+            <p><strong>Matching:</strong> 1-A, 2-B, 3-C, 4-D, 5-E, 6-F, 7-G, 8-H, 9-I, 10-J, 11-K, 12-L, 13-M, 14-N, 15-O</p>
+        </div>
+    </div>
+
+    <!-- TASK 6 -->
+    <div class="card" id="task6">
+        <div class="thdr"><div class="tnum">6</div><div><div class="ttitle">Dictation + Comprehension</div><div class="tsub">Listen, complete the gaps, then answer questions</div></div></div>
+        <div class="aplayer"><p>&#127911; Helping Others &mdash; BBC Learning English</p><audio controls src="help.mp3"></audio></div>
+        <h4 style="color:#2b6cb0;margin-bottom:12px;">Part 1 &mdash; Dictation (ONE WORD ONLY)</h4>
+        <div class="gsec"><div class="gs"><strong>1.</strong> &hellip;Welcome to 6 Minute English. Today we're discussing <input class="gi" id="d1" placeholder="(1)"></div>
+<div class="gs"><strong>2.</strong> &hellip;the positive impact it has on <input class="gi" id="d2" placeholder="(2)"></div>
+<div class="gs"><strong>3.</strong> &hellip;whether giving to <input class="gi" id="d3" placeholder="(3)"></div>
+<div class="gs"><strong>4.</strong> &hellip;really makes us feel good. Small acts of <input class="gi" id="d4" placeholder="(4)"></div>
+<div class="gs"><strong>5.</strong> &hellip;What stops us? One of the biggest <input class="gi" id="d5" placeholder="(5)"></div>
+<div class="gs"><strong>6.</strong> &hellip;is simply <input class="gi" id="d6" placeholder="(6)"></div>
+<div class="gs"><strong>7.</strong> &hellip;We might feel <input class="gi" id="d7" placeholder="(7)"></div>
+<div class="gs"><strong>8.</strong> &hellip;We don't know how to <input class="gi" id="d8" placeholder="(8)"></div>
+<div class="gs"><strong>9.</strong> &hellip;Sometimes we want to <input class="gi" id="d9" placeholder="(9)"></div>
+<div class="gs"><strong>10.</strong> &hellip;but don't know how to <input class="gi" id="d10" placeholder="(10)"></div>
+<div class="gs"><strong>11.</strong> &hellip;Even giving <input class="gi" id="d11" placeholder="(11)"></div>
+<div class="gs"><strong>12.</strong> &hellip;makes people feel good. When we <input class="gi" id="d12" placeholder="(12)"></div>
+<div class="gs"><strong>13.</strong> &hellip;a <input class="gi" id="d13" placeholder="(13)"></div>
+<div class="gs"><strong>14.</strong> &hellip;we're going against our basic <input class="gi" id="d14" placeholder="(14)"></div>
+<div class="gs"><strong>15.</strong> &hellip;for self- <input class="gi" id="d15" placeholder="(15)"></div>
+<div class="gs"><strong>16.</strong> &hellip;We evolved to look out for <input class="gi" id="d16" placeholder="(16)"></div>
+<div class="gs"><strong>17.</strong> &hellip;in our group. We <input class="gi" id="d17" placeholder="(17)"></div>
+<div class="gs"><strong>18.</strong> &hellip;to ensure our own <input class="gi" id="d18" placeholder="(18)"></div>
+<div class="gs"><strong>19.</strong> &hellip;But humans also lived in <input class="gi" id="d19" placeholder="(19)"></div>
+<div class="gs"><strong>20.</strong> &hellip;And communities are <input class="gi" id="d20" placeholder="(20)"></div>
+<div class="gs"><strong>21.</strong> &hellip;when people cooperate. Social <input class="gi" id="d21" placeholder="(21)"></div>
+<div class="gs"><strong>22.</strong> &hellip;is good for our <input class="gi" id="d22" placeholder="(22)"></div>
+<div class="gs"><strong>23.</strong> <input class="gi" id="d23" placeholder="(23)"></div>
+<div class="gs"><strong>24.</strong> &hellip;and our overall <input class="gi" id="d24" placeholder="(24)"></div>
+<div class="gs"><strong>25.</strong> &hellip;Scientists call this <input class="gi" id="d25" placeholder="(25)"></div>
+<div class="gs"><strong>26.</strong> <input class="gi" id="d26" placeholder="(26)"></div>
+<div class="gs"><strong>27.</strong> &hellip;We share similar <input class="gi" id="d27" placeholder="(27)"></div>
+<div class="gs"><strong>28.</strong> &hellip;Cooperation and <input class="gi" id="d28" placeholder="(28)"></div>
+<div class="gs"><strong>29.</strong> &hellip;became part of us. Human <input class="gi" id="d29" placeholder="(29)"></div>
+<div class="gs"><strong>30.</strong> &hellip;made us a successful <input class="gi" id="d30" placeholder="(30)"></div>
+</div>
+        <h4 style="color:#2b6cb0;margin:20px 0 12px;">Part 2 &mdash; Comprehension Questions</h4>
+        <div class="qblock"><div class="qt">1. What is the main topic of the BBC programme?</div><div class="opts"><label><input type="radio" name="t6q1" value="A"> A. The dangers of giving to strangers</label><label><input type="radio" name="t6q1" value="B"> B. Why and how helping others benefits both individuals and society</label><label><input type="radio" name="t6q1" value="C"> C. How to ask for help effectively</label><label><input type="radio" name="t6q1" value="D"> D. The psychology of charity fundraising</label></div><div class="fb" id="fb_t6q1"></div></div>
+        <div class="qblock"><div class="qt">2. According to the programme, what is one of the main barriers to helping?</div><div class="opts"><label><input type="radio" name="t6q2" value="A"> A. People are fundamentally selfish.</label><label><input type="radio" name="t6q2" value="B"> B. People feel awkward and don't know how to offer help.</label><label><input type="radio" name="t6q2" value="C"> C. There are not enough opportunities to help.</label><label><input type="radio" name="t6q2" value="D"> D. Helping costs too much money.</label></div><div class="fb" id="fb_t6q2"></div></div>
+        <div class="qblock"><div class="qt">3. What does "reciprocal altruism" mean?</div><div class="opts"><label><input type="radio" name="t6q3" value="A"> A. Helping only people in your immediate family</label><label><input type="radio" name="t6q3" value="B"> B. Expecting something in return for every act of kindness</label><label><input type="radio" name="t6q3" value="C"> C. Cooperation where helping others ultimately benefits yourself and the group</label><label><input type="radio" name="t6q3" value="D"> D. A legal obligation to help strangers</label></div><div class="fb" id="fb_t6q3"></div></div>
+        <div class="qblock"><div class="qt">4. Why do humans have an instinct to help according to the programme?</div><div class="opts"><label><input type="radio" name="t6q4" value="A"> A. Because helping is taught in schools.</label><label><input type="radio" name="t6q4" value="B"> B. Because governments reward it.</label><label><input type="radio" name="t6q4" value="C"> C. Because cooperation helped communities survive and thrive over time.</label><label><input type="radio" name="t6q4" value="D"> D. Because it is a modern social invention.</label></div><div class="fb" id="fb_t6q4"></div></div>
+        <div class="qblock"><div class="qt">5. What does the programme suggest about helping and wellbeing?</div><div class="opts"><label><input type="radio" name="t6q5" value="A"> A. Helping has no effect on mental health.</label><label><input type="radio" name="t6q5" value="B"> B. Helping is only beneficial for the person being helped.</label><label><input type="radio" name="t6q5" value="C"> C. Helping others improves the helper's mental health and overall wellbeing.</label><label><input type="radio" name="t6q5" value="D"> D. Helping can cause stress for the helper.</label></div><div class="fb" id="fb_t6q5"></div></div>
+        <div class="brow"><button class="prv" onclick="goToTask(5)">&larr; Previous</button><button class="chk" id="check6" onclick="checkTask6()" disabled>Check Answers</button><button class="nxt" id="next6" disabled onclick="goToTask(7)">Next Task &rarr;</button></div>
+        <button class="sab" id="showAns6" onclick="toggleAns('ans6')">&#9660; Show Answers</button>
+        <div class="apan" id="ans6">
+            <p><strong>Dictation:</strong> 1-helping, 2-society, 3-charity, 4-kindness, 5-barriers, 6-fear, 7-awkward, 8-offer, 9-give, 10-ask, 11-money, 12-help, 13-stranger, 14-instinct, 15-survival, 16-others, 17-evolved, 18-survival, 19-communities, 20-stronger, 21-connection, 22-mental, 23-health, 24-wellbeing, 25-reciprocal, 26-altruism, 27-genes, 28-helping, 29-cooperation, 30-species</p>
+            <p><strong>MCQ:</strong> 1-B, 2-B, 3-C, 4-C, 5-C</p>
+        </div>
+    </div>
+
+    <!-- TASK 7 -->
+    <div class="card" id="task7">
+        <div class="thdr"><div class="tnum">7</div><div><div class="ttitle">Practice Listening</div><div class="tsub">Full IELTS-style listening test</div></div></div>
+        <a class="hlink" href="Listening (31).html" target="_blank">&#127911; Open Practice Listening</a>
+        <div class="brow"><button class="prv" onclick="goToTask(6)">&larr; Previous</button><button class="nxt" onclick="finishDay()">Finish Day 3 &#10003;</button></div>
+    </div>
+
+    <!-- COMPLETION -->
+    <div class="done" id="donescreen">
+        <div class="ico">&#127881;</div>
+        <h2>Day 3 Complete!</h2>
+        <p>Great work! You've completed all tasks for Week 7, Day 3.</p>
+        <div style="margin:30px 0;text-align:left;">
+            <h3 style="color:#2b6cb0;border-bottom:2px solid #2b6cb0;padding-bottom:10px;margin-bottom:15px;">&#128203; Review Your Work</h3>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:15px;">
+                <div onclick="reviewTask(1)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#2b6cb0;margin-bottom:5px;">Task 1</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Mini Reading</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(2)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#2b6cb0;margin-bottom:5px;">Task 2</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Article Reading</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(3)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#2b6cb0;margin-bottom:5px;">Task 3</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Reading</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(4)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#2b6cb0;margin-bottom:5px;">Task 4</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Vocabulary</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(5)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#2b6cb0;margin-bottom:5px;">Task 5</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Video + Vocab</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(6)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#2b6cb0;margin-bottom:5px;">Task 6</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Dictation + MCQ</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(7)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#2b6cb0;margin-bottom:5px;">Task 7</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Listening</div><div style="font-size:1.4rem;">&#9989;</div></div>
+            </div>
+        </div>
+        <a href="/student-dashboard.html" class="dbbtn">&larr; Back to Dashboard</a>
+    </div>
+</div>
+<script>
+const SUPABASE_URL='https://nbfceuhuauizyucugejr.supabase.co';
+const SUPABASE_KEY='sb_publishable_0mFIGJkA_DKZfUiDAWFdrA_nXt0hF6H';
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const WEEK=7,DAY=3,TOTAL=7;
+let sid=null,cur=1,t0=Date.now(),stout=null;
+
+const dictAns=['helping','society','charity','kindness','barriers','fear','awkward','offer','give','ask','money','help','stranger','instinct','survival','others','evolved','survival','communities','stronger','connection','mental','health','wellbeing','reciprocal','altruism','genes','helping','cooperation','species'];
+
+const vocab=[
+{w:"1. Bystander effect (n)",d:"Reduced likelihood of helping when others are present"},
+{w:"2. Diffusion of responsibility (n)",d:"Spreading of duty to act across a group"},
+{w:"3. Pluralistic ignorance (n)",d:"Misreading a situation by following uncertain others"},
+{w:"4. Agency (n)",d:"The power to act or make decisions independently"},
+{w:"5. Unambiguous (adj)",d:"Clear and impossible to misunderstand"},
+{w:"6. Identifiable (adj)",d:"Able to be recognised as a specific individual"},
+{w:"7. Paralysis (n)",d:"A state of inability to move or act"},
+{w:"8. Intervene (v)",d:"To step in to affect the outcome of a situation"},
+{w:"9. Accountable (adj)",d:"Morally responsible for one's actions"},
+{w:"10. Direct address (n)",d:"Singling out one person specifically to ask for help"},
+{w:"11. Bystander (n)",d:"A person present at an event but not directly involved"},
+{w:"12. Escalate (v)",d:"To grow worse or more serious"},
+{w:"13. Social norm (n)",d:"Expected behaviour in a social group or situation"},
+{w:"14. Witness (n)",d:"A person who sees an event take place"},
+{w:"15. Altruism (n)",d:"Selfless concern for the wellbeing of others"},
+{w:"16. Reciprocal (adj)",d:"Given and received mutually; existing on both sides"},
+{w:"17. Cooperation (n)",d:"Working together towards a shared goal"},
+{w:"18. Instinct (n)",d:"A natural, automatic behaviour or response"},
+{w:"19. Barrier (n)",d:"Something that prevents progress or action"},
+{w:"20. Awkward (adj)",d:"Causing difficulty or embarrassment"},
+{w:"21. Empathy (n)",d:"The ability to understand and share others' feelings"},
+{w:"22. Obligation (n)",d:"A duty or commitment to do something"},
+{w:"23. Paradox (n)",d:"A seemingly contradictory situation that may be true"},
+{w:"24. Anonymous (adj)",d:"Not identified by name; unknown"},
+{w:"25. Wellbeing (n)",d:"The state of being comfortable, healthy and happy"},
+{w:"26. Paralysis (n)",d:"Inability to act due to fear or uncertainty"},
+{w:"27. Phenomenon (n)",d:"A fact or event observed to exist or happen"},
+{w:"28. Intervene (v)",d:"To become involved in a situation to change its outcome"},
+{w:"29. Selfish (adj)",d:"Caring only about oneself, not others"},
+{w:"30. Cue (n)",d:"A signal that triggers a particular response"},
+{w:"31. Moral (adj)",d:"Concerned with principles of right and wrong behaviour"},
+{w:"32. Emergency (n)",d:"A sudden serious event requiring immediate action"},
+{w:"33. Personalise (v)",d:"To make something relevant to a specific individual"},
+{w:"34. Antidote (n)",d:"Something that counteracts a harmful effect"},
+{w:"35. Victim (n)",d:"A person harmed by an event or situation"},
+{w:"36. Attacker (n)",d:"A person who uses violence against someone"},
+{w:"37. Probability (n)",d:"The likelihood that something will happen"},
+{w:"38. Relevant (adj)",d:"Closely connected to the matter being considered"},
+{w:"39. Predictable (adj)",d:"Able to be expected or anticipated"},
+{w:"40. Acknowledge (v)",d:"To recognise or admit the truth of something"},
+{w:"41. Transform (v)",d:"To change completely in form or character"},
+{w:"42. Witness (v)",d:"To see something take place"},
+{w:"43. Intervene (v)",d:"To get involved in order to change a situation"},
+{w:"44. Evolved (v)",d:"Developed gradually over time through natural processes"},
+{w:"45. Community (n)",d:"A group of people living or working together"},
+{w:"46. Species (n)",d:"A group of living things able to breed with each other"},
+{w:"47. Charity (n)",d:"An organisation or act of giving to those in need"},
+{w:"48. Kindness (n)",d:"The quality of being friendly, generous and considerate"},
+{w:"49. Awkward (adj)",d:"Socially uncomfortable or causing embarrassment"},
+{w:"50. Survival (n)",d:"The state of continuing to live despite difficulty"},
+];
+
+async function initStu(){
+    const p=new URLSearchParams(window.location.search);
+    if(p.get("teacher")==="true"){sid="teacher-preview";return;}
+    try{
+        const u=localStorage.getItem("user");
+        if(!u){window.location.href="/login.html";return;}
+        const pu=JSON.parse(u);
+        const{data,error}=await db.from("students").select("*").eq("username",pu.username).single();
+        if(error||!data)return;
+        sid=data.id;
+    }catch(e){}
+}
+function buildVocab(){
+    document.getElementById("vgrid").innerHTML=vocab.map(v=>`<div class="vi"><div class="vw">${v.w}</div><div class="vd">${v.d}</div></div>`).join("");
+}
+async function startDay(){
+    document.getElementById("splash").style.display="none";
+    document.getElementById("mc").style.display="block";
+    buildVocab();await initStu();await restoreProgress();setupLive();
+}
+function goToTask(n){
+    document.getElementById("task"+cur).classList.remove("active");cur=n;
+    document.getElementById("task"+n).classList.add("active");
+    document.getElementById("task"+n).scrollIntoView({behavior:"smooth",block:"start"});
+    updProg(n);t0=Date.now();saveResume(n);
+}
+function updProg(n){document.getElementById("pfill").style.width=Math.round(((n-1)/TOTAL)*100)+"%";document.getElementById("plabel").textContent="Task "+n+" of "+TOTAL;}
+function showSavi(){const e=document.getElementById("savi");e.classList.add("show");setTimeout(()=>e.classList.remove("show"),2000);}
+async function saveResume(n){if(!sid||sid==="teacher-preview")return;try{await db.from("student_resume").upsert({student_id:sid,week:WEEK,day:DAY,last_task:n,updated_at:new Date().toISOString()},{onConflict:"student_id"});}catch(e){}}
+function scheduleSave(){clearTimeout(stout);stout=setTimeout(()=>{localStorage.setItem("w"+WEEK+"d"+DAY+"_ans",JSON.stringify(gatherAll()));showSavi();},800);}
+function gatherAll(){
+    const d={};
+    document.querySelectorAll(".gi").forEach(el=>{if(el.id)d[el.id]=el.value;});
+    ["t5q1","t5q2","t5q3","t5q4","t5q5","t5q6","t5q7","t5q8","t5q9","t5q10","t6q1","t6q2","t6q3","t6q4","t6q5"].forEach(n=>{const s=document.querySelector("input[name='"+n+"']:checked");if(s)d[n]=s.value;});
+    document.querySelectorAll("select").forEach(el=>{if(el.id)d[el.id]=el.value;});
+    return d;
+}
+async function restoreProgress(){
+    try{
+        const sv=localStorage.getItem("w"+WEEK+"d"+DAY+"_ans");
+        if(sv){
+            const d=JSON.parse(sv);
+            Object.entries(d).forEach(([id,val])=>{const el=document.getElementById(id);if(el&&el.tagName==="INPUT")el.value=val;});
+            ["t5q1","t5q2","t5q3","t5q4","t5q5","t5q6","t5q7","t5q8","t5q9","t5q10","t6q1","t6q2","t6q3","t6q4","t6q5"].forEach(n=>{const val=d[n];if(val){const r=document.querySelector("input[name='"+n+"'][value='"+val+"']");if(r)r.checked=true;}});
+            Object.entries(d).forEach(([id,val])=>{const el=document.getElementById(id);if(el&&el.tagName==="SELECT")el.value=val;});
+        }
+        if(sid&&sid!=="teacher-preview"){
+            const{data:td}=await db.from("task_progress").select("task_number,status").eq("student_id",sid).eq("week",WEEK).eq("day",DAY);
+            if(td&&td.filter(t=>t.status==="completed").length>=TOTAL){
+                document.getElementById("task1").classList.remove("active");
+                document.getElementById("donescreen").style.display="block";
+                updProg(TOTAL);valAll();makeRO();return;
+            }
+            const{data:res}=await db.from("student_resume").select("last_task").eq("student_id",sid).eq("week",WEEK).eq("day",DAY).single();
+            if(res&&res.last_task>1){document.getElementById("task1").classList.remove("active");cur=res.last_task;document.getElementById("task"+cur).classList.add("active");updProg(cur);}
+        }
+        valAll();
+    }catch(e){}
+}
+function makeRO(){
+    document.querySelectorAll(".gi").forEach(el=>{el.disabled=true;el.style.opacity="0.85";});
+    document.querySelectorAll("input[type=radio]").forEach(el=>el.disabled=true);
+    document.querySelectorAll("select").forEach(el=>el.disabled=true);
+    document.querySelectorAll(".chk").forEach(el=>el.style.display="none");
+    document.querySelectorAll(".nxt").forEach(el=>el.style.display="none");
+    document.querySelectorAll(".prv").forEach(el=>el.style.display="none");
+    document.querySelectorAll(".sab").forEach(el=>el.style.display="inline-block");
+}
+function setupLive(){
+    ["t1q1","t1q2","t1q3","t1q4","t1q5","t1q6","t1q7"].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener("input",()=>{valT1();scheduleSave();});});
+    for(let i=1;i<=10;i++){const el=document.getElementById("t4v"+i);if(el)el.addEventListener("change",()=>{valT4();scheduleSave();});}
+    ["t5q1","t5q2","t5q3","t5q4","t5q5","t5q6","t5q7","t5q8","t5q9","t5q10"].forEach(n=>{document.querySelectorAll("input[name='"+n+"']").forEach(el=>el.addEventListener("change",()=>{valT5();scheduleSave();}));});
+    for(let i=1;i<=15;i++){const el=document.getElementById("t5g"+i);if(el)el.addEventListener("input",()=>{valT5();scheduleSave();});}
+    for(let i=1;i<=15;i++){const el=document.getElementById("t5m"+i);if(el)el.addEventListener("change",()=>{valT5();scheduleSave();});}
+    ["t6q1","t6q2","t6q3","t6q4","t6q5"].forEach(n=>{document.querySelectorAll("input[name='"+n+"']").forEach(el=>el.addEventListener("change",()=>{valT6();scheduleSave();}));});
+    for(let i=1;i<=30;i++){const el=document.getElementById("d"+i);if(el)el.addEventListener("input",()=>{valT6();scheduleSave();});}
+}
+function valAll(){valT1();valT4();valT5();valT6();}
+function valT1(){document.getElementById("check1").disabled=!["t1q1","t1q2","t1q3","t1q4","t1q5","t1q6","t1q7"].every(id=>document.getElementById(id)?.value.trim());}
+function valT4(){document.getElementById("check4").disabled=!Array.from({length:10},(_,i)=>document.getElementById("t4v"+(i+1))?.value).every(Boolean);}
+function valT5(){
+    const mc=["t5q1","t5q2","t5q3","t5q4","t5q5","t5q6","t5q7","t5q8","t5q9","t5q10"].every(n=>document.querySelector("input[name='"+n+"']:checked"));
+    const gf=Array.from({length:15},(_,i)=>document.getElementById("t5g"+(i+1))?.value.trim()).every(Boolean);
+    const mt=Array.from({length:15},(_,i)=>document.getElementById("t5m"+(i+1))?.value).every(Boolean);
+    document.getElementById("check5").disabled=!(mc&&gf&&mt);
+}
+function valT6(){
+    const dc=Array.from({length:30},(_,i)=>document.getElementById("d"+(i+1))?.value.trim()).every(Boolean);
+    const mc=["t6q1","t6q2","t6q3","t6q4","t6q5"].every(n=>document.querySelector("input[name='"+n+"']:checked"));
+    document.getElementById("check6").disabled=!(dc&&mc);
+}
+const t1ok={t1q1:["bystander effect","less likely to help"],t1q2:["feeling less personally obligated","someone else will act","less obligated"],t1q3:["looking to others","no emergency exists","concluding no emergency"],t1q4:["the presence of others","presence of others"],t1q5:["when the victim is identifiable","emergency is unambiguous","identifiable"],t1q6:["moral failure","personal moral failure"],t1q7:["direct address"]};
+const t4ok={t4v1:"bystander effect",t4v2:"obligated",t4v3:"pluralistic ignorance",t4v4:"diffusion of responsibility",t4v5:"unambiguous",t4v6:"accountable",t4v7:"moral failure",t4v8:"paralysis",t4v9:"agency",t4v10:"intervene"};
+const t5mcq={t5q1:"B",t5q2:"B",t5q3:"C",t5q4:"C",t5q5:"B",t5q6:"C",t5q7:"B",t5q8:"B",t5q9:"C",t5q10:"B"};
+const t5gap={t5g1:"bystander effect",t5g2:"diffuse",t5g3:"diffusion",t5g4:"pluralistic ignorance",t5g5:"unambiguous",t5g6:"identifiable",t5g7:"paralysis",t5g8:"intervene",t5g9:"accountable",t5g10:"escalating",t5g11:"social norm",t5g12:"direct address",t5g13:"agency",t5g14:"witnesses",t5g15:"crowd"};
+const t5mat={t5m1:"A",t5m2:"B",t5m3:"C",t5m4:"D",t5m5:"E",t5m6:"F",t5m7:"G",t5m8:"H",t5m9:"I",t5m10:"J",t5m11:"K",t5m12:"L",t5m13:"M",t5m14:"N",t5m15:"O"};
+const t6mcq={t6q1:"B",t6q2:"B",t6q3:"C",t6q4:"C",t6q5:"C"};
+
+function checkTask1(){
+    const ans=[];
+    Object.entries(t1ok).forEach(([id,opts])=>{
+        const inp=document.getElementById(id);const val=inp.value.trim().toLowerCase();
+        const ok=opts.some(o=>val.includes(o.toLowerCase()));
+        inp.classList.toggle("correct",ok);inp.classList.toggle("incorrect",!ok);
+        ans.push({question_id:id,question_type:"gap_fill",student_answer:inp.value.trim(),correct_answer:opts[0],is_correct:ok});
+    });
+    document.getElementById("showAns1").style.display="inline-block";
+    document.getElementById("next1").disabled=false;
+    saveAnswers(1,ans);saveTP(1);
+}
+function checkTask4(){
+    const ans=[];
+    Object.entries(t4ok).forEach(([id,correct])=>{
+        const sel=document.getElementById(id);const ok=sel.value===correct;
+        sel.classList.toggle("correct",ok);sel.classList.toggle("incorrect",!ok);
+        ans.push({question_id:id,question_type:"matching",student_answer:sel.value,correct_answer:correct,is_correct:ok});
+    });
+    document.getElementById("showAns4").style.display="inline-block";
+    document.getElementById("next4").disabled=false;
+    saveAnswers(4,ans);saveTP(4);
+}
+function checkTask5(){
+    const ans=[];
+    Object.entries(t5mcq).forEach(([n,correct])=>{
+        const sel=document.querySelector("input[name='"+n+"']:checked");
+        const fb=document.getElementById("fb_"+n);if(!sel)return;
+        const ok=sel.value===correct;
+        fb.textContent=ok?"✅ Correct!":"❌ Incorrect — correct answer: "+correct;
+        fb.className="fb "+(ok?"correct":"incorrect");
+        ans.push({question_id:n,question_type:"mcq",student_answer:sel.value,correct_answer:correct,is_correct:ok});
+    });
+    Object.entries(t5gap).forEach(([id,correct])=>{
+        const inp=document.getElementById(id);const ok=inp.value.trim().toLowerCase()===correct.toLowerCase();
+        inp.classList.toggle("correct",ok);inp.classList.toggle("incorrect",!ok);
+        ans.push({question_id:id,question_type:"gap_fill",student_answer:inp.value.trim(),correct_answer:correct,is_correct:ok});
+    });
+    Object.entries(t5mat).forEach(([id,correct])=>{
+        const sel=document.getElementById(id);const ok=sel.value===correct;
+        sel.classList.toggle("correct",ok);sel.classList.toggle("incorrect",!ok);
+        ans.push({question_id:id,question_type:"matching",student_answer:sel.value,correct_answer:correct,is_correct:ok});
+    });
+    document.getElementById("showAns5").style.display="inline-block";
+    document.getElementById("next5").disabled=false;
+    saveAnswers(5,ans);saveTP(5);
+}
+function checkTask6(){
+    const ans=[];
+    for(let i=1;i<=30;i++){
+        const inp=document.getElementById("d"+i);const correct=dictAns[i-1];
+        const ok=inp.value.trim().toLowerCase()===correct.toLowerCase();
+        inp.classList.toggle("correct",ok);inp.classList.toggle("incorrect",!ok);
+        ans.push({question_id:"d"+i,question_type:"gap_fill",student_answer:inp.value.trim(),correct_answer:correct,is_correct:ok});
+    }
+    Object.entries(t6mcq).forEach(([n,correct])=>{
+        const sel=document.querySelector("input[name='"+n+"']:checked");
+        const fb=document.getElementById("fb_"+n);if(!sel)return;
+        const ok=sel.value===correct;
+        fb.textContent=ok?"✅ Correct!":"❌ Incorrect — correct answer: "+correct;
+        fb.className="fb "+(ok?"correct":"incorrect");
+        ans.push({question_id:n,question_type:"mcq",student_answer:sel.value,correct_answer:correct,is_correct:ok});
+    });
+    document.getElementById("showAns6").style.display="inline-block";
+    document.getElementById("next6").disabled=false;
+    saveAnswers(6,ans);saveTP(6);
+}
+async function saveAnswers(tnum,ans){
+    if(!sid||sid==="teacher-preview")return;
+    try{
+        const rows=ans.map(a=>({student_id:sid,week:WEEK,day:DAY,task_number:tnum,question_id:a.question_id,question_type:a.question_type,student_answer:a.student_answer,correct_answer:a.correct_answer,is_correct:a.is_correct,answered_at:new Date().toISOString()}));
+        await db.from("student_answers").upsert(rows,{onConflict:"student_id,week,day,task_number,question_id"});
+    }catch(e){}
+}
+async function saveTP(n){
+    if(!sid||sid==="teacher-preview")return;
+    try{await db.from("task_progress").upsert({student_id:sid,week:WEEK,day:DAY,task_number:n,status:"completed",time_completed:new Date().toISOString(),time_spent_seconds:Math.round((Date.now()-t0)/1000)},{onConflict:"student_id,week,day,task_number"});}catch(e){}
+}
+async function finishDay(){
+    document.getElementById("task7").classList.remove("active");
+    document.getElementById("donescreen").style.display="block";
+    document.getElementById("donescreen").scrollIntoView({behavior:"smooth"});
+    localStorage.removeItem("w"+WEEK+"d"+DAY+"_ans");
+    for(let i=1;i<=TOTAL;i++)await saveTP(i);
+    if(sid&&sid!=="teacher-preview")await db.from("student_resume").delete().eq("student_id",sid);
+    makeRO();
+}
+function reviewTask(n){
+    document.getElementById("donescreen").style.display="none";cur=n;
+    document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));
+    document.getElementById("task"+n).classList.add("active");
+    document.getElementById("task"+n).scrollIntoView({behavior:"smooth",block:"start"});
+    const ex=document.getElementById("btr");
+    if(!ex){
+        const b=document.createElement("button");b.id="btr";b.textContent="🏆 Back to Results";
+        b.style.cssText="position:fixed;bottom:20px;right:20px;background:#4299e1;color:white;border:none;padding:12px 22px;border-radius:50px;cursor:pointer;font-weight:bold;font-size:0.95rem;z-index:9998;";
+        b.onclick=()=>{b.remove();document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));document.getElementById("donescreen").style.display="block";document.getElementById("donescreen").scrollIntoView({behavior:"smooth"});};
+        document.body.appendChild(b);
+    }
+}
+function toggleVocab(){document.getElementById("vbody").classList.toggle("open");document.getElementById("varr").classList.toggle("open");}
+function toggleAns(id){const d=document.getElementById(id);const b=d.previousElementSibling;d.style.display=d.style.display==="block"?"none":"block";b.textContent=d.style.display==="block"?"▲ Hide Answers":"▼ Show Answers";}
+</script>
+</body>
+</html>
