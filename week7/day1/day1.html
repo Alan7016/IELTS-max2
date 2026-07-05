@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEEK 7 - DAY 1 (Science)</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Segoe UI", sans-serif; background: #ebf8ff; color: #333; }
+        #splash { position: fixed; inset: 0; background: linear-gradient(135deg, #4299e1, #2b6cb0); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; color: white; text-align: center; padding: 20px; }
+        #splash h1 { font-size: 3rem; margin-bottom: 10px; }
+        #splash h2 { font-size: 2rem; margin-bottom: 10px; opacity: 0.9; }
+        #splash p { font-size: 1.2rem; margin-bottom: 40px; opacity: 0.8; }
+        .splash-btn { background: white; color: #2b6cb0; border: none; padding: 18px 60px; font-size: 1.4rem; font-weight: bold; border-radius: 50px; cursor: pointer; }
+        .wrap { max-width: 900px; margin: 0 auto; padding: 20px; }
+        .hdr { background: linear-gradient(135deg, #4299e1, #2b6cb0); color: white; padding: 25px 30px; border-radius: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; }
+        .hdr h1 { font-size: 1.6rem; }
+        .hdr .topic { opacity: 0.85; font-size: 1rem; margin-top: 4px; }
+        .back-btn { background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 10px 20px; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 0.9rem; }
+        .plabel { text-align: center; color: #2b6cb0; font-size: 0.85rem; margin-bottom: 8px; font-weight: 600; }
+        .pwrap { background: #bee3f8; border-radius: 20px; height: 10px; margin-bottom: 20px; overflow: hidden; }
+        .pfill { background: linear-gradient(90deg, #4299e1, #2b6cb0); height: 100%; border-radius: 20px; transition: width 0.5s; }
+        .vsec { background: white; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-left: 5px solid #4299e1; overflow: hidden; }
+        .vtog { width: 100%; background: none; border: none; cursor: pointer; padding: 18px 25px; display: flex; align-items: center; justify-content: space-between; }
+        .vtog h3 { color: #2b6cb0; font-size: 1.1rem; margin: 0; }
+        .vcount { background: #4299e1; color: white; font-size: 0.75rem; font-weight: bold; padding: 3px 10px; border-radius: 20px; }
+        .varr { color: #2b6cb0; font-size: 1rem; transition: transform 0.3s; }
+        .varr.open { transform: rotate(180deg); }
+        .vbody { display: none; padding: 0 25px 20px; }
+        .vbody.open { display: block; }
+        .vgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+        .vi { background: #ebf8ff; padding: 10px 14px; border-radius: 8px; }
+        .vi .vw { font-weight: bold; color: #333; font-size: 0.95rem; }
+        .vi .vd { color: #666; font-size: 0.82rem; margin-top: 2px; }
+        .card { background: white; border-radius: 15px; padding: 28px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); display: none; }
+        .card.active { display: block; }
+        .thdr { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .tnum { background: linear-gradient(135deg, #4299e1, #2b6cb0); color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; flex-shrink: 0; }
+        .ttitle { font-size: 1.3rem; font-weight: bold; color: #333; }
+        .tsub { color: #888; font-size: 0.9rem; margin-top: 2px; }
+        .plink { display: flex; align-items: center; gap: 12px; background: #ebf8ff; padding: 15px 20px; border-radius: 10px; text-decoration: none; color: #333; font-weight: 600; border: 2px solid #bee3f8; transition: all 0.3s; margin-bottom: 12px; }
+        .plink:hover { background: #4299e1; color: white; }
+        .hlink { display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #4299e1, #2b6cb0); color: white; padding: 15px 30px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 1rem; margin: 10px 0; }
+        .vcont { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; margin: 15px 0; }
+        .vcont iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .vfall { background: #ebf8ff; padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align: center; }
+        .vfall a { color: #2b6cb0; font-weight: bold; }
+        .aplayer { background: #ebf8ff; border: 2px solid #bee3f8; border-radius: 12px; padding: 20px; margin: 15px 0; }
+        .aplayer p { color: #555; margin-bottom: 10px; font-weight: 600; }
+        .aplayer audio { width: 100%; }
+        .passage { background: #f0f8ff; border: 1px solid #bee3f8; border-radius: 10px; padding: 25px; margin: 15px 0; line-height: 1.8; font-size: 0.97rem; }
+        .passage h3 { color: #2b6cb0; margin-bottom: 15px; font-size: 1.2rem; }
+        .passage p { margin-bottom: 14px; }
+        .hl { font-style: italic; color: #2b6cb0; font-weight: 600; }
+        .qblock { margin-bottom: 20px; padding: 18px; background: #f8f9fa; border-radius: 10px; }
+        .qt { font-weight: 600; margin-bottom: 12px; color: #333; line-height: 1.5; }
+        .opts label { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; border-radius: 8px; cursor: pointer; margin-bottom: 5px; }
+        .opts label:hover { background: #ebf8ff; }
+        .opts input[type=radio] { margin-top: 3px; flex-shrink: 0; }
+        .fb { margin-top: 8px; font-weight: bold; font-size: 0.9rem; }
+        .fb.correct { color: #28a745; }
+        .fb.incorrect { color: #dc3545; }
+        .gsec { margin-top: 20px; }
+        .gs { margin-bottom: 14px; line-height: 2; font-size: 1rem; }
+        .gi { border: none; border-bottom: 2px solid #4299e1; padding: 4px 8px; font-size: 0.95rem; width: 200px; background: transparent; outline: none; color: #333; }
+        .gi.correct { border-bottom-color: #28a745; background: #d4edda33; }
+        .gi.incorrect { border-bottom-color: #dc3545; background: #f8d7da33; }
+        .wbox { background: #ebf8ff; border: 2px solid #bee3f8; border-radius: 10px; padding: 12px 18px; margin-bottom: 15px; }
+        .wbox strong { color: #2b6cb0; }
+        .mtbl { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .mtbl th { background: #4299e1; color: white; padding: 10px 14px; text-align: left; }
+        .mtbl td { padding: 10px 14px; border-bottom: 1px solid #eee; }
+        .mtbl tr:nth-child(even) td { background: #ebf8ff; }
+        .msel { border: 2px solid #bee3f8; border-radius: 6px; padding: 5px 8px; font-size: 0.88rem; background: white; width: 100%; max-width: 380px; }
+        .msel.correct { border-color: #28a745; }
+        .msel.incorrect { border-color: #dc3545; }
+        .vsel { border: 2px solid #bee3f8; border-radius: 6px; padding: 5px 10px; font-size: 0.9rem; background: white; width: 250px; }
+        .vsel.correct { border-color: #28a745; }
+        .vsel.incorrect { border-color: #dc3545; }
+        .brow { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+        .chk { background: linear-gradient(135deg, #4299e1, #2b6cb0); color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
+        .chk:disabled { background: #ccc; cursor: not-allowed; }
+        .nxt { background: #28a745; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
+        .nxt:disabled { background: #ccc; cursor: not-allowed; }
+        .prv { background: #6c757d; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
+        .sab { background: #ffc107; color: #333; border: none; padding: 10px 22px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.88rem; display: none; margin-top: 10px; }
+        .apan { display: none; background: #fffbea; border: 2px solid #ffc107; border-radius: 10px; padding: 15px; margin-top: 12px; }
+        .apan p { margin-bottom: 6px; font-size: 0.9rem; }
+        .done { text-align: center; padding: 60px 20px; display: none; }
+        .done .ico { font-size: 5rem; margin-bottom: 20px; }
+        .done h2 { font-size: 2.2rem; color: #2b6cb0; margin-bottom: 10px; }
+        .done p { color: #666; font-size: 1rem; margin-bottom: 30px; }
+        .dbbtn { background: linear-gradient(135deg, #4299e1, #2b6cb0); color: white; padding: 16px 40px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 1.1rem; display: inline-block; }
+        .savi { position: fixed; bottom: 20px; right: 20px; background: #4299e1; color: white; padding: 10px 18px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; opacity: 0; transition: opacity 0.4s; z-index: 9000; pointer-events: none; }
+        .savi.show { opacity: 1; }
+    </style>
+</head>
+<body>
+<div id="splash">
+    <h1>&#129504; WEEK 7</h1>
+    <h2>DAY 1</h2>
+    <p>Topic: Human Behaviour &amp; Psychology</p>
+    <button class="splash-btn" onclick="startDay()">LET'S GO!</button>
+</div>
+<div class="savi" id="savi">&#10003; Progress saved</div>
+<div class="wrap" id="mc" style="display:none;">
+    <div class="hdr">
+        <div><h1>&#129504; Week 7 &mdash; Day 1</h1><div class="topic">Topic: Human Behaviour &amp; Psychology</div></div>
+        <a href="/student-dashboard.html" class="back-btn">&larr; Dashboard</a>
+    </div>
+    <div class="plabel" id="plabel">Task 0 of 7</div>
+    <div class="pwrap"><div class="pfill" id="pfill" style="width:0%"></div></div>
+    <div class="vsec">
+        <button class="vtog" onclick="toggleVocab()">
+            <div style="display:flex;align-items:center;gap:10px;"><h3>&#128214; Today's Vocabulary</h3><span class="vcount">50 words</span></div>
+            <span class="varr" id="varr">&#9660;</span>
+        </button>
+        <div class="vbody" id="vbody"><div class="vgrid" id="vgrid"></div></div>
+    </div>
+    <!-- TASK 1 -->
+    <div class="card active" id="task1">
+        <div class="thdr"><div class="tnum">1</div><div><div class="ttitle">Mini Reading</div><div class="tsub">Read and answer &mdash; NO MORE THAN THREE WORDS from the passage</div></div></div>
+        <div class="passage">
+            <h3>The Hidden Forces Behind Human Behaviour</h3>
+            <p>For much of human history, we assumed that people make decisions based on logic and reason. The emerging field of behavioural science has overturned this assumption dramatically. Research now shows that the vast majority of human decisions are shaped not by careful deliberation but by <span class="hl">(1) unconscious processes</span> &mdash; mental shortcuts, emotional responses and deep-rooted social instincts that operate largely below the level of conscious awareness.</p>
+            <p>One of the most influential frameworks in behavioural science is the distinction between what psychologist Daniel Kahneman calls <span class="hl">(2) System 1</span> and System 2 thinking. System 1 is fast, automatic and intuitive &mdash; it relies on <span class="hl">(3) pattern recognition</span> and emotional association rather than logical analysis. System 2 is slow, effortful and deliberate, engaged only when we encounter genuinely novel or demanding <span class="hl">(4) problems</span>. The trouble is that System 1 frequently produces errors &mdash; what scientists call cognitive <span class="hl">(5) biases</span> &mdash; that can lead even intelligent people to make poor decisions.</p>
+            <p>Among the most well-documented biases is confirmation bias: the tendency to seek out and remember information that confirms what we already <span class="hl">(6) believe</span>. Another is the availability heuristic, whereby people judge the likelihood of events based on how easily examples come to mind rather than on actual statistical probability.</p>
+            <p>Understanding human behaviour also requires acknowledging the extraordinary power of social influence. Classic experiments by Solomon Asch demonstrated that individuals would give clearly incorrect answers simply to <span class="hl">(7) conform</span> with those around them. Later work by Stanley Milgram showed that ordinary people would follow instructions from an authority figure even when those instructions seemed harmful &mdash; suggesting our behaviour is shaped far more by <span class="hl">(8) context</span> than by stable personality traits.</p>
+        </div>
+        <h4 style="color:#2b6cb0;margin:20px 0 12px;">Answer &mdash; NO MORE THAN THREE WORDS:</h4>
+        <div class="gsec">
+            <div class="gs">1. What shapes most human decisions according to behavioural science?<br><input class="gi" id="t1q1" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">2. What is System 1 thinking associated with, rather than logical analysis?<br><input class="gi" id="t1q2" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">3. What does System 2 engage with, unlike System 1?<br><input class="gi" id="t1q3" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">4. What do scientists call the errors produced by System 1?<br><input class="gi" id="t1q4" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">5. What is confirmation bias the tendency to do?<br><input class="gi" id="t1q5" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">6. What does the availability heuristic use instead of actual statistics?<br><input class="gi" id="t1q6" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">7. What does Asch's experiment demonstrate about individuals?<br><input class="gi" id="t1q7" placeholder="___" style="width:300px;margin-top:8px;"></div>
+        </div>
+        <div class="brow">
+            <button class="chk" id="check1" onclick="checkTask1()" disabled>Check Answers</button>
+            <button class="nxt" id="next1" disabled onclick="goToTask(2)">Next Task &rarr;</button>
+        </div>
+        <button class="sab" id="showAns1" onclick="toggleAns('ans1')">&#9660; Show Answers</button>
+        <div class="apan" id="ans1"><p><strong>Answers:</strong> 1-unconscious processes, 2-pattern recognition/emotional association, 3-novel or demanding problems, 4-cognitive biases, 5-seek out/confirm what we believe, 6-how easily examples come to mind, 7-they conform/social influence</p></div>
+    </div>
+
+    <!-- TASK 2 -->
+    <div class="card" id="task2">
+        <div class="thdr"><div class="tnum">2</div><div><div class="ttitle">Article Reading</div><div class="tsub">Read the article and study the vocabulary</div></div></div>
+        <a class="plink" href="article 1.pdf" target="_blank"><span style="font-size:1.5rem;">&#128196;</span> Human Behaviour &mdash; Article</a>
+        <a class="plink" href="vocab 1.pdf" target="_blank"><span style="font-size:1.5rem;">&#128216;</span> Human Behaviour &mdash; Vocabulary</a>
+        <div class="brow"><button class="prv" onclick="goToTask(1)">&larr; Previous</button><button class="nxt" onclick="goToTask(3)">Next Task &rarr;</button></div>
+    </div>
+
+    <!-- TASK 3 -->
+    <div class="card" id="task3">
+        <div class="thdr"><div class="tnum">3</div><div><div class="ttitle">Practice Reading</div><div class="tsub">IELTS-style reading test</div></div></div>
+        <a class="hlink" href="Reading (30).html" target="_blank">&#128214; Open Practice Reading</a>
+        <div class="brow"><button class="prv" onclick="goToTask(2)">&larr; Previous</button><button class="nxt" onclick="goToTask(4)">Next Task &rarr;</button></div>
+    </div>
+
+    <!-- TASK 4 -->
+    <div class="card" id="task4">
+        <div class="thdr"><div class="tnum">4</div><div><div class="ttitle">Vocabulary in Context</div><div class="tsub">Choose the correct word for each sentence</div></div></div>
+        <div class="gsec">
+            <div class="gs">1. Most of our daily decisions are made by <select class="vsel" id="t4v1"><option value="">select</option><option value="unconscious">unconscious</option><option value="deliberate">deliberate</option><option value="rational">rational</option></select> processes, not conscious thought.</div>
+            <div class="gs">2. Daniel Kahneman described fast, automatic thinking as <select class="vsel" id="t4v2"><option value="">select</option><option value="System 1">System 1</option><option value="System 2">System 2</option><option value="cortical remapping">cortical remapping</option></select>.</div>
+            <div class="gs">3. When we look only for evidence that supports our views, we show <select class="vsel" id="t4v3"><option value="">select</option><option value="confirmation bias">confirmation bias</option><option value="availability heuristic">availability heuristic</option><option value="neuroplasticity">neuroplasticity</option></select>.</div>
+            <div class="gs">4. Judging risk based on how easily an example comes to mind is the <select class="vsel" id="t4v4"><option value="">select</option><option value="availability heuristic">availability heuristic</option><option value="cognitive bias">cognitive bias</option><option value="social conformity">social conformity</option></select>.</div>
+            <div class="gs">5. Asch's experiment showed the extraordinary power of <select class="vsel" id="t4v5"><option value="">select</option><option value="social conformity">social conformity</option><option value="cognitive bias">cognitive bias</option><option value="neuroplasticity">neuroplasticity</option></select>.</div>
+            <div class="gs">6. A <select class="vsel" id="t4v6"><option value="">select</option><option value="heuristic">heuristic</option><option value="neurone">neurone</option><option value="stimulus">stimulus</option></select> is a mental shortcut that helps us make quick decisions but can lead to errors.</div>
+            <div class="gs">7. The brain's ability to rewire itself after injury is known as <select class="vsel" id="t4v7"><option value="">select</option><option value="neuroplasticity">neuroplasticity</option><option value="polarisation">polarisation</option><option value="attribution">attribution</option></select>.</div>
+            <div class="gs">8. Blaming others' bad behaviour on character rather than the situation is the <select class="vsel" id="t4v8"><option value="">select</option><option value="fundamental attribution error">fundamental attribution error</option><option value="confirmation bias">confirmation bias</option><option value="social proof">social proof</option></select>.</div>
+            <div class="gs">9. Milgram's research showed that ordinary people follow instructions from <select class="vsel" id="t4v9"><option value="">select</option><option value="authority">authority</option><option value="unconscious">unconscious</option><option value="capricious">capricious</option></select> figures.</div>
+            <div class="gs">10. When many people adopt a behaviour, others tend to follow &mdash; this is called <select class="vsel" id="t4v10"><option value="">select</option><option value="social proof">social proof</option><option value="cognitive dissonance">cognitive dissonance</option><option value="heuristic">heuristic</option></select>.</div>
+        </div>
+        <div class="brow"><button class="prv" onclick="goToTask(3)">&larr; Previous</button><button class="chk" id="check4" onclick="checkTask4()" disabled>Check Answers</button><button class="nxt" id="next4" disabled onclick="goToTask(5)">Next Task &rarr;</button></div>
+        <button class="sab" id="showAns4" onclick="toggleAns('ans4')">&#9660; Show Answers</button>
+        <div class="apan" id="ans4"><p><strong>Answers:</strong> 1-unconscious, 2-System 1, 3-confirmation bias, 4-availability heuristic, 5-social conformity, 6-heuristic, 7-neuroplasticity, 8-fundamental attribution error, 9-authority, 10-social proof</p></div>
+    </div>
+    <!-- TASK 5 -->
+    <div class="card" id="task5">
+        <div class="thdr"><div class="tnum">5</div><div><div class="ttitle">Video Watching Task</div><div class="tsub">Watch "Phineas Gage &amp; Neuroplasticity" and answer questions</div></div></div>
+        <div class="vfall"><p>&#9654; <a href="https://www.youtube.com/watch?v=ng7Zh3Rz-SE" target="_blank">Open video in new tab</a> if it doesn't play below.</p></div>
+        <div class="vcont"><iframe src="https://www.youtube.com/embed/ng7Zh3Rz-SE" frameborder="0" allowfullscreen></iframe></div>
+        <h4 style="color:#2b6cb0;margin:20px 0 12px;">Part 1 &mdash; Multiple Choice Questions</h4>
+        <div class="qblock"><div class="qt">1. What caused Phineas Gage's famous brain injury?</div><div class="opts"><label><input type="radio" name="t5q1" value="A"> A. A train accident</label><label><input type="radio" name="t5q1" value="B"> B. A falling rock</label><label><input type="radio" name="t5q1" value="C"> C. An iron rod shot through his skull during an explosion</label><label><input type="radio" name="t5q1" value="D"> D. A horse-riding accident</label></div><div class="fb" id="fb_t5q1"></div></div>
+        <div class="qblock"><div class="qt">2. Which part of Gage's brain was damaged?</div><div class="opts"><label><input type="radio" name="t5q2" value="A"> A. The left temporal lobe</label><label><input type="radio" name="t5q2" value="B"> B. The right frontal lobe</label><label><input type="radio" name="t5q2" value="C"> C. The cerebellum</label><label><input type="radio" name="t5q2" value="D"> D. The occipital lobe</label></div><div class="fb" id="fb_t5q2"></div></div>
+        <div class="qblock"><div class="qt">3. The frontal lobe is mainly associated with...</div><div class="opts"><label><input type="radio" name="t5q3" value="A"> A. breathing and heartbeat.</label><label><input type="radio" name="t5q3" value="B"> B. hearing and balance.</label><label><input type="radio" name="t5q3" value="C"> C. behaviour, emotion and attention.</label><label><input type="radio" name="t5q3" value="D"> D. digestion and movement.</label></div><div class="fb" id="fb_t5q3"></div></div>
+        <div class="qblock"><div class="qt">4. How did Gage's personality change after the accident?</div><div class="opts"><label><input type="radio" name="t5q4" value="A"> A. He became quieter and more thoughtful.</label><label><input type="radio" name="t5q4" value="B"> B. He became rude, unreliable and unpredictable.</label><label><input type="radio" name="t5q4" value="C"> C. He lost the ability to speak.</label><label><input type="radio" name="t5q4" value="D"> D. He completely forgot his family.</label></div><div class="fb" id="fb_t5q4"></div></div>
+        <div class="qblock"><div class="qt">5. What job did Gage take after moving to Chile?</div><div class="opts"><label><input type="radio" name="t5q5" value="A"> A. Doctor</label><label><input type="radio" name="t5q5" value="B"> B. Railroad engineer</label><label><input type="radio" name="t5q5" value="C"> C. Stagecoach driver</label><label><input type="radio" name="t5q5" value="D"> D. School teacher</label></div><div class="fb" id="fb_t5q5"></div></div>
+        <div class="qblock"><div class="qt">6. What is neuroplasticity?</div><div class="opts"><label><input type="radio" name="t5q6" value="A"> A. The ability to replace damaged brain cells with new ones.</label><label><input type="radio" name="t5q6" value="B"> B. The brain's ability to reorganise and form new neural connections.</label><label><input type="radio" name="t5q6" value="C"> C. A surgical procedure used to repair brain injuries.</label><label><input type="radio" name="t5q6" value="D"> D. A medicine used to improve memory.</label></div><div class="fb" id="fb_t5q6"></div></div>
+        <div class="qblock"><div class="qt">7. What is cortical remapping?</div><div class="opts"><label><input type="radio" name="t5q7" value="A"> A. Creating an artificial brain.</label><label><input type="radio" name="t5q7" value="B"> B. Removing damaged brain tissue.</label><label><input type="radio" name="t5q7" value="C"> C. The brain reallocating functions to different areas after injury.</label><label><input type="radio" name="t5q7" value="D"> D. Learning a new language.</label></div><div class="fb" id="fb_t5q7"></div></div>
+        <div class="qblock"><div class="qt">8. Why is Phineas Gage considered important in neuroscience?</div><div class="opts"><label><input type="radio" name="t5q8" value="A"> A. He invented brain surgery.</label><label><input type="radio" name="t5q8" value="B"> B. His case was the first to reveal how the brain can change after injury.</label><label><input type="radio" name="t5q8" value="C"> C. He discovered electrical signals in the brain.</label><label><input type="radio" name="t5q8" value="D"> D. He created modern rehabilitation centres.</label></div><div class="fb" id="fb_t5q8"></div></div>
+        <div class="qblock"><div class="qt">9. Why can music therapy be useful during neurorehabilitation?</div><div class="opts"><label><input type="radio" name="t5q9" value="A"> A. It reduces blood pressure only.</label><label><input type="radio" name="t5q9" value="B"> B. It helps patients fall asleep.</label><label><input type="radio" name="t5q9" value="C"> C. It activates multiple areas of the brain at the same time.</label><label><input type="radio" name="t5q9" value="D"> D. It repairs damaged neurons directly.</label></div><div class="fb" id="fb_t5q9"></div></div>
+        <div class="qblock"><div class="qt">10. Which statement best reflects the video's conclusion?</div><div class="opts"><label><input type="radio" name="t5q10" value="A"> A. Neuroplasticity can completely restore every brain injury.</label><label><input type="radio" name="t5q10" value="B"> B. Brain injuries are always permanent and untreatable.</label><label><input type="radio" name="t5q10" value="C"> C. The brain is remarkably adaptable, but recovery has limits.</label><label><input type="radio" name="t5q10" value="D"> D. Personality is determined entirely by brain injuries.</label></div><div class="fb" id="fb_t5q10"></div></div>
+
+        <h4 style="color:#2b6cb0;margin:20px 0 12px;">Part 2 &mdash; Gap Filling</h4>
+        <div class="wbox"><strong>Word Box:</strong> neuroplasticity &nbsp;|&nbsp; neurones &nbsp;|&nbsp; frontal lobe &nbsp;|&nbsp; deteriorated &nbsp;|&nbsp; capricious &nbsp;|&nbsp; cortex &nbsp;|&nbsp; cortical remapping &nbsp;|&nbsp; cognitive &nbsp;|&nbsp; routine &nbsp;|&nbsp; reallocating &nbsp;|&nbsp; rehabilitation &nbsp;|&nbsp; pathways &nbsp;|&nbsp; seizures &nbsp;|&nbsp; flexible &nbsp;|&nbsp; repetition</div>
+        <div class="gsec">
+            <div class="gs">1. Billions of <input class="gi" id="t5g1" placeholder="___"> form trillions of connections inside the brain.</div>
+            <div class="gs">2. The brain's ability to reorganise itself after injury is called <input class="gi" id="t5g2" placeholder="___">.</div>
+            <div class="gs">3. The iron rod destroyed part of Gage's right <input class="gi" id="t5g3" placeholder="___">.</div>
+            <div class="gs">4. Soon after the accident, Gage's health <input class="gi" id="t5g4" placeholder="___"> so badly that his family ordered a coffin.</div>
+            <div class="gs">5. Dr Harlow described Gage as becoming rude and <input class="gi" id="t5g5" placeholder="___"> after the injury.</div>
+            <div class="gs">6. The brain's outer layer is known as the <input class="gi" id="t5g6" placeholder="___">.</div>
+            <div class="gs">7. The process of moving brain functions to another area is called <input class="gi" id="t5g7" placeholder="___">.</div>
+            <div class="gs">8. Driving a six-horse carriage required considerable <input class="gi" id="t5g8" placeholder="___"> effort.</div>
+            <div class="gs">9. Following the same daily <input class="gi" id="t5g9" placeholder="___"> helped Gage recover some of his abilities.</div>
+            <div class="gs">10. After injury, the brain may adapt by <input class="gi" id="t5g10" placeholder="___"> certain functions to different regions.</div>
+            <div class="gs">11. Modern neuro<input class="gi" id="t5g11" placeholder="___" style="width:140px;"> helps patients regain lost skills.</div>
+            <div class="gs">12. Music therapy encourages the brain to create new neural <input class="gi" id="t5g12" placeholder="___">.</div>
+            <div class="gs">13. Phineas Gage eventually died after suffering multiple <input class="gi" id="t5g13" placeholder="___">.</div>
+            <div class="gs">14. Scientists now know the brain remains remarkably <input class="gi" id="t5g14" placeholder="___"> throughout life.</div>
+            <div class="gs">15. Successful neuroplasticity depends heavily on practice and <input class="gi" id="t5g15" placeholder="___"> over time.</div>
+        </div>
+
+        <h4 style="color:#2b6cb0;margin:20px 0 12px;">Part 3 &mdash; Vocabulary Matching</h4>
+        <table class="mtbl"><thead><tr><th>#</th><th>Word</th><th>Definition</th></tr></thead><tbody>
+        <tr><td>1</td><td><strong>traumatic</strong></td><td><select class="msel" id="t5m1"><option value="">&#8212; select &#8212;</option><option value="A">A. serious enough to cause lasting damage</option><option value="B">B. to watch over and direct an activity</option><option value="C">C. a specialised nerve cell that carries information</option><option value="D">D. the ability of the brain to reorganise itself</option><option value="E">E. the front part of the brain linked to behaviour and decision-making</option><option value="F">F. to become worse</option><option value="G">G. changing suddenly and unpredictably</option><option value="H">H. relating to thinking and mental processes</option><option value="I">I. the outer layer of the brain</option><option value="J">J. moving brain functions to different areas after injury</option><option value="K">K. treatment that helps someone recover lost abilities</option><option value="L">L. a connection through which brain signals travel</option><option value="M">M. a sudden burst of abnormal electrical activity in the brain</option><option value="N">N. able to adapt or change</option><option value="O">O. something important that continues to exist after a person dies</option></select></td></tr>
+<tr><td>2</td><td><strong>supervise</strong></td><td><select class="msel" id="t5m2"><option value="">&#8212; select &#8212;</option><option value="A">A. serious enough to cause lasting damage</option><option value="B">B. to watch over and direct an activity</option><option value="C">C. a specialised nerve cell that carries information</option><option value="D">D. the ability of the brain to reorganise itself</option><option value="E">E. the front part of the brain linked to behaviour and decision-making</option><option value="F">F. to become worse</option><option value="G">G. changing suddenly and unpredictably</option><option value="H">H. relating to thinking and mental processes</option><option value="I">I. the outer layer of the brain</option><option value="J">J. moving brain functions to different areas after injury</option><option value="K">K. treatment that helps someone recover lost abilities</option><option value="L">L. a connection through which brain signals travel</option><option value="M">M. a sudden burst of abnormal electrical activity in the brain</option><option value="N">N. able to adapt or change</option><option value="O">O. something important that continues to exist after a person dies</option></select></td></tr>
+<tr><td>3</td><td><strong>neurone</strong></td><td><select class="msel" id="t5m3"><option value="">&#8212; select &#8212;</option><option value="A">A. serious enough to cause lasting damage</option><option value="B">B. to watch over and direct an activity</option><option value="C">C. a specialised nerve cell that carries information</option><option value="D">D. the ability of the brain to reorganise itself</option><option value="E">E. the front part of the brain linked to behaviour and decision-making</option><option value="F">F. to become worse</option><option value="G">G. changing suddenly and unpredictably</option><option value="H">H. relating to thinking and mental processes</option><option value="I">I. the outer layer of the brain</option><option value="J">J. moving brain functions to different areas after injury</option><option value="K">K. treatment that helps someone recover lost abilities</option><option value="L">L. a connection through which brain signals travel</option><option value="M">M. a sudden burst of abnormal electrical activity in the brain</option><option value="N">N. able to adapt or change</option><option value="O">O. something important that continues to exist after a person dies</option></select></td></tr>
+<tr><td>4</td><td><strong>neuroplasticity</strong></td><td><select class="msel" id="t5m4"><option value="">&#8212; select &#8212;</option><option value="A">A. serious enough to cause lasting damage</option><option value="B">B. to watch over and direct an activity</option><option value="C">C. a specialised nerve cell that carries information</option><option value="D">D. the ability of the brain to reorganise itself</option><option value="E">E. the front part of the brain linked to behaviour and decision-making</option><option value="F">F. to become worse</option><option value="G">G. changing suddenly and unpredictably</option><option value="H">H. relating to thinking and mental processes</option><option value="I">I. the outer layer of the brain</option><option value="J">J. moving brain functions to different areas after injury</option><option value="K">K. treatment that helps someone recover lost abilities</option><option value="L">L. a connection through which brain signals travel</option><option value="M">M. a sudden burst of abnormal electrical activity in the brain</option><option value="N">N. able to adapt or change</option><option value="O">O. something important that continues to exist after a person dies</option></select></td></tr>
+<tr><td>5</td><td><strong>frontal lobe</strong></td><td><select class="msel" id="t5m5"><option value="">&#8212; select &#8212;</option><option value="A">A. serious enough to cause lasting damage</option><option value="B">B. to watch over and direct an activity</option><option value="C">C. a specialised nerve cell that carries information</option><option value="D">D. the ability of the brain to reorganise itself</option><option value="E">E. the front part of the brain linked to behaviour and decision-making</option><option value="F">F. to become worse</option><option value="G">G. changing suddenly and unpredictably</option><option value="H">H. relating to thinking and mental processes</option><option value="I">I. the outer layer of the brain</option><option value="J">J. moving brain functions to different areas after injury</option><option value="K">K. treatment that helps someone recover lost abilities</option><option value="L">L. a connection through which brain signals travel</option><option value="M">M. a sudden burst of abnormal electrical activity in the brain</option><option value="N">N. able to adapt or change</option><option value="O">O. something important that continues to exist after a person dies</option></select></td></tr>
+<tr><td>6</td><td><strong>deteriorate</strong></td><td><select class="msel" id="t5m6"><option value="">&#8212; select &#8212;</option><option value="A">A. serious enough to cause lasting damage</option><option value="B">B. to watch over and direct an activity</option><option value="C">C. a specialised nerve cell that carries information</option><option value="D">D. the ability of the brain to reorganise itself</option><option value="E">E. the front part of the brain linked to behaviour and decision-making</option><option value="F">F. to become worse</option><option value="G">G. changing suddenly and unpredictably</option><option value="H">H. relating to thinking and mental processes</option><option value="I">I. the outer layer of the brain</option><option value="J">J. moving brain functions to different areas after injury</option><option value="K">K. treatment that helps someone recover lost abilities</option><option value="L">L. a connection through which brain signals travel</option><option value="M">M. a sudden burst of abnormal electrical activity in the brain</option><option value="N">N. able to adapt or change</option><option value="O">O. something important that continues to exist after a person dies</option></select></td></tr>
+<tr><td>7</td><td><strong>capricious</strong></td><td><select class="msel" id="t5m7"><option value="">&#8212; select &#8212;</option><option value="A">A. serious enough to cause lasting damage</option><option value="B">B. to watch over and direct an activity</option><option value="C">C. a specialised nerve cell that carries information</option><option value="D">D. the ability of the brain to reorganise itself</option><option value="E">E. the front part of the brain linked to behaviour and decision-making</option><option value="F">F. to become worse</option><option value="G">G. changing suddenly and unpredictably</option><option value="H">H. relating to thinking and mental processes</option><option value="I">I. the outer layer of the brain</option><option value="J">J. moving brain functions to different areas after injury</option><option value="K">K. treatment that helps someone recover lost abilities</option><option value="L">L. a connection through which brain signals travel</option><option value="M">M. a sudden burst of abnormal electrical activity in the brain</option><option value="N">N. able to adapt or change</option><option value="O">O. something important that continues to exist after a person dies</option></select></td></tr>
+<tr><td>8</td><td><strong>cognitive</strong></td><td><select class="msel" id="t5m8"><option value="">&#8212; select &#8212;</option><option value="A">A. serious enough to cause lasting damage</option><option value="B">B. to watch over and direct an activity</option><option value="C">C. a specialised nerve cell that carries information</option><option value="D">D. the ability of the brain to reorganise itself</option><option value="E">E. the front part of the brain linked to behaviour and decision-making</option><option value="F">F. to become worse</option><option value="G">G. changing suddenly and unpredictably</option><option value="H">H. relating to thinking and mental processes</option><option value="I">I. the outer layer of the brain</option><option value="J">J. moving brain functions to different areas after injury</option><option value="K">K. treatment that helps someone recover lost abilities</option><option value="L">L. a connection through which brain signals travel</option><option value="M">M. a sudden burst of abnormal electrical activity in the brain</option><option value="N">N. able to adapt or change</option><option value="O">O. something important that continues to exist after a person dies</option></select></td></tr>
+<tr><td>9</td><td><strong>cortex</strong></td><td><select class="msel" id="t5m9"><option value="">&#8212; select &#8212;</option><option value="A">A. serious enough to cause lasting damage</option><option value="B">B. to watch over and direct an activity</option><option value="C">C. a specialised nerve cell that carries information</option><option value="D">D. the ability of the brain to reorganise itself</option><option value="E">E. the front part of the brain linked to behaviour and decision-making</option><option value="F">F. to become worse</option><option value="G">G. changing suddenly and unpredictably</option><option value="H">H. relating to thinking and mental processes</option><option value="I">I. the outer layer of the brain</option><option value="J">J. moving brain functions to different areas after injury</option><option value="K">K. treatment that helps someone recover lost abilities</option><option value="L">L. a connection through which brain signals travel</option><option value="M">M. a sudden burst of abnormal electrical activity in the brain</option><option value="N">N. able to adapt or change</option><option value="O">O. something important that continues to exist after a person dies</option></select></td></tr>
+<tr><td>10</td><td><strong>cortical remapping</strong></td><td><select class="msel" id="t5m10"><option value="">&#8212; select &#8212;</option><option value="A">A. serious enough to cause lasting damage</option><option value="B">B. to watch over and direct an activity</option><option value="C">C. a specialised nerve cell that carries information</option><option value="D">D. the ability of the brain to reorganise itself</option><option value="E">E. the front part of the brain linked to behaviour and decision-making</option><option value="F">F. to become worse</option><option value="G">G. changing suddenly and unpredictably</option><option value="H">H. relating to thinking and mental processes</option><option value="I">I. the outer layer of the brain</option><option value="J">J. moving brain functions to different areas after injury</option><option value="K">K. treatment that helps someone recover lost abilities</option><option value="L">L. a connection through which brain signals travel</option><option value="M">M. a sudden burst of abnormal electrical activity in the brain</option><option value="N">N. able to adapt or change</option><option value="O">O. something important that continues to exist after a person dies</option></select></td></tr>
+<tr><td>11</td><td><strong>rehabilitation</strong></td><td><select class="msel" id="t5m11"><option value="">&#8212; select &#8212;</option><option value="A">A. serious enough to cause lasting damage</option><option value="B">B. to watch over and direct an activity</option><option value="C">C. a specialised nerve cell that carries information</option><option value="D">D. the ability of the brain to reorganise itself</option><option value="E">E. the front part of the brain linked to behaviour and decision-making</option><option value="F">F. to become worse</option><option value="G">G. changing suddenly and unpredictably</option><option value="H">H. relating to thinking and mental processes</option><option value="I">I. the outer layer of the brain</option><option value="J">J. moving brain functions to different areas after injury</option><option value="K">K. treatment that helps someone recover lost abilities</option><option value="L">L. a connection through which brain signals travel</option><option value="M">M. a sudden burst of abnormal electrical activity in the brain</option><option value="N">N. able to adapt or change</option><option value="O">O. something important that continues to exist after a person dies</option></select></td></tr>
+<tr><td>12</td><td><strong>neural pathway</strong></td><td><select class="msel" id="t5m12"><option value="">&#8212; select &#8212;</option><option value="A">A. serious enough to cause lasting damage</option><option value="B">B. to watch over and direct an activity</option><option value="C">C. a specialised nerve cell that carries information</option><option value="D">D. the ability of the brain to reorganise itself</option><option value="E">E. the front part of the brain linked to behaviour and decision-making</option><option value="F">F. to become worse</option><option value="G">G. changing suddenly and unpredictably</option><option value="H">H. relating to thinking and mental processes</option><option value="I">I. the outer layer of the brain</option><option value="J">J. moving brain functions to different areas after injury</option><option value="K">K. treatment that helps someone recover lost abilities</option><option value="L">L. a connection through which brain signals travel</option><option value="M">M. a sudden burst of abnormal electrical activity in the brain</option><option value="N">N. able to adapt or change</option><option value="O">O. something important that continues to exist after a person dies</option></select></td></tr>
+<tr><td>13</td><td><strong>seizure</strong></td><td><select class="msel" id="t5m13"><option value="">&#8212; select &#8212;</option><option value="A">A. serious enough to cause lasting damage</option><option value="B">B. to watch over and direct an activity</option><option value="C">C. a specialised nerve cell that carries information</option><option value="D">D. the ability of the brain to reorganise itself</option><option value="E">E. the front part of the brain linked to behaviour and decision-making</option><option value="F">F. to become worse</option><option value="G">G. changing suddenly and unpredictably</option><option value="H">H. relating to thinking and mental processes</option><option value="I">I. the outer layer of the brain</option><option value="J">J. moving brain functions to different areas after injury</option><option value="K">K. treatment that helps someone recover lost abilities</option><option value="L">L. a connection through which brain signals travel</option><option value="M">M. a sudden burst of abnormal electrical activity in the brain</option><option value="N">N. able to adapt or change</option><option value="O">O. something important that continues to exist after a person dies</option></select></td></tr>
+<tr><td>14</td><td><strong>flexible</strong></td><td><select class="msel" id="t5m14"><option value="">&#8212; select &#8212;</option><option value="A">A. serious enough to cause lasting damage</option><option value="B">B. to watch over and direct an activity</option><option value="C">C. a specialised nerve cell that carries information</option><option value="D">D. the ability of the brain to reorganise itself</option><option value="E">E. the front part of the brain linked to behaviour and decision-making</option><option value="F">F. to become worse</option><option value="G">G. changing suddenly and unpredictably</option><option value="H">H. relating to thinking and mental processes</option><option value="I">I. the outer layer of the brain</option><option value="J">J. moving brain functions to different areas after injury</option><option value="K">K. treatment that helps someone recover lost abilities</option><option value="L">L. a connection through which brain signals travel</option><option value="M">M. a sudden burst of abnormal electrical activity in the brain</option><option value="N">N. able to adapt or change</option><option value="O">O. something important that continues to exist after a person dies</option></select></td></tr>
+<tr><td>15</td><td><strong>legacy</strong></td><td><select class="msel" id="t5m15"><option value="">&#8212; select &#8212;</option><option value="A">A. serious enough to cause lasting damage</option><option value="B">B. to watch over and direct an activity</option><option value="C">C. a specialised nerve cell that carries information</option><option value="D">D. the ability of the brain to reorganise itself</option><option value="E">E. the front part of the brain linked to behaviour and decision-making</option><option value="F">F. to become worse</option><option value="G">G. changing suddenly and unpredictably</option><option value="H">H. relating to thinking and mental processes</option><option value="I">I. the outer layer of the brain</option><option value="J">J. moving brain functions to different areas after injury</option><option value="K">K. treatment that helps someone recover lost abilities</option><option value="L">L. a connection through which brain signals travel</option><option value="M">M. a sudden burst of abnormal electrical activity in the brain</option><option value="N">N. able to adapt or change</option><option value="O">O. something important that continues to exist after a person dies</option></select></td></tr>
+</tbody></table>
+        <div class="brow"><button class="prv" onclick="goToTask(4)">&larr; Previous</button><button class="chk" id="check5" onclick="checkTask5()" disabled>Check Answers</button><button class="nxt" id="next5" disabled onclick="goToTask(6)">Next Task &rarr;</button></div>
+        <button class="sab" id="showAns5" onclick="toggleAns('ans5')">&#9660; Show Answers</button>
+        <div class="apan" id="ans5">
+            <p><strong>MCQ:</strong> 1-C, 2-B, 3-C, 4-B, 5-C, 6-B, 7-C, 8-B, 9-C, 10-C</p>
+            <p><strong>Gap Fill:</strong> 1-neurones, 2-neuroplasticity, 3-frontal lobe, 4-deteriorated, 5-capricious, 6-cortex, 7-cortical remapping, 8-cognitive, 9-routine, 10-reallocating, 11-rehabilitation, 12-pathways, 13-seizures, 14-flexible, 15-repetition</p>
+            <p><strong>Matching:</strong> 1-C, 2-D, 3-E, 4-A, 5-B, 6-F, 7-G, 8-H, 9-I, 10-J, 11-K, 12-L, 13-M, 14-N, 15-O</p>
+        </div>
+    </div>
+    <!-- TASK 6 -->
+    <div class="card" id="task6">
+        <div class="thdr"><div class="tnum">6</div><div><div class="ttitle">Dictation + Comprehension</div><div class="tsub">Listen, complete the gaps, then answer questions</div></div></div>
+        <div class="aplayer"><p>&#127911; Reading and the Brain &mdash; BBC Learning English</p><audio controls src="mind.mp3"></audio></div>
+        <h4 style="color:#2b6cb0;margin-bottom:12px;">Part 1 &mdash; Dictation (ONE WORD ONLY)</h4>
+        <div class="gsec"><div class="gs"><strong>1.</strong> &hellip;you can find all this episode's vocabulary on our <input class="gi" id="d1" placeholder="(1)"></div>
+<div class="gs"><strong>2.</strong> &hellip;I just feel like I don't have the <input class="gi" id="d2" placeholder="(2)"></div>
+<div class="gs"><strong>3.</strong> &hellip;I feel like it helps me <input class="gi" id="d3" placeholder="(3)"></div>
+<div class="gs"><strong>4.</strong> &hellip;about how reading can change our <input class="gi" id="d4" placeholder="(4)"></div>
+<div class="gs"><strong>5.</strong> &hellip;or c) 13 <input class="gi" id="d5" placeholder="(5)"></div>
+<div class="gs"><strong>6.</strong> &hellip;I'm going to go with b) 1.3 <input class="gi" id="d6" placeholder="(6)"></div>
+<div class="gs"><strong>7.</strong> &hellip;We're born with the <input class="gi" id="d7" placeholder="(7)"></div>
+<div class="gs"><strong>8.</strong> &hellip;something you were born with or that comes from <input class="gi" id="d8" placeholder="(8)"></div>
+<div class="gs"><strong>9.</strong> &hellip;our vocal cords to produce <input class="gi" id="d9" placeholder="(9)"></div>
+<div class="gs"><strong>10.</strong> &hellip;Our brain hasn't had enough time to develop a dedicated <input class="gi" id="d10" placeholder="(10)"></div>
+<div class="gs"><strong>11.</strong> &hellip;vision, auditory processing, language, attention and <input class="gi" id="d11" placeholder="(11)"></div>
+<div class="gs"><strong>12.</strong> &hellip;from brain activity to brain structure and brain <input class="gi" id="d12" placeholder="(12)"></div>
+<div class="gs"><strong>13.</strong> &hellip;we change our brains and we change who we <input class="gi" id="d13" placeholder="(13)"></div>
+<div class="gs"><strong>14.</strong> &hellip;Dedicated means designed and used for one particular <input class="gi" id="d14" placeholder="(14)"></div>
+<div class="gs"><strong>15.</strong> &hellip;When we learn to read, we <input class="gi" id="d15" placeholder="(15)"></div>
+<div class="gs"><strong>16.</strong> &hellip;Co-opt means to include something, often against their <input class="gi" id="d16" placeholder="(16)"></div>
+<div class="gs"><strong>17.</strong> &hellip;Chinese characters use symbols instead of letters of the <input class="gi" id="d17" placeholder="(17)"></div>
+<div class="gs"><strong>18.</strong> &hellip;he lost the ability to read <input class="gi" id="d18" placeholder="(18)"></div>
+<div class="gs"><strong>19.</strong> &hellip;more visual memory and visual processing of those beautifully intricate <input class="gi" id="d19" placeholder="(19)"></div>
+<div class="gs"><strong>20.</strong> &hellip;A circuit is a system of <input class="gi" id="d20" placeholder="(20)"></div>
+<div class="gs"><strong>21.</strong> &hellip;inevitably mean more visual areas of the brain are <input class="gi" id="d21" placeholder="(21)"></div>
+<div class="gs"><strong>22.</strong> &hellip;in a way that cannot be stopped or <input class="gi" id="d22" placeholder="(22)"></div>
+<div class="gs"><strong>23.</strong> &hellip;Maryanne describes the symbolic Chinese characters as beautifully <input class="gi" id="d23" placeholder="(23)"></div>
+<div class="gs"><strong>24.</strong> &hellip;If something is intricate, it has lots of <input class="gi" id="d24" placeholder="(24)"></div>
+<div class="gs"><strong>25.</strong> &hellip;I said 1.3 <input class="gi" id="d25" placeholder="(25)"></div>
+<div class="gs"><strong>26.</strong> &hellip;And you were <input class="gi" id="d26" placeholder="(26)"></div>
+<div class="gs"><strong>27.</strong> &hellip;one sentence with over <input class="gi" id="d27" placeholder="(27)"></div>
+<div class="gs"><strong>28.</strong> &hellip;something you were born with or that comes from <input class="gi" id="d28" placeholder="(28)"></div>
+<div class="gs"><strong>29.</strong> &hellip;A circuit is a system of <input class="gi" id="d29" placeholder="(29)"></div>
+<div class="gs"><strong>30.</strong> &hellip;intricate describes something with lots of <input class="gi" id="d30" placeholder="(30)"></div>
+</div>
+        <h4 style="color:#2b6cb0;margin:20px 0 12px;">Part 2 &mdash; Comprehension Questions</h4>
+        <div class="qblock"><div class="qt">1. According to the programme, why isn't reading considered natural?</div><div class="opts"><label><input type="radio" name="t6q1" value="A"> A. Because only adults can learn it.</label><label><input type="radio" name="t6q1" value="B"> B. Because humans are born with a reading centre in the brain.</label><label><input type="radio" name="t6q1" value="C"> C. Because the brain must develop reading by using existing brain systems.</label><label><input type="radio" name="t6q1" value="D"> D. Because reading was invented recently.</label></div><div class="fb" id="fb_t6q1"></div></div>
+        <div class="qblock"><div class="qt">2. What does Rebecca Gotlieb mean by saying we co-opt parts of the brain?</div><div class="opts"><label><input type="radio" name="t6q2" value="A"> A. We create a completely new brain.</label><label><input type="radio" name="t6q2" value="B"> B. We borrow existing brain areas for a new purpose.</label><label><input type="radio" name="t6q2" value="C"> C. We stop using our memory.</label><label><input type="radio" name="t6q2" value="D"> D. We lose the ability to speak.</label></div><div class="fb" id="fb_t6q2"></div></div>
+        <div class="qblock"><div class="qt">3. Why could the bilingual man still read English after his stroke?</div><div class="opts"><label><input type="radio" name="t6q3" value="A"> A. English is easier than Chinese.</label><label><input type="radio" name="t6q3" value="B"> B. Reading Chinese and English relies on different brain networks.</label><label><input type="radio" name="t6q3" value="C"> C. He forgot Chinese before the stroke.</label><label><input type="radio" name="t6q3" value="D"> D. He only spoke English at home.</label></div><div class="fb" id="fb_t6q3"></div></div>
+        <div class="qblock"><div class="qt">4. What does the word "dedicated" mean in the programme?</div><div class="opts"><label><input type="radio" name="t6q4" value="A"> A. Expensive</label><label><input type="radio" name="t6q4" value="B"> B. Designed and used for one specific purpose</label><label><input type="radio" name="t6q4" value="C"> C. Difficult to understand</label><label><input type="radio" name="t6q4" value="D"> D. Very old</label></div><div class="fb" id="fb_t6q4"></div></div>
+        <div class="qblock"><div class="qt">5. What does the programme suggest happens when we read deeply?</div><div class="opts"><label><input type="radio" name="t6q5" value="A"> A. We only improve our vocabulary.</label><label><input type="radio" name="t6q5" value="B"> B. Our eyesight becomes stronger.</label><label><input type="radio" name="t6q5" value="C"> C. Reading changes our brain structure and even who we are.</label><label><input type="radio" name="t6q5" value="D"> D. We remember everything forever.</label></div><div class="fb" id="fb_t6q5"></div></div>
+        <div class="brow"><button class="prv" onclick="goToTask(5)">&larr; Previous</button><button class="chk" id="check6" onclick="checkTask6()" disabled>Check Answers</button><button class="nxt" id="next6" disabled onclick="goToTask(7)">Next Task &rarr;</button></div>
+        <button class="sab" id="showAns6" onclick="toggleAns('ans6')">&#9660; Show Answers</button>
+        <div class="apan" id="ans6">
+            <p><strong>Dictation:</strong> 1-website, 2-time, 3-relax, 4-brains, 5-million, 6-million, 7-potential, 8-nature, 9-sounds, 10-reading, 11-affect, 12-connectivity, 13-are, 14-purpose, 15-co-opt, 16-will, 17-alphabet, 18-Chinese, 19-symbols, 20-connections, 21-developed, 22-avoided, 23-intricate, 24-detail, 25-million, 26-correct, 27-900, 28-nature, 29-connections, 30-detail</p>
+            <p><strong>MCQ:</strong> 1-C, 2-B, 3-B, 4-B, 5-C</p>
+        </div>
+    </div>
+
+    <!-- TASK 7 -->
+    <div class="card" id="task7">
+        <div class="thdr"><div class="tnum">7</div><div><div class="ttitle">Practice Listening</div><div class="tsub">Full IELTS-style listening test</div></div></div>
+        <a class="hlink" href="Listening (30).html" target="_blank">&#127911; Open Practice Listening</a>
+        <div class="brow"><button class="prv" onclick="goToTask(6)">&larr; Previous</button><button class="nxt" onclick="finishDay()">Finish Day 1 &#10003;</button></div>
+    </div>
+
+    <!-- COMPLETION -->
+    <div class="done" id="donescreen">
+        <div class="ico">&#127881;</div>
+        <h2>Day 1 Complete!</h2>
+        <p>Great work! You've completed all tasks for Week 7, Day 1.</p>
+        <div style="margin:30px 0;text-align:left;">
+            <h3 style="color:#2b6cb0;border-bottom:2px solid #2b6cb0;padding-bottom:10px;margin-bottom:15px;">&#128203; Review Your Work</h3>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:15px;">
+                <div onclick="reviewTask(1)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#2b6cb0;margin-bottom:5px;">Task 1</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Mini Reading</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(2)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#2b6cb0;margin-bottom:5px;">Task 2</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Article Reading</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(3)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#2b6cb0;margin-bottom:5px;">Task 3</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Reading</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(4)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#2b6cb0;margin-bottom:5px;">Task 4</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Vocabulary</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(5)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#2b6cb0;margin-bottom:5px;">Task 5</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Video + Vocab</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(6)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#2b6cb0;margin-bottom:5px;">Task 6</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Dictation + MCQ</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(7)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#2b6cb0;margin-bottom:5px;">Task 7</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Listening</div><div style="font-size:1.4rem;">&#9989;</div></div>
+            </div>
+        </div>
+        <a href="/student-dashboard.html" class="dbbtn">&larr; Back to Dashboard</a>
+    </div>
+</div>
+<script>
+const SUPABASE_URL='https://nbfceuhuauizyucugejr.supabase.co';
+const SUPABASE_KEY='sb_publishable_0mFIGJkA_DKZfUiDAWFdrA_nXt0hF6H';
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const WEEK=7,DAY=1,TOTAL=7;
+let sid=null,cur=1,t0=Date.now(),stout=null;
+
+const dictAns=['website','time','relax','brains','million','million','potential','nature','sounds','reading','affect','connectivity','are','purpose','co-opt','will','alphabet','Chinese','symbols','connections','developed','avoided','intricate','detail','million','correct','900','nature','connections','detail'];
+
+const vocab=[
+{w:"1. Behavioural science (n)",d:"The study of human actions and decision-making"},
+{w:"2. Unconscious (adj)",d:"Not aware; happening without deliberate thought"},
+{w:"3. Deliberation (n)",d:"Long and careful consideration of something"},
+{w:"4. Heuristic (n)",d:"A mental shortcut used to make quick decisions"},
+{w:"5. Cognitive bias (n)",d:"A systematic error in thinking that affects decisions"},
+{w:"6. Confirmation bias (n)",d:"The tendency to favour information that confirms existing beliefs"},
+{w:"7. Availability heuristic (n)",d:"Judging likelihood based on how easily examples come to mind"},
+{w:"8. System 1 (n)",d:"Fast, automatic and intuitive thinking"},
+{w:"9. System 2 (n)",d:"Slow, deliberate and effortful thinking"},
+{w:"10. Social conformity (n)",d:"Changing behaviour to match those around you"},
+{w:"11. Authority (n)",d:"The power to give orders or make decisions"},
+{w:"12. Social proof (n)",d:"Adopting behaviours because others are doing them"},
+{w:"13. Fundamental attribution error (n)",d:"Blaming others' failures on character rather than situation"},
+{w:"14. Cognitive dissonance (n)",d:"Discomfort from holding conflicting beliefs"},
+{w:"15. Neuroplasticity (n)",d:"The brain's ability to reorganise and form new connections"},
+{w:"16. Neurone (n)",d:"A specialised cell that carries signals in the nervous system"},
+{w:"17. Frontal lobe (n)",d:"The front part of the brain linked to behaviour and decisions"},
+{w:"18. Cortex (n)",d:"The outer layer of the brain"},
+{w:"19. Cortical remapping (n)",d:"Moving brain functions to different areas after injury"},
+{w:"20. Rehabilitation (n)",d:"Treatment to help someone recover lost abilities"},
+{w:"21. Neural pathway (n)",d:"A connection through which brain signals travel"},
+{w:"22. Seizure (n)",d:"A sudden burst of abnormal electrical activity in the brain"},
+{w:"23. Capricious (adj)",d:"Changing suddenly and unpredictably"},
+{w:"24. Deteriorate (v)",d:"To become worse over time"},
+{w:"25. Cognitive (adj)",d:"Relating to thinking and mental processes"},
+{w:"26. Traumatic (adj)",d:"Serious enough to cause lasting psychological damage"},
+{w:"27. Repetition (n)",d:"The action of doing something again and again"},
+{w:"28. Pattern recognition (n)",d:"The ability to identify recurring structures or sequences"},
+{w:"29. Instinct (n)",d:"A natural, automatic response or behaviour"},
+{w:"30. Polarisation (n)",d:"The division of people into opposing groups"},
+{w:"31. Stimulus (n)",d:"Something that causes a reaction or response"},
+{w:"32. Intuitive (adj)",d:"Based on feeling rather than conscious reasoning"},
+{w:"33. Dedicated (adj)",d:"Designed and used for one particular purpose"},
+{w:"34. Co-opt (v)",d:"To include something for a new purpose"},
+{w:"35. Circuit (n)",d:"A system of connected pathways"},
+{w:"36. Intricate (adj)",d:"Having many complex details"},
+{w:"37. Inevitable (adj)",d:"Certain to happen; unable to be prevented"},
+{w:"38. Bilingual (adj)",d:"Able to speak two languages fluently"},
+{w:"39. Auditory (adj)",d:"Relating to the sense of hearing"},
+{w:"40. Connectivity (n)",d:"The state of being connected; how brain areas communicate"},
+{w:"41. Influence (n)",d:"The power to have an effect on someone or something"},
+{w:"42. Assumption (n)",d:"Something accepted as true without evidence"},
+{w:"43. Framework (n)",d:"A system of principles used to understand something"},
+{w:"44. Statistical (adj)",d:"Relating to the collection and interpretation of data"},
+{w:"45. Probability (n)",d:"The likelihood that something will happen"},
+{w:"46. Obedience (n)",d:"Compliance with instructions from an authority"},
+{w:"47. Identity (n)",d:"The characteristics that define who someone is"},
+{w:"48. Perception (n)",d:"The way someone understands or interprets something"},
+{w:"49. Subconscious (adj)",d:"Operating below the level of conscious awareness"},
+{w:"50. Legacy (n)",d:"Something important that continues to exist after a person dies"},
+];
+
+async function initStu(){
+    const p=new URLSearchParams(window.location.search);
+    if(p.get("teacher")==="true"){sid="teacher-preview";return;}
+    try{
+        const u=localStorage.getItem("user");
+        if(!u){window.location.href="/login.html";return;}
+        const pu=JSON.parse(u);
+        const{data,error}=await db.from("students").select("*").eq("username",pu.username).single();
+        if(error||!data)return;
+        sid=data.id;
+    }catch(e){}
+}
+
+function buildVocab(){
+    document.getElementById("vgrid").innerHTML=vocab.map(v=>`<div class="vi"><div class="vw">${v.w}</div><div class="vd">${v.d}</div></div>`).join("");
+}
+
+async function startDay(){
+    document.getElementById("splash").style.display="none";
+    document.getElementById("mc").style.display="block";
+    buildVocab();
+    await initStu();
+    await restoreProgress();
+    setupLive();
+}
+
+function goToTask(n){
+    document.getElementById("task"+cur).classList.remove("active");
+    cur=n;
+    document.getElementById("task"+n).classList.add("active");
+    document.getElementById("task"+n).scrollIntoView({behavior:"smooth",block:"start"});
+    updProg(n);t0=Date.now();saveResume(n);
+}
+function updProg(n){document.getElementById("pfill").style.width=Math.round(((n-1)/TOTAL)*100)+"%";document.getElementById("plabel").textContent="Task "+n+" of "+TOTAL;}
+function showSavi(){const e=document.getElementById("savi");e.classList.add("show");setTimeout(()=>e.classList.remove("show"),2000);}
+async function saveResume(n){if(!sid||sid==="teacher-preview")return;try{await db.from("student_resume").upsert({student_id:sid,week:WEEK,day:DAY,last_task:n,updated_at:new Date().toISOString()},{onConflict:"student_id"});}catch(e){}}
+function scheduleSave(){clearTimeout(stout);stout=setTimeout(()=>{localStorage.setItem("w"+WEEK+"d"+DAY+"_ans",JSON.stringify(gatherAll()));showSavi();},800);}
+
+function gatherAll(){
+    const d={};
+    document.querySelectorAll(".gi").forEach(el=>{if(el.id)d[el.id]=el.value;});
+    ["t5q1","t5q2","t5q3","t5q4","t5q5","t5q6","t5q7","t5q8","t5q9","t5q10","t6q1","t6q2","t6q3","t6q4","t6q5"].forEach(n=>{const s=document.querySelector("input[name='"+n+"']:checked");if(s)d[n]=s.value;});
+    document.querySelectorAll("select").forEach(el=>{if(el.id)d[el.id]=el.value;});
+    return d;
+}
+
+async function restoreProgress(){
+    try{
+        const sv=localStorage.getItem("w"+WEEK+"d"+DAY+"_ans");
+        if(sv){
+            const d=JSON.parse(sv);
+            Object.entries(d).forEach(([id,val])=>{const el=document.getElementById(id);if(el&&el.tagName==="INPUT")el.value=val;});
+            ["t5q1","t5q2","t5q3","t5q4","t5q5","t5q6","t5q7","t5q8","t5q9","t5q10","t6q1","t6q2","t6q3","t6q4","t6q5"].forEach(n=>{const val=d[n];if(val){const r=document.querySelector("input[name='"+n+"'][value='"+val+"']");if(r)r.checked=true;}});
+            Object.entries(d).forEach(([id,val])=>{const el=document.getElementById(id);if(el&&el.tagName==="SELECT")el.value=val;});
+        }
+        if(sid&&sid!=="teacher-preview"){
+            const{data:td}=await db.from("task_progress").select("task_number,status").eq("student_id",sid).eq("week",WEEK).eq("day",DAY);
+            if(td&&td.filter(t=>t.status==="completed").length>=TOTAL){
+                document.getElementById("task1").classList.remove("active");
+                document.getElementById("donescreen").style.display="block";
+                updProg(TOTAL);valAll();makeRO();return;
+            }
+            const{data:res}=await db.from("student_resume").select("last_task").eq("student_id",sid).eq("week",WEEK).eq("day",DAY).single();
+            if(res&&res.last_task>1){document.getElementById("task1").classList.remove("active");cur=res.last_task;document.getElementById("task"+cur).classList.add("active");updProg(cur);}
+        }
+        valAll();
+    }catch(e){}
+}
+
+function makeRO(){
+    document.querySelectorAll(".gi").forEach(el=>{el.disabled=true;el.style.opacity="0.85";});
+    document.querySelectorAll("input[type=radio]").forEach(el=>el.disabled=true);
+    document.querySelectorAll("select").forEach(el=>el.disabled=true);
+    document.querySelectorAll(".chk").forEach(el=>el.style.display="none");
+    document.querySelectorAll(".nxt").forEach(el=>el.style.display="none");
+    document.querySelectorAll(".prv").forEach(el=>el.style.display="none");
+    document.querySelectorAll(".sab").forEach(el=>el.style.display="inline-block");
+}
+
+function setupLive(){
+    ["t1q1","t1q2","t1q3","t1q4","t1q5","t1q6","t1q7"].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener("input",()=>{valT1();scheduleSave();});});
+    for(let i=1;i<=10;i++){const el=document.getElementById("t4v"+i);if(el)el.addEventListener("change",()=>{valT4();scheduleSave();});}
+    ["t5q1","t5q2","t5q3","t5q4","t5q5","t5q6","t5q7","t5q8","t5q9","t5q10"].forEach(n=>{document.querySelectorAll("input[name='"+n+"']").forEach(el=>el.addEventListener("change",()=>{valT5();scheduleSave();}));});
+    for(let i=1;i<=15;i++){const el=document.getElementById("t5g"+i);if(el)el.addEventListener("input",()=>{valT5();scheduleSave();});}
+    for(let i=1;i<=15;i++){const el=document.getElementById("t5m"+i);if(el)el.addEventListener("change",()=>{valT5();scheduleSave();});}
+    ["t6q1","t6q2","t6q3","t6q4","t6q5"].forEach(n=>{document.querySelectorAll("input[name='"+n+"']").forEach(el=>el.addEventListener("change",()=>{valT6();scheduleSave();}));});
+    for(let i=1;i<=30;i++){const el=document.getElementById("d"+i);if(el)el.addEventListener("input",()=>{valT6();scheduleSave();});}
+}
+
+function valAll(){valT1();valT4();valT5();valT6();}
+function valT1(){document.getElementById("check1").disabled=!["t1q1","t1q2","t1q3","t1q4","t1q5","t1q6","t1q7"].every(id=>document.getElementById(id)?.value.trim());}
+function valT4(){document.getElementById("check4").disabled=!Array.from({length:10},(_,i)=>document.getElementById("t4v"+(i+1))?.value).every(Boolean);}
+function valT5(){
+    const mc=["t5q1","t5q2","t5q3","t5q4","t5q5","t5q6","t5q7","t5q8","t5q9","t5q10"].every(n=>document.querySelector("input[name='"+n+"']:checked"));
+    const gf=Array.from({length:15},(_,i)=>document.getElementById("t5g"+(i+1))?.value.trim()).every(Boolean);
+    const mt=Array.from({length:15},(_,i)=>document.getElementById("t5m"+(i+1))?.value).every(Boolean);
+    document.getElementById("check5").disabled=!(mc&&gf&&mt);
+}
+function valT6(){
+    const dc=Array.from({length:30},(_,i)=>document.getElementById("d"+(i+1))?.value.trim()).every(Boolean);
+    const mc=["t6q1","t6q2","t6q3","t6q4","t6q5"].every(n=>document.querySelector("input[name='"+n+"']:checked"));
+    document.getElementById("check6").disabled=!(dc&&mc);
+}
+
+const t1ok={t1q1:["unconscious processes","unconscious"],t1q2:["pattern recognition","emotional association"],t1q3:["novel or demanding problems","demanding problems"],t1q4:["cognitive biases","biases"],t1q5:["confirm what we believe","seek out","what we believe"],t1q6:["how easily examples","come to mind"],t1q7:["conform","social influence","they conform"]};
+const t4ok={t4v1:"unconscious",t4v2:"System 1",t4v3:"confirmation bias",t4v4:"availability heuristic",t4v5:"social conformity",t4v6:"heuristic",t4v7:"neuroplasticity",t4v8:"fundamental attribution error",t4v9:"authority",t4v10:"social proof"};
+const t5mcq={t5q1:"C",t5q2:"B",t5q3:"C",t5q4:"B",t5q5:"C",t5q6:"B",t5q7:"C",t5q8:"B",t5q9:"C",t5q10:"C"};
+const t5gap={t5g1:"neurones",t5g2:"neuroplasticity",t5g3:"frontal lobe",t5g4:"deteriorated",t5g5:"capricious",t5g6:"cortex",t5g7:"cortical remapping",t5g8:"cognitive",t5g9:"routine",t5g10:"reallocating",t5g11:"rehabilitation",t5g12:"pathways",t5g13:"seizures",t5g14:"flexible",t5g15:"repetition"};
+const t5mat={t5m1:"C",t5m2:"D",t5m3:"E",t5m4:"A",t5m5:"B",t5m6:"F",t5m7:"G",t5m8:"H",t5m9:"I",t5m10:"J",t5m11:"K",t5m12:"L",t5m13:"M",t5m14:"N",t5m15:"O"};
+const t6mcq={t6q1:"C",t6q2:"B",t6q3:"B",t6q4:"B",t6q5:"C"};
+
+function checkTask1(){
+    const ans=[];
+    Object.entries(t1ok).forEach(([id,opts])=>{
+        const inp=document.getElementById(id);
+        const val=inp.value.trim().toLowerCase();
+        const ok=opts.some(o=>val.includes(o.toLowerCase()));
+        inp.classList.toggle("correct",ok);inp.classList.toggle("incorrect",!ok);
+        ans.push({question_id:id,question_type:"gap_fill",student_answer:inp.value.trim(),correct_answer:opts[0],is_correct:ok});
+    });
+    document.getElementById("showAns1").style.display="inline-block";
+    document.getElementById("next1").disabled=false;
+    saveAnswers(1,ans);saveTP(1);
+}
+
+function checkTask4(){
+    const ans=[];
+    Object.entries(t4ok).forEach(([id,correct])=>{
+        const sel=document.getElementById(id);
+        const ok=sel.value===correct;
+        sel.classList.toggle("correct",ok);sel.classList.toggle("incorrect",!ok);
+        ans.push({question_id:id,question_type:"matching",student_answer:sel.value,correct_answer:correct,is_correct:ok});
+    });
+    document.getElementById("showAns4").style.display="inline-block";
+    document.getElementById("next4").disabled=false;
+    saveAnswers(4,ans);saveTP(4);
+}
+
+function checkTask5(){
+    const ans=[];
+    Object.entries(t5mcq).forEach(([n,correct])=>{
+        const sel=document.querySelector("input[name='"+n+"']:checked");
+        const fb=document.getElementById("fb_"+n);
+        if(!sel)return;
+        const ok=sel.value===correct;
+        fb.textContent=ok?"✅ Correct!":"❌ Incorrect — correct answer: "+correct;
+        fb.className="fb "+(ok?"correct":"incorrect");
+        ans.push({question_id:n,question_type:"mcq",student_answer:sel.value,correct_answer:correct,is_correct:ok});
+    });
+    Object.entries(t5gap).forEach(([id,correct])=>{
+        const inp=document.getElementById(id);
+        const ok=inp.value.trim().toLowerCase()===correct.toLowerCase();
+        inp.classList.toggle("correct",ok);inp.classList.toggle("incorrect",!ok);
+        ans.push({question_id:id,question_type:"gap_fill",student_answer:inp.value.trim(),correct_answer:correct,is_correct:ok});
+    });
+    Object.entries(t5mat).forEach(([id,correct])=>{
+        const sel=document.getElementById(id);
+        const ok=sel.value===correct;
+        sel.classList.toggle("correct",ok);sel.classList.toggle("incorrect",!ok);
+        ans.push({question_id:id,question_type:"matching",student_answer:sel.value,correct_answer:correct,is_correct:ok});
+    });
+    document.getElementById("showAns5").style.display="inline-block";
+    document.getElementById("next5").disabled=false;
+    saveAnswers(5,ans);saveTP(5);
+}
+
+function checkTask6(){
+    const ans=[];
+    for(let i=1;i<=30;i++){
+        const inp=document.getElementById("d"+i);
+        const correct=dictAns[i-1];
+        const ok=inp.value.trim().toLowerCase()===correct.toLowerCase();
+        inp.classList.toggle("correct",ok);inp.classList.toggle("incorrect",!ok);
+        ans.push({question_id:"d"+i,question_type:"gap_fill",student_answer:inp.value.trim(),correct_answer:correct,is_correct:ok});
+    }
+    Object.entries(t6mcq).forEach(([n,correct])=>{
+        const sel=document.querySelector("input[name='"+n+"']:checked");
+        const fb=document.getElementById("fb_"+n);
+        if(!sel)return;
+        const ok=sel.value===correct;
+        fb.textContent=ok?"✅ Correct!":"❌ Incorrect — correct answer: "+correct;
+        fb.className="fb "+(ok?"correct":"incorrect");
+        ans.push({question_id:n,question_type:"mcq",student_answer:sel.value,correct_answer:correct,is_correct:ok});
+    });
+    document.getElementById("showAns6").style.display="inline-block";
+    document.getElementById("next6").disabled=false;
+    saveAnswers(6,ans);saveTP(6);
+}
+
+async function saveAnswers(tnum,ans){
+    if(!sid||sid==="teacher-preview")return;
+    try{
+        const rows=ans.map(a=>({student_id:sid,week:WEEK,day:DAY,task_number:tnum,question_id:a.question_id,question_type:a.question_type,student_answer:a.student_answer,correct_answer:a.correct_answer,is_correct:a.is_correct,answered_at:new Date().toISOString()}));
+        await db.from("student_answers").upsert(rows,{onConflict:"student_id,week,day,task_number,question_id"});
+    }catch(e){}
+}
+async function saveTP(n){
+    if(!sid||sid==="teacher-preview")return;
+    try{await db.from("task_progress").upsert({student_id:sid,week:WEEK,day:DAY,task_number:n,status:"completed",time_completed:new Date().toISOString(),time_spent_seconds:Math.round((Date.now()-t0)/1000)},{onConflict:"student_id,week,day,task_number"});}catch(e){}
+}
+
+async function finishDay(){
+    document.getElementById("task7").classList.remove("active");
+    document.getElementById("donescreen").style.display="block";
+    document.getElementById("donescreen").scrollIntoView({behavior:"smooth"});
+    localStorage.removeItem("w"+WEEK+"d"+DAY+"_ans");
+    for(let i=1;i<=TOTAL;i++)await saveTP(i);
+    if(sid&&sid!=="teacher-preview")await db.from("student_resume").delete().eq("student_id",sid);
+    makeRO();
+}
+
+function reviewTask(n){
+    document.getElementById("donescreen").style.display="none";
+    cur=n;
+    document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));
+    document.getElementById("task"+n).classList.add("active");
+    document.getElementById("task"+n).scrollIntoView({behavior:"smooth",block:"start"});
+    const ex=document.getElementById("btr");
+    if(!ex){
+        const b=document.createElement("button");b.id="btr";b.textContent="🏆 Back to Results";
+        b.style.cssText="position:fixed;bottom:20px;right:20px;background:#4299e1;color:white;border:none;padding:12px 22px;border-radius:50px;cursor:pointer;font-weight:bold;font-size:0.95rem;z-index:9998;";
+        b.onclick=()=>{b.remove();document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));document.getElementById("donescreen").style.display="block";document.getElementById("donescreen").scrollIntoView({behavior:"smooth"});};
+        document.body.appendChild(b);
+    }
+}
+
+function toggleVocab(){document.getElementById("vbody").classList.toggle("open");document.getElementById("varr").classList.toggle("open");}
+function toggleAns(id){const d=document.getElementById(id);const b=d.previousElementSibling;d.style.display=d.style.display==="block"?"none":"block";b.textContent=d.style.display==="block"?"▲ Hide Answers":"▼ Show Answers";}
+</script>
+</body>
+</html>
