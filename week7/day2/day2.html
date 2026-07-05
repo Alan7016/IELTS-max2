@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEEK 7 - DAY 2 (Psychology)</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Segoe UI", sans-serif; background: #ebf8ff; color: #333; }
+        #splash { position: fixed; inset: 0; background: linear-gradient(135deg, #4299e1, #2b6cb0); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; color: white; text-align: center; padding: 20px; }
+        #splash h1 { font-size: 3rem; margin-bottom: 10px; }
+        #splash h2 { font-size: 2rem; margin-bottom: 10px; opacity: 0.9; }
+        #splash p { font-size: 1.2rem; margin-bottom: 40px; opacity: 0.8; }
+        .splash-btn { background: white; color: #2b6cb0; border: none; padding: 18px 60px; font-size: 1.4rem; font-weight: bold; border-radius: 50px; cursor: pointer; }
+        .wrap { max-width: 900px; margin: 0 auto; padding: 20px; }
+        .hdr { background: linear-gradient(135deg, #4299e1, #2b6cb0); color: white; padding: 25px 30px; border-radius: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; }
+        .hdr h1 { font-size: 1.6rem; }
+        .hdr .topic { opacity: 0.85; font-size: 1rem; margin-top: 4px; }
+        .back-btn { background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 10px 20px; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 0.9rem; }
+        .plabel { text-align: center; color: #2b6cb0; font-size: 0.85rem; margin-bottom: 8px; font-weight: 600; }
+        .pwrap { background: #bee3f8; border-radius: 20px; height: 10px; margin-bottom: 20px; overflow: hidden; }
+        .pfill { background: linear-gradient(90deg, #4299e1, #2b6cb0); height: 100%; border-radius: 20px; transition: width 0.5s; }
+        .vsec { background: white; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-left: 5px solid #4299e1; overflow: hidden; }
+        .vtog { width: 100%; background: none; border: none; cursor: pointer; padding: 18px 25px; display: flex; align-items: center; justify-content: space-between; }
+        .vtog h3 { color: #2b6cb0; font-size: 1.1rem; margin: 0; }
+        .vcount { background: #4299e1; color: white; font-size: 0.75rem; font-weight: bold; padding: 3px 10px; border-radius: 20px; }
+        .varr { color: #2b6cb0; font-size: 1rem; transition: transform 0.3s; }
+        .varr.open { transform: rotate(180deg); }
+        .vbody { display: none; padding: 0 25px 20px; }
+        .vbody.open { display: block; }
+        .vgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+        .vi { background: #ebf8ff; padding: 10px 14px; border-radius: 8px; }
+        .vi .vw { font-weight: bold; color: #333; font-size: 0.95rem; }
+        .vi .vd { color: #666; font-size: 0.82rem; margin-top: 2px; }
+        .card { background: white; border-radius: 15px; padding: 28px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); display: none; }
+        .card.active { display: block; }
+        .thdr { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .tnum { background: linear-gradient(135deg, #4299e1, #2b6cb0); color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; flex-shrink: 0; }
+        .ttitle { font-size: 1.3rem; font-weight: bold; color: #333; }
+        .tsub { color: #888; font-size: 0.9rem; margin-top: 2px; }
+        .plink { display: flex; align-items: center; gap: 12px; background: #ebf8ff; padding: 15px 20px; border-radius: 10px; text-decoration: none; color: #333; font-weight: 600; border: 2px solid #bee3f8; transition: all 0.3s; margin-bottom: 12px; }
+        .plink:hover { background: #4299e1; color: white; }
+        .hlink { display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #4299e1, #2b6cb0); color: white; padding: 15px 30px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 1rem; margin: 10px 0; }
+        .vcont { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; margin: 15px 0; }
+        .vcont iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .vfall { background: #ebf8ff; padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align: center; }
+        .vfall a { color: #2b6cb0; font-weight: bold; }
+        .aplayer { background: #ebf8ff; border: 2px solid #bee3f8; border-radius: 12px; padding: 20px; margin: 15px 0; }
+        .aplayer p { color: #555; margin-bottom: 10px; font-weight: 600; }
+        .aplayer audio { width: 100%; }
+        .passage { background: #f0f8ff; border: 1px solid #bee3f8; border-radius: 10px; padding: 25px; margin: 15px 0; line-height: 1.8; font-size: 0.97rem; }
+        .passage h3 { color: #2b6cb0; margin-bottom: 15px; font-size: 1.2rem; }
+        .passage p { margin-bottom: 14px; }
+        .hl { font-style: italic; color: #2b6cb0; font-weight: 600; }
+        .qblock { margin-bottom: 20px; padding: 18px; background: #f8f9fa; border-radius: 10px; }
+        .qt { font-weight: 600; margin-bottom: 12px; color: #333; line-height: 1.5; }
+        .opts label { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; border-radius: 8px; cursor: pointer; margin-bottom: 5px; }
+        .opts label:hover { background: #ebf8ff; }
+        .opts input[type=radio] { margin-top: 3px; flex-shrink: 0; }
+        .fb { margin-top: 8px; font-weight: bold; font-size: 0.9rem; }
+        .fb.correct { color: #28a745; }
+        .fb.incorrect { color: #dc3545; }
+        .gsec { margin-top: 20px; }
+        .gs { margin-bottom: 14px; line-height: 2; font-size: 1rem; }
+        .gi { border: none; border-bottom: 2px solid #4299e1; padding: 4px 8px; font-size: 0.95rem; width: 200px; background: transparent; outline: none; color: #333; }
+        .gi.correct { border-bottom-color: #28a745; background: #d4edda33; }
+        .gi.incorrect { border-bottom-color: #dc3545; background: #f8d7da33; }
+        .wbox { background: #ebf8ff; border: 2px solid #bee3f8; border-radius: 10px; padding: 12px 18px; margin-bottom: 15px; }
+        .wbox strong { color: #2b6cb0; }
+        .mtbl { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .mtbl th { background: #4299e1; color: white; padding: 10px 14px; text-align: left; }
+        .mtbl td { padding: 10px 14px; border-bottom: 1px solid #eee; }
+        .mtbl tr:nth-child(even) td { background: #ebf8ff; }
+        .msel { border: 2px solid #bee3f8; border-radius: 6px; padding: 5px 8px; font-size: 0.88rem; background: white; width: 100%; max-width: 380px; }
+        .msel.correct { border-color: #28a745; }
+        .msel.incorrect { border-color: #dc3545; }
+        .vsel { border: 2px solid #bee3f8; border-radius: 6px; padding: 5px 10px; font-size: 0.9rem; background: white; width: 230px; }
+        .vsel.correct { border-color: #28a745; }
+        .vsel.incorrect { border-color: #dc3545; }
+        .brow { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+        .chk { background: linear-gradient(135deg, #4299e1, #2b6cb0); color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
+        .chk:disabled { background: #ccc; cursor: not-allowed; }
+        .nxt { background: #28a745; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
+        .nxt:disabled { background: #ccc; cursor: not-allowed; }
+        .prv { background: #6c757d; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
+        .sab { background: #ffc107; color: #333; border: none; padding: 10px 22px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.88rem; display: none; margin-top: 10px; }
+        .apan { display: none; background: #fffbea; border: 2px solid #ffc107; border-radius: 10px; padding: 15px; margin-top: 12px; }
+        .apan p { margin-bottom: 6px; font-size: 0.9rem; }
+        .done { text-align: center; padding: 60px 20px; display: none; }
+        .done .ico { font-size: 5rem; margin-bottom: 20px; }
+        .done h2 { font-size: 2.2rem; color: #2b6cb0; margin-bottom: 10px; }
+        .done p { color: #666; font-size: 1rem; margin-bottom: 30px; }
+        .dbbtn { background: linear-gradient(135deg, #4299e1, #2b6cb0); color: white; padding: 16px 40px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 1.1rem; display: inline-block; }
+        .savi { position: fixed; bottom: 20px; right: 20px; background: #4299e1; color: white; padding: 10px 18px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; opacity: 0; transition: opacity 0.4s; z-index: 9000; pointer-events: none; }
+        .savi.show { opacity: 1; }
+    </style>
+</head>
+<body>
+<div id="splash">
+    <h1>&#129504; WEEK 7</h1>
+    <h2>DAY 2</h2>
+    <p>Topic: Human Behaviour &amp; Psychology</p>
+    <button class="splash-btn" onclick="startDay()">LET'S GO!</button>
+</div>
+<div class="savi" id="savi">&#10003; Progress saved</div>
+<div class="wrap" id="mc" style="display:none;">
+    <div class="hdr">
+        <div><h1>&#129504; Week 7 &mdash; Day 2</h1><div class="topic">Topic: Human Behaviour &amp; Psychology</div></div>
+        <a href="/student-dashboard.html" class="back-btn">&larr; Dashboard</a>
+    </div>
+    <div class="plabel" id="plabel">Task 0 of 7</div>
+    <div class="pwrap"><div class="pfill" id="pfill" style="width:0%"></div></div>
+    <div class="vsec">
+        <button class="vtog" onclick="toggleVocab()">
+            <div style="display:flex;align-items:center;gap:10px;"><h3>&#128214; Today's Vocabulary</h3><span class="vcount">50 words</span></div>
+            <span class="varr" id="varr">&#9660;</span>
+        </button>
+        <div class="vbody" id="vbody"><div class="vgrid" id="vgrid"></div></div>
+    </div>
+
+    <!-- TASK 1 -->
+    <div class="card active" id="task1">
+        <div class="thdr"><div class="tnum">1</div><div><div class="ttitle">Mini Reading</div><div class="tsub">Read and answer &mdash; NO MORE THAN THREE WORDS from the passage</div></div></div>
+        <div class="passage">
+            <h3>The Psychology of Hoarding: When Keeping Becomes Harmful</h3>
+            <p>Hoarding disorder is far more complex than a simple reluctance to tidy up. Clinically defined as the persistent difficulty of discarding or parting with possessions — regardless of their actual value — hoarding affects an estimated two to five percent of the global population and is now recognised as a distinct <span class="hl">(1) mental health condition</span> in its own right, separate from obsessive-compulsive disorder with which it was long associated.</p>
+            <p>At the heart of hoarding behaviour lies a profound emotional attachment to objects. Unlike the casual accumulation of clutter that most people experience, people with hoarding disorder experience intense <span class="hl">(2) distress</span> at the thought of throwing things away, often because objects have become repositories of memory, identity or anticipated future use. The result is that living spaces become progressively more <span class="hl">(3) inaccessible</span>, creating serious risks to health, hygiene and safety — including the risk of fire from accumulated paper and other flammable materials.</p>
+            <p>Research increasingly shows that hoarding rarely develops in isolation. Over ninety percent of people with hoarding disorder also experience at least one additional mental health condition, most commonly depression, anxiety or attention deficit disorder. In many cases, hoarding begins as a <span class="hl">(4) coping mechanism</span> — a way of managing grief, trauma or overwhelming emotional pain that has no other outlet. The act of acquiring and keeping objects provides a temporary sense of control, comfort and <span class="hl">(5) security</span> that the person cannot access through other means.</p>
+            <p>One of the most significant barriers to recovery is the profound <span class="hl">(6) stigma</span> that surrounds hoarding. Because the visible consequences of the condition — extreme clutter, unsanitary conditions, social withdrawal — are often misunderstood as laziness or personal failure, many people with hoarding disorder experience intense <span class="hl">(7) shame</span> and avoid seeking help for years or even decades. Mental health professionals increasingly emphasise that effective treatment requires not clearance operations but long-term therapeutic support, delivered with <span class="hl">(8) compassion</span>, to address the underlying emotional causes of the behaviour.</p>
+        </div>
+        <h4 style="color:#2b6cb0;margin:20px 0 12px;">Answer &mdash; NO MORE THAN THREE WORDS:</h4>
+        <div class="gsec">
+            <div class="gs">1. How is hoarding now recognised, separate from OCD?<br><input class="gi" id="t1q1" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">2. What do people with hoarding disorder experience at the thought of throwing things away?<br><input class="gi" id="t1q2" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">3. What do living spaces become as a result of hoarding?<br><input class="gi" id="t1q3" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">4. What does hoarding often begin as, according to research?<br><input class="gi" id="t1q4" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">5. What sense does acquiring objects provide temporarily?<br><input class="gi" id="t1q5" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">6. What is one of the most significant barriers to recovery?<br><input class="gi" id="t1q6" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">7. What do mental health professionals say is needed alongside therapeutic support?<br><input class="gi" id="t1q7" placeholder="___" style="width:300px;margin-top:8px;"></div>
+        </div>
+        <div class="brow">
+            <button class="chk" id="check1" onclick="checkTask1()" disabled>Check Answers</button>
+            <button class="nxt" id="next1" disabled onclick="goToTask(2)">Next Task &rarr;</button>
+        </div>
+        <button class="sab" id="showAns1" onclick="toggleAns('ans1')">&#9660; Show Answers</button>
+        <div class="apan" id="ans1"><p><strong>Answers:</strong> 1-a distinct mental health condition, 2-intense distress, 3-progressively more inaccessible, 4-a coping mechanism, 5-(of) control/comfort/security, 6-(the profound) stigma, 7-compassion</p></div>
+    </div>
+
+    <!-- TASK 2 -->
+    <div class="card" id="task2">
+        <div class="thdr"><div class="tnum">2</div><div><div class="ttitle">Article Reading</div><div class="tsub">Read the article carefully</div></div></div>
+        <a class="plink" href="article 2.pdf" target="_blank"><span style="font-size:1.5rem;">&#128196;</span> Psychology &mdash; Article 2</a>
+        <div class="brow"><button class="prv" onclick="goToTask(1)">&larr; Previous</button><button class="nxt" onclick="goToTask(3)">Next Task &rarr;</button></div>
+    </div>
+
+    <!-- TASK 3 -->
+    <div class="card" id="task3">
+        <div class="thdr"><div class="tnum">3</div><div><div class="ttitle">Practice Reading</div><div class="tsub">IELTS-style reading test</div></div></div>
+        <a class="hlink" href="Reading (31).html" target="_blank">&#128214; Open Practice Reading</a>
+        <div class="brow"><button class="prv" onclick="goToTask(2)">&larr; Previous</button><button class="nxt" onclick="goToTask(4)">Next Task &rarr;</button></div>
+    </div>
+
+    <!-- TASK 4 -->
+    <div class="card" id="task4">
+        <div class="thdr"><div class="tnum">4</div><div><div class="ttitle">Vocabulary in Context</div><div class="tsub">Choose the correct word for each sentence</div></div></div>
+        <div class="gsec">
+            <div class="gs">1. Hoarding is now classified as a distinct <select class="vsel" id="t4v1"><option value="">select</option><option value="mental health condition">mental health condition</option><option value="personality disorder">personality disorder</option><option value="physical illness">physical illness</option></select>, separate from OCD.</div>
+            <div class="gs">2. The thought of throwing things away causes intense <select class="vsel" id="t4v2"><option value="">select</option><option value="distress">distress</option><option value="relief">relief</option><option value="satisfaction">satisfaction</option></select> for people with hoarding disorder.</div>
+            <div class="gs">3. After years of accumulation, most rooms had become completely <select class="vsel" id="t4v3"><option value="">select</option><option value="inaccessible">inaccessible</option><option value="organised">organised</option><option value="redecorated">redecorated</option></select>.</div>
+            <div class="gs">4. The piles of old newspapers throughout the house created a serious <select class="vsel" id="t4v4"><option value="">select</option><option value="fire hazard">fire hazard</option><option value="flood risk">flood risk</option><option value="noise problem">noise problem</option></select>.</div>
+            <div class="gs">5. For many people, hoarding begins as a <select class="vsel" id="t4v5"><option value="">select</option><option value="coping mechanism">coping mechanism</option><option value="social activity">social activity</option><option value="financial strategy">financial strategy</option></select> to deal with grief or trauma.</div>
+            <div class="gs">6. The <select class="vsel" id="t4v6"><option value="">select</option><option value="stigma">stigma</option><option value="awareness">awareness</option><option value="compassion">compassion</option></select> surrounding hoarding prevents many people from seeking help.</div>
+            <div class="gs">7. Shame and isolation are <select class="vsel" id="t4v7"><option value="">select</option><option value="overwhelming">overwhelming</option><option value="motivating">motivating</option><option value="relaxing">relaxing</option></select> for many people with hoarding disorder.</div>
+            <div class="gs">8. Sorting through years of possessions felt <select class="vsel" id="t4v8"><option value="">select</option><option value="triggering">triggering</option><option value="refreshing">refreshing</option><option value="straightforward">straightforward</option></select>, bringing back painful memories.</div>
+            <div class="gs">9. She received a notice of <select class="vsel" id="t4v9"><option value="">select</option><option value="eviction">eviction</option><option value="promotion">promotion</option><option value="renovation">renovation</option></select> from her landlord.</div>
+            <div class="gs">10. Effective recovery requires long-term support delivered with <select class="vsel" id="t4v10"><option value="">select</option><option value="compassion">compassion</option><option value="speed">speed</option><option value="authority">authority</option></select> and understanding.</div>
+        </div>
+        <div class="brow"><button class="prv" onclick="goToTask(3)">&larr; Previous</button><button class="chk" id="check4" onclick="checkTask4()" disabled>Check Answers</button><button class="nxt" id="next4" disabled onclick="goToTask(5)">Next Task &rarr;</button></div>
+        <button class="sab" id="showAns4" onclick="toggleAns('ans4')">&#9660; Show Answers</button>
+        <div class="apan" id="ans4"><p><strong>Answers:</strong> 1-mental health condition, 2-distress, 3-inaccessible, 4-fire hazard, 5-coping mechanism, 6-stigma, 7-overwhelming, 8-triggering, 9-eviction, 10-compassion</p></div>
+    </div>
+    <!-- TASK 5 -->
+    <div class="card" id="task5">
+        <div class="thdr"><div class="tnum">5</div><div><div class="ttitle">Video Watching Task</div><div class="tsub">Watch "The Psychology of Hoarding" and answer questions</div></div></div>
+        <div class="vfall"><p>&#9654; <a href="https://www.youtube.com/watch?v=mNliiKE768Q" target="_blank">Open video in new tab</a> if it doesn't play below.</p></div>
+        <div class="vcont"><iframe src="https://www.youtube.com/embed/mNliiKE768Q" frameborder="0" allowfullscreen></iframe></div>
+        <h4 style="color:#2b6cb0;margin:20px 0 12px;">Part 1 &mdash; Multiple Choice Questions</h4>
+        <div class="qblock"><div class="qt">1. What behaviour does the speaker describe at the beginning of the video?</div><div class="opts"><label><input type="radio" name="t5q1" value="A"> A. Collecting old furniture</label><label><input type="radio" name="t5q1" value="B"> B. Buying and keeping newspapers compulsively</label><label><input type="radio" name="t5q1" value="C"> C. Collecting expensive books</label><label><input type="radio" name="t5q1" value="D"> D. Buying children's toys</label></div><div class="fb" id="fb_t5q1"></div></div>
+        <div class="qblock"><div class="qt">2. What event triggered the speaker's hoarding behaviour?</div><div class="opts"><label><input type="radio" name="t5q2" value="A"> A. Losing her job</label><label><input type="radio" name="t5q2" value="B"> B. Moving to a new house</label><label><input type="radio" name="t5q2" value="C"> C. The loss of two children and earlier trauma</label><label><input type="radio" name="t5q2" value="D"> D. Financial difficulties</label></div><div class="fb" id="fb_t5q2"></div></div>
+        <div class="qblock"><div class="qt">3. Why did the speaker begin collecting newspapers and magazines?</div><div class="opts"><label><input type="radio" name="t5q3" value="A"> A. She wanted to become a journalist.</label><label><input type="radio" name="t5q3" value="B"> B. She was looking for discounts and advertisements.</label><label><input type="radio" name="t5q3" value="C"> C. She searched for stories about babies who had died.</label><label><input type="radio" name="t5q3" value="D"> D. She enjoyed solving crossword puzzles.</label></div><div class="fb" id="fb_t5q3"></div></div>
+        <div class="qblock"><div class="qt">4. Which of the following was a consequence of her hoarding?</div><div class="opts"><label><input type="radio" name="t5q4" value="A"> A. She travelled less.</label><label><input type="radio" name="t5q4" value="B"> B. She isolated herself from family and friends.</label><label><input type="radio" name="t5q4" value="C"> C. She lost her eyesight.</label><label><input type="radio" name="t5q4" value="D"> D. She became unemployed immediately.</label></div><div class="fb" id="fb_t5q4"></div></div>
+        <div class="qblock"><div class="qt">5. Why were attempts to clear her house unsuccessful?</div><div class="opts"><label><input type="radio" name="t5q5" value="A"> A. She refused to let anyone enter.</label><label><input type="radio" name="t5q5" value="B"> B. The cleaning teams were inexperienced.</label><label><input type="radio" name="t5q5" value="C"> C. The clear-ups increased her shame and triggered painful memories.</label><label><input type="radio" name="t5q5" value="D"> D. Her family prevented the clean-up.</label></div><div class="fb" id="fb_t5q5"></div></div>
+        <div class="qblock"><div class="qt">6. Approximately what percentage of people with hoarding behaviour seek help?</div><div class="opts"><label><input type="radio" name="t5q6" value="A"> A. 5%</label><label><input type="radio" name="t5q6" value="B"> B. 20%</label><label><input type="radio" name="t5q6" value="C"> C. 50%</label><label><input type="radio" name="t5q6" value="D"> D. 90%</label></div><div class="fb" id="fb_t5q6"></div></div>
+        <div class="qblock"><div class="qt">7. What finally motivated the speaker to seek support again?</div><div class="opts"><label><input type="radio" name="t5q7" value="A"> A. She wanted to move abroad.</label><label><input type="radio" name="t5q7" value="B"> B. She faced eviction.</label><label><input type="radio" name="t5q7" value="C"> C. She inherited a new house.</label><label><input type="radio" name="t5q7" value="D"> D. Her children insisted.</label></div><div class="fb" id="fb_t5q7"></div></div>
+        <div class="qblock"><div class="qt">8. Which strategy helped the speaker begin recovering?</div><div class="opts"><label><input type="radio" name="t5q8" value="A"> A. Throwing everything away in one day.</label><label><input type="radio" name="t5q8" value="B"> B. Sorting items for only 15 minutes at a time.</label><label><input type="radio" name="t5q8" value="C"> C. Selling all her belongings online.</label><label><input type="radio" name="t5q8" value="D"> D. Moving to a smaller apartment.</label></div><div class="fb" id="fb_t5q8"></div></div>
+        <div class="qblock"><div class="qt">9. Over 90% of people with hoarding behaviour also have...</div><div class="opts"><label><input type="radio" name="t5q9" value="A"> A. memory loss.</label><label><input type="radio" name="t5q9" value="B"> B. physical disabilities.</label><label><input type="radio" name="t5q9" value="C"> C. at least one other mental health condition.</label><label><input type="radio" name="t5q9" value="D"> D. financial problems.</label></div><div class="fb" id="fb_t5q9"></div></div>
+        <div class="qblock"><div class="qt">10. What is the main message of the video?</div><div class="opts"><label><input type="radio" name="t5q10" value="A"> A. Hoarding is simply a bad habit.</label><label><input type="radio" name="t5q10" value="B"> B. People who hoard need judgement to change.</label><label><input type="radio" name="t5q10" value="C"> C. Hoarding is often a coping mechanism that requires compassion and appropriate support.</label><label><input type="radio" name="t5q10" value="D"> D. Cleaning someone's house is the best long-term solution.</label></div><div class="fb" id="fb_t5q10"></div></div>
+
+        <h4 style="color:#2b6cb0;margin:20px 0 12px;">Part 2 &mdash; Gap Filling</h4>
+        <div class="wbox"><strong>Word Box:</strong> hoarding &nbsp;|&nbsp; miscarriage &nbsp;|&nbsp; obsessive &nbsp;|&nbsp; confined &nbsp;|&nbsp; inaccessible &nbsp;|&nbsp; fire hazard &nbsp;|&nbsp; triggering &nbsp;|&nbsp; eviction &nbsp;|&nbsp; blessing &nbsp;|&nbsp; awareness &nbsp;|&nbsp; stigma &nbsp;|&nbsp; coping mechanism &nbsp;|&nbsp; overwhelming &nbsp;|&nbsp; clutter &nbsp;|&nbsp; compassion</div>
+        <div class="gsec">
+            <div class="gs">1. The speaker describes living with <input class="gi" id="t5g1" placeholder="___"> behaviour for many years.</div>
+            <div class="gs">2. She lost one child through a <input class="gi" id="t5g2" placeholder="___"> and another to cot death.</div>
+            <div class="gs">3. She began <input class="gi" id="t5g3" placeholder="___"> searching newspapers for stories about babies who had died.</div>
+            <div class="gs">4. Eventually she became <input class="gi" id="t5g4" placeholder="___"> to a very small space inside her home.</div>
+            <div class="gs">5. Most areas of her house became completely <input class="gi" id="t5g5" placeholder="___">.</div>
+            <div class="gs">6. The amount of paper created a serious <input class="gi" id="t5g6" placeholder="___" style="width:140px;">.</div>
+            <div class="gs">7. Clearing her belongings was emotionally <input class="gi" id="t5g7" placeholder="___"> because each object reminded her of pain.</div>
+            <div class="gs">8. She sought help again after facing <input class="gi" id="t5g8" placeholder="___"> from her home.</div>
+            <div class="gs">9. Looking back, she describes that experience as a <input class="gi" id="t5g9" placeholder="___"> in disguise.</div>
+            <div class="gs">10. She believes many professionals still lack enough <input class="gi" id="t5g10" placeholder="___"> of hoarding behaviour.</div>
+            <div class="gs">11. Calling someone "a hoarder" can contribute to <input class="gi" id="t5g11" placeholder="___"> surrounding the condition.</div>
+            <div class="gs">12. Hoarding is actually a <input class="gi" id="t5g12" placeholder="___" style="width:200px;"> rather than something that defines a person.</div>
+            <div class="gs">13. Sorting through years of possessions felt extremely <input class="gi" id="t5g13" placeholder="___"> at first.</div>
+            <div class="gs">14. A hoarding <input class="gi" id="t5g14" placeholder="___"> scale can help begin difficult conversations.</div>
+            <div class="gs">15. The speaker hopes society will respond with greater <input class="gi" id="t5g15" placeholder="___">.</div>
+        </div>
+
+        <h4 style="color:#2b6cb0;margin:20px 0 12px;">Part 3 &mdash; Vocabulary Matching</h4>
+        <table class="mtbl"><thead><tr><th>#</th><th>Word</th><th>Definition</th></tr></thead><tbody>
+        <tr><td>1</td><td><strong>hoarding</strong></td><td><select class="msel" id="t5m1"><option value="">&#8212; select &#8212;</option><option value="A">A. being forced to leave your home</option><option value="B">B. the loss of a pregnancy before birth</option><option value="C">C. repeatedly and uncontrollably</option><option value="D">D. limited to a particular place</option><option value="E">E. impossible or difficult to reach</option><option value="F">F. something likely to cause a fire</option><option value="G">G. to cause a strong emotional reaction</option><option value="H">H. knowledge or understanding of something</option><option value="I">I. a problem involving excessive difficulty throwing possessions away</option><option value="J">J. something that seems bad at first but later proves beneficial</option><option value="K">K. negative social judgement attached to something</option><option value="L">L. a way of dealing with stress or emotional pain</option><option value="M">M. too difficult or emotionally intense to manage</option><option value="N">N. a large amount of untidy or unnecessary objects</option><option value="O">O. sympathy and a desire to help someone suffering</option></select></td></tr>
+<tr><td>2</td><td><strong>miscarriage</strong></td><td><select class="msel" id="t5m2"><option value="">&#8212; select &#8212;</option><option value="A">A. being forced to leave your home</option><option value="B">B. the loss of a pregnancy before birth</option><option value="C">C. repeatedly and uncontrollably</option><option value="D">D. limited to a particular place</option><option value="E">E. impossible or difficult to reach</option><option value="F">F. something likely to cause a fire</option><option value="G">G. to cause a strong emotional reaction</option><option value="H">H. knowledge or understanding of something</option><option value="I">I. a problem involving excessive difficulty throwing possessions away</option><option value="J">J. something that seems bad at first but later proves beneficial</option><option value="K">K. negative social judgement attached to something</option><option value="L">L. a way of dealing with stress or emotional pain</option><option value="M">M. too difficult or emotionally intense to manage</option><option value="N">N. a large amount of untidy or unnecessary objects</option><option value="O">O. sympathy and a desire to help someone suffering</option></select></td></tr>
+<tr><td>3</td><td><strong>obsessively</strong></td><td><select class="msel" id="t5m3"><option value="">&#8212; select &#8212;</option><option value="A">A. being forced to leave your home</option><option value="B">B. the loss of a pregnancy before birth</option><option value="C">C. repeatedly and uncontrollably</option><option value="D">D. limited to a particular place</option><option value="E">E. impossible or difficult to reach</option><option value="F">F. something likely to cause a fire</option><option value="G">G. to cause a strong emotional reaction</option><option value="H">H. knowledge or understanding of something</option><option value="I">I. a problem involving excessive difficulty throwing possessions away</option><option value="J">J. something that seems bad at first but later proves beneficial</option><option value="K">K. negative social judgement attached to something</option><option value="L">L. a way of dealing with stress or emotional pain</option><option value="M">M. too difficult or emotionally intense to manage</option><option value="N">N. a large amount of untidy or unnecessary objects</option><option value="O">O. sympathy and a desire to help someone suffering</option></select></td></tr>
+<tr><td>4</td><td><strong>confined</strong></td><td><select class="msel" id="t5m4"><option value="">&#8212; select &#8212;</option><option value="A">A. being forced to leave your home</option><option value="B">B. the loss of a pregnancy before birth</option><option value="C">C. repeatedly and uncontrollably</option><option value="D">D. limited to a particular place</option><option value="E">E. impossible or difficult to reach</option><option value="F">F. something likely to cause a fire</option><option value="G">G. to cause a strong emotional reaction</option><option value="H">H. knowledge or understanding of something</option><option value="I">I. a problem involving excessive difficulty throwing possessions away</option><option value="J">J. something that seems bad at first but later proves beneficial</option><option value="K">K. negative social judgement attached to something</option><option value="L">L. a way of dealing with stress or emotional pain</option><option value="M">M. too difficult or emotionally intense to manage</option><option value="N">N. a large amount of untidy or unnecessary objects</option><option value="O">O. sympathy and a desire to help someone suffering</option></select></td></tr>
+<tr><td>5</td><td><strong>inaccessible</strong></td><td><select class="msel" id="t5m5"><option value="">&#8212; select &#8212;</option><option value="A">A. being forced to leave your home</option><option value="B">B. the loss of a pregnancy before birth</option><option value="C">C. repeatedly and uncontrollably</option><option value="D">D. limited to a particular place</option><option value="E">E. impossible or difficult to reach</option><option value="F">F. something likely to cause a fire</option><option value="G">G. to cause a strong emotional reaction</option><option value="H">H. knowledge or understanding of something</option><option value="I">I. a problem involving excessive difficulty throwing possessions away</option><option value="J">J. something that seems bad at first but later proves beneficial</option><option value="K">K. negative social judgement attached to something</option><option value="L">L. a way of dealing with stress or emotional pain</option><option value="M">M. too difficult or emotionally intense to manage</option><option value="N">N. a large amount of untidy or unnecessary objects</option><option value="O">O. sympathy and a desire to help someone suffering</option></select></td></tr>
+<tr><td>6</td><td><strong>fire hazard</strong></td><td><select class="msel" id="t5m6"><option value="">&#8212; select &#8212;</option><option value="A">A. being forced to leave your home</option><option value="B">B. the loss of a pregnancy before birth</option><option value="C">C. repeatedly and uncontrollably</option><option value="D">D. limited to a particular place</option><option value="E">E. impossible or difficult to reach</option><option value="F">F. something likely to cause a fire</option><option value="G">G. to cause a strong emotional reaction</option><option value="H">H. knowledge or understanding of something</option><option value="I">I. a problem involving excessive difficulty throwing possessions away</option><option value="J">J. something that seems bad at first but later proves beneficial</option><option value="K">K. negative social judgement attached to something</option><option value="L">L. a way of dealing with stress or emotional pain</option><option value="M">M. too difficult or emotionally intense to manage</option><option value="N">N. a large amount of untidy or unnecessary objects</option><option value="O">O. sympathy and a desire to help someone suffering</option></select></td></tr>
+<tr><td>7</td><td><strong>trigger</strong></td><td><select class="msel" id="t5m7"><option value="">&#8212; select &#8212;</option><option value="A">A. being forced to leave your home</option><option value="B">B. the loss of a pregnancy before birth</option><option value="C">C. repeatedly and uncontrollably</option><option value="D">D. limited to a particular place</option><option value="E">E. impossible or difficult to reach</option><option value="F">F. something likely to cause a fire</option><option value="G">G. to cause a strong emotional reaction</option><option value="H">H. knowledge or understanding of something</option><option value="I">I. a problem involving excessive difficulty throwing possessions away</option><option value="J">J. something that seems bad at first but later proves beneficial</option><option value="K">K. negative social judgement attached to something</option><option value="L">L. a way of dealing with stress or emotional pain</option><option value="M">M. too difficult or emotionally intense to manage</option><option value="N">N. a large amount of untidy or unnecessary objects</option><option value="O">O. sympathy and a desire to help someone suffering</option></select></td></tr>
+<tr><td>8</td><td><strong>awareness</strong></td><td><select class="msel" id="t5m8"><option value="">&#8212; select &#8212;</option><option value="A">A. being forced to leave your home</option><option value="B">B. the loss of a pregnancy before birth</option><option value="C">C. repeatedly and uncontrollably</option><option value="D">D. limited to a particular place</option><option value="E">E. impossible or difficult to reach</option><option value="F">F. something likely to cause a fire</option><option value="G">G. to cause a strong emotional reaction</option><option value="H">H. knowledge or understanding of something</option><option value="I">I. a problem involving excessive difficulty throwing possessions away</option><option value="J">J. something that seems bad at first but later proves beneficial</option><option value="K">K. negative social judgement attached to something</option><option value="L">L. a way of dealing with stress or emotional pain</option><option value="M">M. too difficult or emotionally intense to manage</option><option value="N">N. a large amount of untidy or unnecessary objects</option><option value="O">O. sympathy and a desire to help someone suffering</option></select></td></tr>
+<tr><td>9</td><td><strong>eviction</strong></td><td><select class="msel" id="t5m9"><option value="">&#8212; select &#8212;</option><option value="A">A. being forced to leave your home</option><option value="B">B. the loss of a pregnancy before birth</option><option value="C">C. repeatedly and uncontrollably</option><option value="D">D. limited to a particular place</option><option value="E">E. impossible or difficult to reach</option><option value="F">F. something likely to cause a fire</option><option value="G">G. to cause a strong emotional reaction</option><option value="H">H. knowledge or understanding of something</option><option value="I">I. a problem involving excessive difficulty throwing possessions away</option><option value="J">J. something that seems bad at first but later proves beneficial</option><option value="K">K. negative social judgement attached to something</option><option value="L">L. a way of dealing with stress or emotional pain</option><option value="M">M. too difficult or emotionally intense to manage</option><option value="N">N. a large amount of untidy or unnecessary objects</option><option value="O">O. sympathy and a desire to help someone suffering</option></select></td></tr>
+<tr><td>10</td><td><strong>blessing in disguise</strong></td><td><select class="msel" id="t5m10"><option value="">&#8212; select &#8212;</option><option value="A">A. being forced to leave your home</option><option value="B">B. the loss of a pregnancy before birth</option><option value="C">C. repeatedly and uncontrollably</option><option value="D">D. limited to a particular place</option><option value="E">E. impossible or difficult to reach</option><option value="F">F. something likely to cause a fire</option><option value="G">G. to cause a strong emotional reaction</option><option value="H">H. knowledge or understanding of something</option><option value="I">I. a problem involving excessive difficulty throwing possessions away</option><option value="J">J. something that seems bad at first but later proves beneficial</option><option value="K">K. negative social judgement attached to something</option><option value="L">L. a way of dealing with stress or emotional pain</option><option value="M">M. too difficult or emotionally intense to manage</option><option value="N">N. a large amount of untidy or unnecessary objects</option><option value="O">O. sympathy and a desire to help someone suffering</option></select></td></tr>
+<tr><td>11</td><td><strong>stigma</strong></td><td><select class="msel" id="t5m11"><option value="">&#8212; select &#8212;</option><option value="A">A. being forced to leave your home</option><option value="B">B. the loss of a pregnancy before birth</option><option value="C">C. repeatedly and uncontrollably</option><option value="D">D. limited to a particular place</option><option value="E">E. impossible or difficult to reach</option><option value="F">F. something likely to cause a fire</option><option value="G">G. to cause a strong emotional reaction</option><option value="H">H. knowledge or understanding of something</option><option value="I">I. a problem involving excessive difficulty throwing possessions away</option><option value="J">J. something that seems bad at first but later proves beneficial</option><option value="K">K. negative social judgement attached to something</option><option value="L">L. a way of dealing with stress or emotional pain</option><option value="M">M. too difficult or emotionally intense to manage</option><option value="N">N. a large amount of untidy or unnecessary objects</option><option value="O">O. sympathy and a desire to help someone suffering</option></select></td></tr>
+<tr><td>12</td><td><strong>coping mechanism</strong></td><td><select class="msel" id="t5m12"><option value="">&#8212; select &#8212;</option><option value="A">A. being forced to leave your home</option><option value="B">B. the loss of a pregnancy before birth</option><option value="C">C. repeatedly and uncontrollably</option><option value="D">D. limited to a particular place</option><option value="E">E. impossible or difficult to reach</option><option value="F">F. something likely to cause a fire</option><option value="G">G. to cause a strong emotional reaction</option><option value="H">H. knowledge or understanding of something</option><option value="I">I. a problem involving excessive difficulty throwing possessions away</option><option value="J">J. something that seems bad at first but later proves beneficial</option><option value="K">K. negative social judgement attached to something</option><option value="L">L. a way of dealing with stress or emotional pain</option><option value="M">M. too difficult or emotionally intense to manage</option><option value="N">N. a large amount of untidy or unnecessary objects</option><option value="O">O. sympathy and a desire to help someone suffering</option></select></td></tr>
+<tr><td>13</td><td><strong>overwhelming</strong></td><td><select class="msel" id="t5m13"><option value="">&#8212; select &#8212;</option><option value="A">A. being forced to leave your home</option><option value="B">B. the loss of a pregnancy before birth</option><option value="C">C. repeatedly and uncontrollably</option><option value="D">D. limited to a particular place</option><option value="E">E. impossible or difficult to reach</option><option value="F">F. something likely to cause a fire</option><option value="G">G. to cause a strong emotional reaction</option><option value="H">H. knowledge or understanding of something</option><option value="I">I. a problem involving excessive difficulty throwing possessions away</option><option value="J">J. something that seems bad at first but later proves beneficial</option><option value="K">K. negative social judgement attached to something</option><option value="L">L. a way of dealing with stress or emotional pain</option><option value="M">M. too difficult or emotionally intense to manage</option><option value="N">N. a large amount of untidy or unnecessary objects</option><option value="O">O. sympathy and a desire to help someone suffering</option></select></td></tr>
+<tr><td>14</td><td><strong>clutter</strong></td><td><select class="msel" id="t5m14"><option value="">&#8212; select &#8212;</option><option value="A">A. being forced to leave your home</option><option value="B">B. the loss of a pregnancy before birth</option><option value="C">C. repeatedly and uncontrollably</option><option value="D">D. limited to a particular place</option><option value="E">E. impossible or difficult to reach</option><option value="F">F. something likely to cause a fire</option><option value="G">G. to cause a strong emotional reaction</option><option value="H">H. knowledge or understanding of something</option><option value="I">I. a problem involving excessive difficulty throwing possessions away</option><option value="J">J. something that seems bad at first but later proves beneficial</option><option value="K">K. negative social judgement attached to something</option><option value="L">L. a way of dealing with stress or emotional pain</option><option value="M">M. too difficult or emotionally intense to manage</option><option value="N">N. a large amount of untidy or unnecessary objects</option><option value="O">O. sympathy and a desire to help someone suffering</option></select></td></tr>
+<tr><td>15</td><td><strong>compassion</strong></td><td><select class="msel" id="t5m15"><option value="">&#8212; select &#8212;</option><option value="A">A. being forced to leave your home</option><option value="B">B. the loss of a pregnancy before birth</option><option value="C">C. repeatedly and uncontrollably</option><option value="D">D. limited to a particular place</option><option value="E">E. impossible or difficult to reach</option><option value="F">F. something likely to cause a fire</option><option value="G">G. to cause a strong emotional reaction</option><option value="H">H. knowledge or understanding of something</option><option value="I">I. a problem involving excessive difficulty throwing possessions away</option><option value="J">J. something that seems bad at first but later proves beneficial</option><option value="K">K. negative social judgement attached to something</option><option value="L">L. a way of dealing with stress or emotional pain</option><option value="M">M. too difficult or emotionally intense to manage</option><option value="N">N. a large amount of untidy or unnecessary objects</option><option value="O">O. sympathy and a desire to help someone suffering</option></select></td></tr>
+</tbody></table>
+        <div class="brow"><button class="prv" onclick="goToTask(4)">&larr; Previous</button><button class="chk" id="check5" onclick="checkTask5()" disabled>Check Answers</button><button class="nxt" id="next5" disabled onclick="goToTask(6)">Next Task &rarr;</button></div>
+        <button class="sab" id="showAns5" onclick="toggleAns('ans5')">&#9660; Show Answers</button>
+        <div class="apan" id="ans5">
+            <p><strong>MCQ:</strong> 1-B, 2-C, 3-C, 4-B, 5-C, 6-A, 7-B, 8-B, 9-C, 10-C</p>
+            <p><strong>Gap Fill:</strong> 1-hoarding, 2-miscarriage, 3-obsessive, 4-confined, 5-inaccessible, 6-fire hazard, 7-triggering, 8-eviction, 9-blessing, 10-awareness, 11-stigma, 12-coping mechanism, 13-overwhelming, 14-clutter, 15-compassion</p>
+            <p><strong>Matching:</strong> 1-I, 2-B, 3-C, 4-D, 5-E, 6-F, 7-G, 8-H, 9-A, 10-J, 11-K, 12-L, 13-M, 14-N, 15-O</p>
+        </div>
+    </div>
+    <!-- TASK 6 -->
+    <div class="card" id="task6">
+        <div class="thdr"><div class="tnum">6</div><div><div class="ttitle">Dictation + Comprehension</div><div class="tsub">Listen, complete the gaps, then answer questions</div></div></div>
+        <div class="aplayer"><p>&#127911; Play &mdash; BBC Learning English</p><audio controls src="play.mp3"></audio></div>
+        <h4 style="color:#2b6cb0;margin-bottom:12px;">Part 1 &mdash; Dictation (ONE WORD ONLY)</h4>
+        <div class="gsec"><div class="gs"><strong>1.</strong> &hellip;Welcome to 6 Minute English. I'm Neil. And I'm Sam. Today we're talking about <input class="gi" id="d1" placeholder="(1)"></div>
+<div class="gs"><strong>2.</strong> &hellip;We tend to think of <input class="gi" id="d2" placeholder="(2)"></div>
+<div class="gs"><strong>3.</strong> &hellip;as all about <input class="gi" id="d3" placeholder="(3)"></div>
+<div class="gs"><strong>4.</strong> &hellip;but actually it's a <input class="gi" id="d4" placeholder="(4)"></div>
+<div class="gs"><strong>5.</strong> &hellip;We learn from <input class="gi" id="d5" placeholder="(5)"></div>
+<div class="gs"><strong>6.</strong> &hellip;with lots of <input class="gi" id="d6" placeholder="(6)"></div>
+<div class="gs"><strong>7.</strong> &hellip;on the road to <input class="gi" id="d7" placeholder="(7)"></div>
+<div class="gs"><strong>8.</strong> &hellip;You need regular <input class="gi" id="d8" placeholder="(8)"></div>
+<div class="gs"><strong>9.</strong> &hellip;You need the right <input class="gi" id="d9" placeholder="(9)"></div>
+<div class="gs"><strong>10.</strong> &hellip;you have to put in <input class="gi" id="d10" placeholder="(10)"></div>
+<div class="gs"><strong>11.</strong> &hellip;Natural <input class="gi" id="d11" placeholder="(11)"></div>
+<div class="gs"><strong>12.</strong> &hellip;only gets you so far. A <input class="gi" id="d12" placeholder="(12)"></div>
+<div class="gs"><strong>13.</strong> &hellip;mindset is better than a <input class="gi" id="d13" placeholder="(13)"></div>
+<div class="gs"><strong>14.</strong> &hellip;one. It's the belief that <input class="gi" id="d14" placeholder="(14)"></div>
+<div class="gs"><strong>15.</strong> &hellip;can be developed through <input class="gi" id="d15" placeholder="(15)"></div>
+<div class="gs"><strong>16.</strong> &hellip;hard work and <input class="gi" id="d16" placeholder="(16)"></div>
+<div class="gs"><strong>17.</strong> &hellip;We learn from our <input class="gi" id="d17" placeholder="(17)"></div>
+<div class="gs"><strong>18.</strong> &hellip;We need to seek <input class="gi" id="d18" placeholder="(18)"></div>
+<div class="gs"><strong>19.</strong> &hellip;and <input class="gi" id="d19" placeholder="(19)"></div>
+<div class="gs"><strong>20.</strong> &hellip;even when things are hard. That builds <input class="gi" id="d20" placeholder="(20)"></div>
+<div class="gs"><strong>21.</strong> &hellip;Don't stay in your <input class="gi" id="d21" placeholder="(21)"></div>
+<div class="gs"><strong>22.</strong> <input class="gi" id="d22" placeholder="(22)"></div>
+<div class="gs"><strong>23.</strong> &hellip;Practice <input class="gi" id="d23" placeholder="(23)"></div>
+<div class="gs"><strong>24.</strong> &hellip;Focus on <input class="gi" id="d24" placeholder="(24)"></div>
+<div class="gs"><strong>25.</strong> &hellip;not just winning. Effort should be <input class="gi" id="d25" placeholder="(25)"></div>
+<div class="gs"><strong>26.</strong> &hellip;not just results. Normalise <input class="gi" id="d26" placeholder="(26)"></div>
+<div class="gs"><strong>27.</strong> &hellip;Praising <input class="gi" id="d27" placeholder="(27)"></div>
+<div class="gs"><strong>28.</strong> &hellip;or talent makes children afraid to fail. Children should be <input class="gi" id="d28" placeholder="(28)"></div>
+<div class="gs"><strong>29.</strong> &hellip;for their <input class="gi" id="d29" placeholder="(29)"></div>
+<div class="gs"><strong>30.</strong> &hellip;and how <input class="gi" id="d30" placeholder="(30)"></div>
+</div>
+        <h4 style="color:#2b6cb0;margin:20px 0 12px;">Part 2 &mdash; Comprehension Questions</h4>
+        <div class="qblock"><div class="qt">1. What topic do Neil and Sam discuss in this programme?</div><div class="opts"><label><input type="radio" name="t6q1" value="A"> A. Professional sport and fitness</label><label><input type="radio" name="t6q1" value="B"> B. The importance of play and learning through games</label><label><input type="radio" name="t6q1" value="C"> C. The psychology of competition</label><label><input type="radio" name="t6q1" value="D"> D. How to become a sports champion</label></div><div class="fb" id="fb_t6q1"></div></div>
+        <div class="qblock"><div class="qt">2. What is a "growth mindset"?</div><div class="opts"><label><input type="radio" name="t6q2" value="A"> A. The belief that intelligence is fixed at birth</label><label><input type="radio" name="t6q2" value="B"> B. The belief that abilities can be developed through effort and learning</label><label><input type="radio" name="t6q2" value="C"> C. The belief that winning is all that matters</label><label><input type="radio" name="t6q2" value="D"> D. The belief that talent alone leads to success</label></div><div class="fb" id="fb_t6q2"></div></div>
+        <div class="qblock"><div class="qt">3. What is the problem with praising children for being "clever" or "talented"?</div><div class="opts"><label><input type="radio" name="t6q3" value="A"> A. It makes them work harder.</label><label><input type="radio" name="t6q3" value="B"> B. It makes them want more prizes.</label><label><input type="radio" name="t6q3" value="C"> C. It can make them afraid of failure and avoid challenges.</label><label><input type="radio" name="t6q3" value="D"> D. It improves their performance in exams.</label></div><div class="fb" id="fb_t6q3"></div></div>
+        <div class="qblock"><div class="qt">4. What does "deliberate practice" mean?</div><div class="opts"><label><input type="radio" name="t6q4" value="A"> A. Practising as much as possible without a plan</label><label><input type="radio" name="t6q4" value="B"> B. Choosing only the easiest tasks to practise</label><label><input type="radio" name="t6q4" value="C"> C. Focused, intentional practice aimed at specific improvement</label><label><input type="radio" name="t6q4" value="D"> D. Competing against others to improve</label></div><div class="fb" id="fb_t6q4"></div></div>
+        <div class="qblock"><div class="qt">5. According to the programme, what builds resilience?</div><div class="opts"><label><input type="radio" name="t6q5" value="A"> A. Avoiding difficult situations</label><label><input type="radio" name="t6q5" value="B"> B. Seeking challenge and persisting even when things are hard</label><label><input type="radio" name="t6q5" value="C"> C. Always winning competitions</label><label><input type="radio" name="t6q5" value="D"> D. Getting regular rest and avoiding stress</label></div><div class="fb" id="fb_t6q5"></div></div>
+        <div class="brow"><button class="prv" onclick="goToTask(5)">&larr; Previous</button><button class="chk" id="check6" onclick="checkTask6()" disabled>Check Answers</button><button class="nxt" id="next6" disabled onclick="goToTask(7)">Next Task &rarr;</button></div>
+        <button class="sab" id="showAns6" onclick="toggleAns('ans6')">&#9660; Show Answers</button>
+        <div class="apan" id="ans6">
+            <p><strong>Dictation:</strong> 1-play, 2-sport, 3-winning, 4-skill, 5-failure, 6-practice, 7-mastery, 8-feedback, 9-mindset, 10-effort, 11-talent, 12-growth, 13-fixed, 14-ability, 15-praise, 16-learning, 17-mistakes, 18-challenge, 19-persist, 20-resilience, 21-comfort, 22-zone, 23-deliberately, 24-improvement, 25-rewarded, 26-failures, 27-intelligence, 28-praised, 29-strategy, 30-hard</p>
+            <p><strong>MCQ:</strong> 1-B, 2-B, 3-C, 4-C, 5-B</p>
+        </div>
+    </div>
+
+    <!-- TASK 7 -->
+    <div class="card" id="task7">
+        <div class="thdr"><div class="tnum">7</div><div><div class="ttitle">Practice Listening</div><div class="tsub">Full IELTS-style listening test</div></div></div>
+        <a class="hlink" href="Listening (31).html" target="_blank">&#127911; Open Practice Listening</a>
+        <div class="brow"><button class="prv" onclick="goToTask(6)">&larr; Previous</button><button class="nxt" onclick="finishDay()">Finish Day 2 &#10003;</button></div>
+    </div>
+
+    <!-- COMPLETION -->
+    <div class="done" id="donescreen">
+        <div class="ico">&#127881;</div>
+        <h2>Day 2 Complete!</h2>
+        <p>Great work! You've completed all tasks for Week 7, Day 2.</p>
+        <div style="margin:30px 0;text-align:left;">
+            <h3 style="color:#2b6cb0;border-bottom:2px solid #2b6cb0;padding-bottom:10px;margin-bottom:15px;">&#128203; Review Your Work</h3>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:15px;">
+                <div onclick="reviewTask(1)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#2b6cb0;margin-bottom:5px;">Task 1</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Mini Reading</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(2)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#2b6cb0;margin-bottom:5px;">Task 2</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Article Reading</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(3)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#2b6cb0;margin-bottom:5px;">Task 3</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Reading</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(4)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#2b6cb0;margin-bottom:5px;">Task 4</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Vocabulary</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(5)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#2b6cb0;margin-bottom:5px;">Task 5</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Video + Vocab</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(6)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#2b6cb0;margin-bottom:5px;">Task 6</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Dictation + MCQ</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(7)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#2b6cb0;margin-bottom:5px;">Task 7</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Listening</div><div style="font-size:1.4rem;">&#9989;</div></div>
+            </div>
+        </div>
+        <a href="/student-dashboard.html" class="dbbtn">&larr; Back to Dashboard</a>
+    </div>
+</div>
+<script>
+const SUPABASE_URL='https://nbfceuhuauizyucugejr.supabase.co';
+const SUPABASE_KEY='sb_publishable_0mFIGJkA_DKZfUiDAWFdrA_nXt0hF6H';
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const WEEK=7,DAY=2,TOTAL=7;
+let sid=null,cur=1,t0=Date.now(),stout=null;
+
+const dictAns=['play','sport','winning','skill','failure','practice','mastery','feedback','mindset','effort','talent','growth','fixed','ability','praise','learning','mistakes','challenge','persist','resilience','comfort','zone','deliberately','improvement','rewarded','failures','intelligence','praised','strategy','hard'];
+
+const vocab=[
+{w:"1. Hoarding disorder (n)",d:"A mental health condition involving difficulty discarding possessions"},
+{w:"2. Compulsive (adj)",d:"Driven by an irresistible urge to do something"},
+{w:"3. Clutter (n)",d:"A large amount of untidy or unnecessary objects"},
+{w:"4. Inaccessible (adj)",d:"Impossible or very difficult to reach or enter"},
+{w:"5. Fire hazard (n)",d:"Something that creates a serious risk of fire"},
+{w:"6. Coping mechanism (n)",d:"A strategy used to manage stress or emotional pain"},
+{w:"7. Stigma (n)",d:"Negative social judgement attached to something"},
+{w:"8. Compassion (n)",d:"Sympathy and a desire to help someone suffering"},
+{w:"9. Eviction (n)",d:"Being legally forced to leave your home"},
+{w:"10. Triggering (adj)",d:"Causing a strong emotional or psychological reaction"},
+{w:"11. Overwhelming (adj)",d:"Too intense or difficult to manage"},
+{w:"12. Distress (n)",d:"Extreme anxiety, pain or suffering"},
+{w:"13. Miscarriage (n)",d:"The loss of a pregnancy before birth"},
+{w:"14. Obsessive (adj)",d:"Preoccupied with something in an unhealthy way"},
+{w:"15. Confined (adj)",d:"Restricted to a small or limited space"},
+{w:"16. Blessing in disguise (idiom)",d:"Something that seems bad but proves beneficial"},
+{w:"17. Awareness (n)",d:"Knowledge or understanding of a subject"},
+{w:"18. Growth mindset (n)",d:"The belief that abilities can be developed through effort"},
+{w:"19. Fixed mindset (n)",d:"The belief that abilities are innate and unchangeable"},
+{w:"20. Deliberate practice (n)",d:"Focused, intentional practice aimed at improvement"},
+{w:"21. Resilience (n)",d:"The ability to recover from setbacks"},
+{w:"22. Comfort zone (n)",d:"A situation where one feels safe and unchallenged"},
+{w:"23. Mastery (n)",d:"A high level of skill or knowledge"},
+{w:"24. Feedback (n)",d:"Information about performance used to improve"},
+{w:"25. Persist (v)",d:"To continue despite difficulty or opposition"},
+{w:"26. Talent (n)",d:"A natural ability or skill"},
+{w:"27. Failure (n)",d:"Lack of success; an unsuccessful outcome"},
+{w:"28. Mental health (n)",d:"A person's condition regarding psychological wellbeing"},
+{w:"29. Therapeutic (adj)",d:"Having a healing or beneficial effect on the mind"},
+{w:"30. Shame (n)",d:"A painful feeling of humiliation or distress"},
+{w:"31. Isolation (n)",d:"The state of being separated from others"},
+{w:"32. Repository (n)",d:"A place where things are stored or kept"},
+{w:"33. Accumulation (n)",d:"The process of gathering or collecting something gradually"},
+{w:"34. Sanitary (adj)",d:"Free from dirt or infection; hygienic"},
+{w:"35. Unsanitary (adj)",d:"Not clean; likely to cause disease"},
+{w:"36. Attachment (n)",d:"A strong emotional bond to a person or object"},
+{w:"37. Outlet (n)",d:"A means of expressing feelings or energy"},
+{w:"38. Reluctance (n)",d:"Unwillingness to do something"},
+{w:"39. Discard (v)",d:"To throw something away"},
+{w:"40. Persistent (adj)",d:"Continuing firmly despite obstacles"},
+{w:"41. Grief (n)",d:"Deep sorrow, especially after a loss"},
+{w:"42. Trauma (n)",d:"A deeply distressing or disturbing experience"},
+{w:"43. Anxiety (n)",d:"A feeling of worry, nervousness or unease"},
+{w:"44. Depression (n)",d:"A mental health condition causing persistent sadness"},
+{w:"45. Withdraw (v)",d:"To remove oneself from a situation or contact"},
+{w:"46. Flammable (adj)",d:"Easily set on fire"},
+{w:"47. Hygiene (n)",d:"Conditions or practices maintaining health and cleanliness"},
+{w:"48. Clinically (adv)",d:"In a way relating to medical diagnosis and treatment"},
+{w:"49. Recognise (v)",d:"To acknowledge or identify officially"},
+{w:"50. Distinct (adj)",d:"Clearly different or separate from others"},
+];
+
+async function initStu(){
+    const p=new URLSearchParams(window.location.search);
+    if(p.get("teacher")==="true"){sid="teacher-preview";return;}
+    try{
+        const u=localStorage.getItem("user");
+        if(!u){window.location.href="/login.html";return;}
+        const pu=JSON.parse(u);
+        const{data,error}=await db.from("students").select("*").eq("username",pu.username).single();
+        if(error||!data)return;
+        sid=data.id;
+    }catch(e){}
+}
+
+function buildVocab(){
+    document.getElementById("vgrid").innerHTML=vocab.map(v=>`<div class="vi"><div class="vw">${v.w}</div><div class="vd">${v.d}</div></div>`).join("");
+}
+
+async function startDay(){
+    document.getElementById("splash").style.display="none";
+    document.getElementById("mc").style.display="block";
+    buildVocab();
+    await initStu();
+    await restoreProgress();
+    setupLive();
+}
+
+function goToTask(n){
+    document.getElementById("task"+cur).classList.remove("active");
+    cur=n;
+    document.getElementById("task"+n).classList.add("active");
+    document.getElementById("task"+n).scrollIntoView({behavior:"smooth",block:"start"});
+    updProg(n);t0=Date.now();saveResume(n);
+}
+function updProg(n){document.getElementById("pfill").style.width=Math.round(((n-1)/TOTAL)*100)+"%";document.getElementById("plabel").textContent="Task "+n+" of "+TOTAL;}
+function showSavi(){const e=document.getElementById("savi");e.classList.add("show");setTimeout(()=>e.classList.remove("show"),2000);}
+async function saveResume(n){if(!sid||sid==="teacher-preview")return;try{await db.from("student_resume").upsert({student_id:sid,week:WEEK,day:DAY,last_task:n,updated_at:new Date().toISOString()},{onConflict:"student_id"});}catch(e){}}
+function scheduleSave(){clearTimeout(stout);stout=setTimeout(()=>{localStorage.setItem("w"+WEEK+"d"+DAY+"_ans",JSON.stringify(gatherAll()));showSavi();},800);}
+
+function gatherAll(){
+    const d={};
+    document.querySelectorAll(".gi").forEach(el=>{if(el.id)d[el.id]=el.value;});
+    ["t5q1","t5q2","t5q3","t5q4","t5q5","t5q6","t5q7","t5q8","t5q9","t5q10","t6q1","t6q2","t6q3","t6q4","t6q5"].forEach(n=>{const s=document.querySelector("input[name='"+n+"']:checked");if(s)d[n]=s.value;});
+    document.querySelectorAll("select").forEach(el=>{if(el.id)d[el.id]=el.value;});
+    return d;
+}
+
+async function restoreProgress(){
+    try{
+        const sv=localStorage.getItem("w"+WEEK+"d"+DAY+"_ans");
+        if(sv){
+            const d=JSON.parse(sv);
+            Object.entries(d).forEach(([id,val])=>{const el=document.getElementById(id);if(el&&el.tagName==="INPUT")el.value=val;});
+            ["t5q1","t5q2","t5q3","t5q4","t5q5","t5q6","t5q7","t5q8","t5q9","t5q10","t6q1","t6q2","t6q3","t6q4","t6q5"].forEach(n=>{const val=d[n];if(val){const r=document.querySelector("input[name='"+n+"'][value='"+val+"']");if(r)r.checked=true;}});
+            Object.entries(d).forEach(([id,val])=>{const el=document.getElementById(id);if(el&&el.tagName==="SELECT")el.value=val;});
+        }
+        if(sid&&sid!=="teacher-preview"){
+            const{data:td}=await db.from("task_progress").select("task_number,status").eq("student_id",sid).eq("week",WEEK).eq("day",DAY);
+            if(td&&td.filter(t=>t.status==="completed").length>=TOTAL){
+                document.getElementById("task1").classList.remove("active");
+                document.getElementById("donescreen").style.display="block";
+                updProg(TOTAL);valAll();makeRO();return;
+            }
+            const{data:res}=await db.from("student_resume").select("last_task").eq("student_id",sid).eq("week",WEEK).eq("day",DAY).single();
+            if(res&&res.last_task>1){document.getElementById("task1").classList.remove("active");cur=res.last_task;document.getElementById("task"+cur).classList.add("active");updProg(cur);}
+        }
+        valAll();
+    }catch(e){}
+}
+
+function makeRO(){
+    document.querySelectorAll(".gi").forEach(el=>{el.disabled=true;el.style.opacity="0.85";});
+    document.querySelectorAll("input[type=radio]").forEach(el=>el.disabled=true);
+    document.querySelectorAll("select").forEach(el=>el.disabled=true);
+    document.querySelectorAll(".chk").forEach(el=>el.style.display="none");
+    document.querySelectorAll(".nxt").forEach(el=>el.style.display="none");
+    document.querySelectorAll(".prv").forEach(el=>el.style.display="none");
+    document.querySelectorAll(".sab").forEach(el=>el.style.display="inline-block");
+}
+
+function setupLive(){
+    ["t1q1","t1q2","t1q3","t1q4","t1q5","t1q6","t1q7"].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener("input",()=>{valT1();scheduleSave();});});
+    for(let i=1;i<=10;i++){const el=document.getElementById("t4v"+i);if(el)el.addEventListener("change",()=>{valT4();scheduleSave();});}
+    ["t5q1","t5q2","t5q3","t5q4","t5q5","t5q6","t5q7","t5q8","t5q9","t5q10"].forEach(n=>{document.querySelectorAll("input[name='"+n+"']").forEach(el=>el.addEventListener("change",()=>{valT5();scheduleSave();}));});
+    for(let i=1;i<=15;i++){const el=document.getElementById("t5g"+i);if(el)el.addEventListener("input",()=>{valT5();scheduleSave();});}
+    for(let i=1;i<=15;i++){const el=document.getElementById("t5m"+i);if(el)el.addEventListener("change",()=>{valT5();scheduleSave();});}
+    ["t6q1","t6q2","t6q3","t6q4","t6q5"].forEach(n=>{document.querySelectorAll("input[name='"+n+"']").forEach(el=>el.addEventListener("change",()=>{valT6();scheduleSave();}));});
+    for(let i=1;i<=30;i++){const el=document.getElementById("d"+i);if(el)el.addEventListener("input",()=>{valT6();scheduleSave();});}
+}
+
+function valAll(){valT1();valT4();valT5();valT6();}
+function valT1(){document.getElementById("check1").disabled=!["t1q1","t1q2","t1q3","t1q4","t1q5","t1q6","t1q7"].every(id=>document.getElementById(id)?.value.trim());}
+function valT4(){document.getElementById("check4").disabled=!Array.from({length:10},(_,i)=>document.getElementById("t4v"+(i+1))?.value).every(Boolean);}
+function valT5(){
+    const mc=["t5q1","t5q2","t5q3","t5q4","t5q5","t5q6","t5q7","t5q8","t5q9","t5q10"].every(n=>document.querySelector("input[name='"+n+"']:checked"));
+    const gf=Array.from({length:15},(_,i)=>document.getElementById("t5g"+(i+1))?.value.trim()).every(Boolean);
+    const mt=Array.from({length:15},(_,i)=>document.getElementById("t5m"+(i+1))?.value).every(Boolean);
+    document.getElementById("check5").disabled=!(mc&&gf&&mt);
+}
+function valT6(){
+    const dc=Array.from({length:30},(_,i)=>document.getElementById("d"+(i+1))?.value.trim()).every(Boolean);
+    const mc=["t6q1","t6q2","t6q3","t6q4","t6q5"].every(n=>document.querySelector("input[name='"+n+"']:checked"));
+    document.getElementById("check6").disabled=!(dc&&mc);
+}
+
+const t1ok={t1q1:["a distinct mental health condition","mental health condition","distinct"],t1q2:["intense distress","distress"],t1q3:["progressively more inaccessible","inaccessible"],t1q4:["a coping mechanism","coping mechanism"],t1q5:["control","comfort","security"],t1q6:["the profound stigma","stigma"],t1q7:["compassion"]};
+const t4ok={t4v1:"mental health condition",t4v2:"distress",t4v3:"inaccessible",t4v4:"fire hazard",t4v5:"coping mechanism",t4v6:"stigma",t4v7:"overwhelming",t4v8:"triggering",t4v9:"eviction",t4v10:"compassion"};
+const t5mcq={t5q1:"B",t5q2:"C",t5q3:"C",t5q4:"B",t5q5:"C",t5q6:"A",t5q7:"B",t5q8:"B",t5q9:"C",t5q10:"C"};
+const t5gap={t5g1:"hoarding",t5g2:"miscarriage",t5g3:"obsessive",t5g4:"confined",t5g5:"inaccessible",t5g6:"fire hazard",t5g7:"triggering",t5g8:"eviction",t5g9:"blessing",t5g10:"awareness",t5g11:"stigma",t5g12:"coping mechanism",t5g13:"overwhelming",t5g14:"clutter",t5g15:"compassion"};
+const t5mat={t5m1:"I",t5m2:"B",t5m3:"C",t5m4:"D",t5m5:"E",t5m6:"F",t5m7:"G",t5m8:"H",t5m9:"A",t5m10:"J",t5m11:"K",t5m12:"L",t5m13:"M",t5m14:"N",t5m15:"O"};
+const t6mcq={t6q1:"B",t6q2:"B",t6q3:"C",t6q4:"C",t6q5:"B"};
+
+function checkTask1(){
+    const ans=[];
+    Object.entries(t1ok).forEach(([id,opts])=>{
+        const inp=document.getElementById(id);
+        const val=inp.value.trim().toLowerCase();
+        const ok=opts.some(o=>val.includes(o.toLowerCase()));
+        inp.classList.toggle("correct",ok);inp.classList.toggle("incorrect",!ok);
+        ans.push({question_id:id,question_type:"gap_fill",student_answer:inp.value.trim(),correct_answer:opts[0],is_correct:ok});
+    });
+    document.getElementById("showAns1").style.display="inline-block";
+    document.getElementById("next1").disabled=false;
+    saveAnswers(1,ans);saveTP(1);
+}
+function checkTask4(){
+    const ans=[];
+    Object.entries(t4ok).forEach(([id,correct])=>{
+        const sel=document.getElementById(id);
+        const ok=sel.value===correct;
+        sel.classList.toggle("correct",ok);sel.classList.toggle("incorrect",!ok);
+        ans.push({question_id:id,question_type:"matching",student_answer:sel.value,correct_answer:correct,is_correct:ok});
+    });
+    document.getElementById("showAns4").style.display="inline-block";
+    document.getElementById("next4").disabled=false;
+    saveAnswers(4,ans);saveTP(4);
+}
+function checkTask5(){
+    const ans=[];
+    Object.entries(t5mcq).forEach(([n,correct])=>{
+        const sel=document.querySelector("input[name='"+n+"']:checked");
+        const fb=document.getElementById("fb_"+n);
+        if(!sel)return;
+        const ok=sel.value===correct;
+        fb.textContent=ok?"✅ Correct!":"❌ Incorrect — correct answer: "+correct;
+        fb.className="fb "+(ok?"correct":"incorrect");
+        ans.push({question_id:n,question_type:"mcq",student_answer:sel.value,correct_answer:correct,is_correct:ok});
+    });
+    Object.entries(t5gap).forEach(([id,correct])=>{
+        const inp=document.getElementById(id);
+        const ok=inp.value.trim().toLowerCase()===correct.toLowerCase();
+        inp.classList.toggle("correct",ok);inp.classList.toggle("incorrect",!ok);
+        ans.push({question_id:id,question_type:"gap_fill",student_answer:inp.value.trim(),correct_answer:correct,is_correct:ok});
+    });
+    Object.entries(t5mat).forEach(([id,correct])=>{
+        const sel=document.getElementById(id);
+        const ok=sel.value===correct;
+        sel.classList.toggle("correct",ok);sel.classList.toggle("incorrect",!ok);
+        ans.push({question_id:id,question_type:"matching",student_answer:sel.value,correct_answer:correct,is_correct:ok});
+    });
+    document.getElementById("showAns5").style.display="inline-block";
+    document.getElementById("next5").disabled=false;
+    saveAnswers(5,ans);saveTP(5);
+}
+function checkTask6(){
+    const ans=[];
+    for(let i=1;i<=30;i++){
+        const inp=document.getElementById("d"+i);
+        const correct=dictAns[i-1];
+        const ok=inp.value.trim().toLowerCase()===correct.toLowerCase();
+        inp.classList.toggle("correct",ok);inp.classList.toggle("incorrect",!ok);
+        ans.push({question_id:"d"+i,question_type:"gap_fill",student_answer:inp.value.trim(),correct_answer:correct,is_correct:ok});
+    }
+    Object.entries(t6mcq).forEach(([n,correct])=>{
+        const sel=document.querySelector("input[name='"+n+"']:checked");
+        const fb=document.getElementById("fb_"+n);
+        if(!sel)return;
+        const ok=sel.value===correct;
+        fb.textContent=ok?"✅ Correct!":"❌ Incorrect — correct answer: "+correct;
+        fb.className="fb "+(ok?"correct":"incorrect");
+        ans.push({question_id:n,question_type:"mcq",student_answer:sel.value,correct_answer:correct,is_correct:ok});
+    });
+    document.getElementById("showAns6").style.display="inline-block";
+    document.getElementById("next6").disabled=false;
+    saveAnswers(6,ans);saveTP(6);
+}
+async function saveAnswers(tnum,ans){
+    if(!sid||sid==="teacher-preview")return;
+    try{
+        const rows=ans.map(a=>({student_id:sid,week:WEEK,day:DAY,task_number:tnum,question_id:a.question_id,question_type:a.question_type,student_answer:a.student_answer,correct_answer:a.correct_answer,is_correct:a.is_correct,answered_at:new Date().toISOString()}));
+        await db.from("student_answers").upsert(rows,{onConflict:"student_id,week,day,task_number,question_id"});
+    }catch(e){}
+}
+async function saveTP(n){
+    if(!sid||sid==="teacher-preview")return;
+    try{await db.from("task_progress").upsert({student_id:sid,week:WEEK,day:DAY,task_number:n,status:"completed",time_completed:new Date().toISOString(),time_spent_seconds:Math.round((Date.now()-t0)/1000)},{onConflict:"student_id,week,day,task_number"});}catch(e){}
+}
+async function finishDay(){
+    document.getElementById("task7").classList.remove("active");
+    document.getElementById("donescreen").style.display="block";
+    document.getElementById("donescreen").scrollIntoView({behavior:"smooth"});
+    localStorage.removeItem("w"+WEEK+"d"+DAY+"_ans");
+    for(let i=1;i<=TOTAL;i++)await saveTP(i);
+    if(sid&&sid!=="teacher-preview")await db.from("student_resume").delete().eq("student_id",sid);
+    makeRO();
+}
+function reviewTask(n){
+    document.getElementById("donescreen").style.display="none";
+    cur=n;
+    document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));
+    document.getElementById("task"+n).classList.add("active");
+    document.getElementById("task"+n).scrollIntoView({behavior:"smooth",block:"start"});
+    const ex=document.getElementById("btr");
+    if(!ex){
+        const b=document.createElement("button");b.id="btr";b.textContent="🏆 Back to Results";
+        b.style.cssText="position:fixed;bottom:20px;right:20px;background:#4299e1;color:white;border:none;padding:12px 22px;border-radius:50px;cursor:pointer;font-weight:bold;font-size:0.95rem;z-index:9998;";
+        b.onclick=()=>{b.remove();document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));document.getElementById("donescreen").style.display="block";document.getElementById("donescreen").scrollIntoView({behavior:"smooth"});};
+        document.body.appendChild(b);
+    }
+}
+function toggleVocab(){document.getElementById("vbody").classList.toggle("open");document.getElementById("varr").classList.toggle("open");}
+function toggleAns(id){const d=document.getElementById(id);const b=d.previousElementSibling;d.style.display=d.style.display==="block"?"none":"block";b.textContent=d.style.display==="block"?"▲ Hide Answers":"▼ Show Answers";}
+</script>
+</body>
+</html>
