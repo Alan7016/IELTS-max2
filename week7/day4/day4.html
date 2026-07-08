@@ -1,0 +1,628 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEEK 7 - DAY 4 (Psychology)</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Segoe UI", sans-serif; background: #ebf8ff; color: #333; }
+        #splash { position: fixed; inset: 0; background: linear-gradient(135deg, #4299e1, #2b6cb0); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; color: white; text-align: center; padding: 20px; }
+        #splash h1 { font-size: 3rem; margin-bottom: 10px; }
+        #splash h2 { font-size: 2rem; margin-bottom: 10px; opacity: 0.9; }
+        #splash p { font-size: 1.2rem; margin-bottom: 40px; opacity: 0.8; }
+        .splash-btn { background: white; color: #2b6cb0; border: none; padding: 18px 60px; font-size: 1.4rem; font-weight: bold; border-radius: 50px; cursor: pointer; }
+        .wrap { max-width: 900px; margin: 0 auto; padding: 20px; }
+        .hdr { background: linear-gradient(135deg, #4299e1, #2b6cb0); color: white; padding: 25px 30px; border-radius: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; }
+        .hdr h1 { font-size: 1.6rem; }
+        .hdr .topic { opacity: 0.85; font-size: 1rem; margin-top: 4px; }
+        .back-btn { background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 10px 20px; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 0.9rem; }
+        .plabel { text-align: center; color: #2b6cb0; font-size: 0.85rem; margin-bottom: 8px; font-weight: 600; }
+        .pwrap { background: #bee3f8; border-radius: 20px; height: 10px; margin-bottom: 20px; overflow: hidden; }
+        .pfill { background: linear-gradient(90deg, #4299e1, #2b6cb0); height: 100%; border-radius: 20px; transition: width 0.5s; }
+        .vsec { background: white; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-left: 5px solid #4299e1; overflow: hidden; }
+        .vtog { width: 100%; background: none; border: none; cursor: pointer; padding: 18px 25px; display: flex; align-items: center; justify-content: space-between; }
+        .vtog h3 { color: #2b6cb0; font-size: 1.1rem; margin: 0; }
+        .vcount { background: #4299e1; color: white; font-size: 0.75rem; font-weight: bold; padding: 3px 10px; border-radius: 20px; }
+        .varr { color: #2b6cb0; font-size: 1rem; transition: transform 0.3s; }
+        .varr.open { transform: rotate(180deg); }
+        .vbody { display: none; padding: 0 25px 20px; }
+        .vbody.open { display: block; }
+        .vgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+        .vi { background: #ebf8ff; padding: 10px 14px; border-radius: 8px; }
+        .vi .vw { font-weight: bold; color: #333; font-size: 0.95rem; }
+        .vi .vd { color: #666; font-size: 0.82rem; margin-top: 2px; }
+        .card { background: white; border-radius: 15px; padding: 28px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); display: none; }
+        .card.active { display: block; }
+        .thdr { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .tnum { background: linear-gradient(135deg, #4299e1, #2b6cb0); color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; flex-shrink: 0; }
+        .ttitle { font-size: 1.3rem; font-weight: bold; color: #333; }
+        .tsub { color: #888; font-size: 0.9rem; margin-top: 2px; }
+        .plink { display: flex; align-items: center; gap: 12px; background: #ebf8ff; padding: 15px 20px; border-radius: 10px; text-decoration: none; color: #333; font-weight: 600; border: 2px solid #bee3f8; transition: all 0.3s; margin-bottom: 12px; }
+        .plink:hover { background: #4299e1; color: white; }
+        .hlink { display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #4299e1, #2b6cb0); color: white; padding: 15px 30px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 1rem; margin: 10px 0; }
+        .vcont { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; margin: 15px 0; }
+        .vcont iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .vfall { background: #ebf8ff; padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align: center; }
+        .vfall a { color: #2b6cb0; font-weight: bold; }
+        .aplayer { background: #ebf8ff; border: 2px solid #bee3f8; border-radius: 12px; padding: 20px; margin: 15px 0; }
+        .aplayer p { color: #555; margin-bottom: 10px; font-weight: 600; }
+        .aplayer audio { width: 100%; }
+        .passage { background: #f0f8ff; border: 1px solid #bee3f8; border-radius: 10px; padding: 25px; margin: 15px 0; line-height: 1.8; font-size: 0.97rem; }
+        .passage h3 { color: #2b6cb0; margin-bottom: 15px; font-size: 1.2rem; }
+        .passage p { margin-bottom: 14px; }
+        .hl { font-style: italic; color: #2b6cb0; font-weight: 600; }
+        .qblock { margin-bottom: 20px; padding: 18px; background: #f8f9fa; border-radius: 10px; }
+        .qt { font-weight: 600; margin-bottom: 12px; color: #333; line-height: 1.5; }
+        .opts label { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; border-radius: 8px; cursor: pointer; margin-bottom: 5px; }
+        .opts label:hover { background: #ebf8ff; }
+        .opts input[type=radio] { margin-top: 3px; flex-shrink: 0; }
+        .opts input[type=checkbox] { margin-top: 3px; flex-shrink: 0; }
+        .fb { margin-top: 8px; font-weight: bold; font-size: 0.9rem; }
+        .fb.correct { color: #28a745; }
+        .fb.incorrect { color: #dc3545; }
+        .gsec { margin-top: 20px; }
+        .gs { margin-bottom: 14px; line-height: 2; font-size: 1rem; }
+        .gi { border: none; border-bottom: 2px solid #4299e1; padding: 4px 8px; font-size: 0.95rem; width: 200px; background: transparent; outline: none; color: #333; }
+        .gi.correct { border-bottom-color: #28a745; background: #d4edda33; }
+        .gi.incorrect { border-bottom-color: #dc3545; background: #f8d7da33; }
+        .stmt-list { list-style: none; padding: 0; }
+        .stmt-list li { display: flex; align-items: flex-start; gap: 12px; padding: 10px 14px; background: #f8f9fa; border-radius: 8px; margin-bottom: 8px; font-size: 0.97rem; }
+        .stmt-list li span { flex: 1; }
+        .stmt-check { width: 22px; height: 22px; border: 2px solid #4299e1; border-radius: 4px; flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
+        .stmt-check.checked { background: #4299e1; color: white; }
+        .stmt-check.correct-ans { border-color: #28a745; }
+        .stmt-check.checked.correct { background: #28a745; border-color: #28a745; }
+        .stmt-check.checked.incorrect { background: #dc3545; border-color: #dc3545; }
+        .stmt-check.missed { border-color: #28a745; background: #d4edda; }
+        .wbox { background: #ebf8ff; border: 2px solid #bee3f8; border-radius: 10px; padding: 12px 18px; margin-bottom: 15px; }
+        .wbox strong { color: #2b6cb0; }
+        .mtbl { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .mtbl th { background: #4299e1; color: white; padding: 10px 14px; text-align: left; }
+        .mtbl td { padding: 10px 14px; border-bottom: 1px solid #eee; }
+        .mtbl tr:nth-child(even) td { background: #ebf8ff; }
+        .msel { border: 2px solid #bee3f8; border-radius: 6px; padding: 5px 8px; font-size: 0.88rem; background: white; width: 100%; max-width: 380px; }
+        .msel.correct { border-color: #28a745; }
+        .msel.incorrect { border-color: #dc3545; }
+        .vsel { border: 2px solid #bee3f8; border-radius: 6px; padding: 5px 10px; font-size: 0.9rem; background: white; width: 230px; }
+        .vsel.correct { border-color: #28a745; }
+        .vsel.incorrect { border-color: #dc3545; }
+        .brow { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+        .chk { background: linear-gradient(135deg, #4299e1, #2b6cb0); color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
+        .chk:disabled { background: #ccc; cursor: not-allowed; }
+        .nxt { background: #28a745; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
+        .nxt:disabled { background: #ccc; cursor: not-allowed; }
+        .prv { background: #6c757d; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
+        .sab { background: #ffc107; color: #333; border: none; padding: 10px 22px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.88rem; display: none; margin-top: 10px; }
+        .apan { display: none; background: #fffbea; border: 2px solid #ffc107; border-radius: 10px; padding: 15px; margin-top: 12px; }
+        .apan p { margin-bottom: 6px; font-size: 0.9rem; }
+        .done { text-align: center; padding: 60px 20px; display: none; }
+        .done .ico { font-size: 5rem; margin-bottom: 20px; }
+        .done h2 { font-size: 2.2rem; color: #2b6cb0; margin-bottom: 10px; }
+        .done p { color: #666; font-size: 1rem; margin-bottom: 30px; }
+        .dbbtn { background: linear-gradient(135deg, #4299e1, #2b6cb0); color: white; padding: 16px 40px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 1.1rem; display: inline-block; }
+        .savi { position: fixed; bottom: 20px; right: 20px; background: #4299e1; color: white; padding: 10px 18px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; opacity: 0; transition: opacity 0.4s; z-index: 9000; pointer-events: none; }
+        .savi.show { opacity: 1; }
+    </style>
+</head>
+<body>
+<div id="splash">
+    <h1>&#129504; WEEK 7</h1>
+    <h2>DAY 4</h2>
+    <p>Topic: Human Behaviour &amp; Psychology</p>
+    <button class="splash-btn" onclick="startDay()">LET'S GO!</button>
+</div>
+<div class="savi" id="savi">&#10003; Progress saved</div>
+<div class="wrap" id="mc" style="display:none;">
+    <div class="hdr">
+        <div><h1>&#129504; Week 7 &mdash; Day 4</h1><div class="topic">Topic: Human Behaviour &amp; Psychology</div></div>
+        <a href="/student-dashboard.html" class="back-btn">&larr; Dashboard</a>
+    </div>
+    <div class="plabel" id="plabel">Task 0 of 7</div>
+    <div class="pwrap"><div class="pfill" id="pfill" style="width:0%"></div></div>
+    <div class="vsec">
+        <button class="vtog" onclick="toggleVocab()">
+            <div style="display:flex;align-items:center;gap:10px;"><h3>&#128214; Today's Vocabulary</h3><span class="vcount">50 words</span></div>
+            <span class="varr" id="varr">&#9660;</span>
+        </button>
+        <div class="vbody" id="vbody"><div class="vgrid" id="vgrid"></div></div>
+    </div>
+
+    <!-- TASK 1 -->
+    <div class="card active" id="task1">
+        <div class="thdr"><div class="tnum">1</div><div><div class="ttitle">Mini Reading</div><div class="tsub">Read and answer &mdash; NO MORE THAN THREE WORDS from the passage</div></div></div>
+        <div class="passage">
+            <h3>Obedience, Conformity and the Social Self</h3>
+            <p>Human beings are fundamentally social creatures. From the earliest stages of development, we learn to regulate our behaviour in response to the expectations of those around us, acquiring through this process an understanding of <span class="hl">(1) social norms</span> — the unwritten rules that govern acceptable behaviour within a given community or culture. The power of these norms is so pervasive that most people follow them not through deliberate choice but through an entirely <span class="hl">(2) automatic</span> process of social learning that begins in childhood.</p>
+            <p>The psychologist Solomon Asch demonstrated in a celebrated series of experiments during the 1950s just how powerfully social pressure shapes individual judgement. Participants were asked to compare the lengths of lines — a task so simple that errors would be almost impossible under normal conditions. Yet when surrounded by confederates who unanimously gave the wrong answer, approximately <span class="hl">(3) thirty-seven percent</span> of participants conformed to the incorrect group response, even though their own senses told them otherwise. Asch concluded that the desire to belong and avoid social <span class="hl">(4) rejection</span> is a powerful enough force to override even clear sensory evidence.</p>
+            <p>Stanley Milgram's obedience experiments, conducted in the early 1960s, produced findings that were even more disturbing. Participants were instructed by an authority figure to administer increasingly severe electric shocks to a person in another room. Despite audible signs of distress from the supposed victim, around <span class="hl">(5) sixty-five percent</span> of participants continued to the maximum shock level. Milgram interpreted these results as evidence not of individual cruelty but of the extraordinary human capacity for <span class="hl">(6) obedience</span> — a capacity that, he argued, is built into the very structure of hierarchical social organisation.</p>
+            <p>The concept of conformity extends beyond laboratory settings. Individuals regularly adjust their opinions, tastes and behaviours to align with perceived <span class="hl">(7) group norms</span>, often without consciously realising they are doing so. This process — sometimes called <span class="hl">(8) normative influence</span> — helps explain phenomena as diverse as the spread of fashion trends, the persistence of harmful group behaviours, and the difficulty individuals experience when trying to maintain minority opinions in the face of social pressure.</p>
+        </div>
+        <h4 style="color:#2b6cb0;margin:20px 0 12px;">Answer &mdash; NO MORE THAN THREE WORDS:</h4>
+        <div class="gsec">
+            <div class="gs">1. What did individuals acquire through the process of social learning?<br><input class="gi" id="t1q1" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">2. How do most people follow social norms, according to the passage?<br><input class="gi" id="t1q2" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">3. What percentage of Asch's participants conformed to the incorrect answer?<br><input class="gi" id="t1q3" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">4. What desire did Asch identify as powerful enough to override sensory evidence?<br><input class="gi" id="t1q4" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">5. What percentage of Milgram's participants continued to the maximum shock level?<br><input class="gi" id="t1q5" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">6. What did Milgram see his results as evidence of?<br><input class="gi" id="t1q6" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">7. What is the process of adjusting behaviour to align with group norms called?<br><input class="gi" id="t1q7" placeholder="___" style="width:300px;margin-top:8px;"></div>
+        </div>
+        <div class="brow">
+            <button class="chk" id="check1" onclick="checkTask1()" disabled>Check Answers</button>
+            <button class="nxt" id="next1" disabled onclick="goToTask(2)">Next Task &rarr;</button>
+        </div>
+        <button class="sab" id="showAns1" onclick="toggleAns('ans1')">&#9660; Show Answers</button>
+        <div class="apan" id="ans1"><p><strong>Answers:</strong> 1-social norms, 2-an automatic process, 3-thirty-seven percent, 4-(avoid social) rejection/desire to belong, 5-sixty-five percent, 6-(extraordinary human capacity for) obedience, 7-normative influence</p></div>
+    </div>
+
+    <!-- TASK 2 -->
+    <div class="card" id="task2">
+        <div class="thdr"><div class="tnum">2</div><div><div class="ttitle">Article Reading</div><div class="tsub">Read the article carefully</div></div></div>
+        <a class="plink" href="article 4.pdf" target="_blank"><span style="font-size:1.5rem;">&#128196;</span> Psychology &mdash; Article 4</a>
+        <div class="brow"><button class="prv" onclick="goToTask(1)">&larr; Previous</button><button class="nxt" onclick="goToTask(3)">Next Task &rarr;</button></div>
+    </div>
+
+    <!-- TASK 3 -->
+    <div class="card" id="task3">
+        <div class="thdr"><div class="tnum">3</div><div><div class="ttitle">Practice Reading</div><div class="tsub">IELTS-style reading test</div></div></div>
+        <a class="hlink" href="Reading (33).html" target="_blank">&#128214; Open Practice Reading</a>
+        <div class="brow"><button class="prv" onclick="goToTask(2)">&larr; Previous</button><button class="nxt" onclick="goToTask(4)">Next Task &rarr;</button></div>
+    </div>
+
+    <!-- TASK 4 -->
+    <div class="card" id="task4">
+        <div class="thdr"><div class="tnum">4</div><div><div class="ttitle">Mini Listening Task</div><div class="tsub">Listen to a talk about groups and society &mdash; tick the opinions you hear expressed</div></div></div>
+        <div class="aplayer">
+            <p>&#127911; Track 7 &mdash; Groups and Society</p>
+            <audio controls src="track7.mp3"></audio>
+        </div>
+        <p style="color:#555;margin-bottom:15px;font-weight:600;">Tick all the opinions that are expressed in the talk:</p>
+        <ul class="stmt-list" id="stmtList">
+            <li><div class="stmt-check" id="sc1" onclick="toggleCheck(1)"></div><span>1. When people conform, it helps make society more <em>peaceful</em>.</span></li>
+            <li><div class="stmt-check" id="sc2" onclick="toggleCheck(2)"></div><span>2. Some people <em>obey social customs</em> without question.</span></li>
+            <li><div class="stmt-check" id="sc3" onclick="toggleCheck(3)"></div><span>3. <em>Conventional</em> people help keep our <em>traditions</em> alive.</span></li>
+            <li><div class="stmt-check" id="sc4" onclick="toggleCheck(4)"></div><span>4. Some multicultural societies focus more on developing <em>traditional ways</em> than others.</span></li>
+            <li><div class="stmt-check" id="sc5" onclick="toggleCheck(5)"></div><span>5. As time passes, our idea of <em>what is normal</em> changes.</span></li>
+            <li><div class="stmt-check" id="sc6" onclick="toggleCheck(6)"></div><span>6. Some people try to be <em>different from the group</em>.</span></li>
+            <li><div class="stmt-check" id="sc7" onclick="toggleCheck(7)"></div><span>7. Some people create an <em>alternative social group</em> and rebel against the traditional way of life.</span></li>
+            <li><div class="stmt-check" id="sc8" onclick="toggleCheck(8)"></div><span>8. In the 1970s, it was <em>usual</em> for hippies to wear second-hand clothes.</span></li>
+        </ul>
+        <div class="brow">
+            <button class="prv" onclick="goToTask(3)">&larr; Previous</button>
+            <button class="chk" id="check4" onclick="checkTask4()">Check Answers</button>
+            <button class="nxt" id="next4" disabled onclick="goToTask(5)">Next Task &rarr;</button>
+        </div>
+        <button class="sab" id="showAns4" onclick="toggleAns('ans4')">&#9660; Show Answers</button>
+        <div class="apan" id="ans4"><p><strong>Correct answers (ticked):</strong> 1 &#10003;, 2 &#10003;, 3 &#10003;, 5 &#10003;, 6 &#10003;, 7 &#10003; &nbsp;&nbsp; <strong>Not expressed:</strong> 4 &#10007;, 8 &#10007;</p></div>
+    </div>
+    <!-- TASK 5 -->
+    <div class="card" id="task5">
+        <div class="thdr"><div class="tnum">5</div><div><div class="ttitle">Video Watching Task</div><div class="tsub">Watch "The Psychology of Habits" and answer questions</div></div></div>
+        <div class="vfall"><p>&#9654; <a href="https://www.youtube.com/watch?v=wr6fQ4KpbRM" target="_blank">Open video in new tab</a> if it doesn't play below.</p></div>
+        <div class="vcont"><iframe src="https://www.youtube.com/embed/wr6fQ4KpbRM" frameborder="0" allowfullscreen></iframe></div>
+        <h4 style="color:#2b6cb0;margin:20px 0 12px;">Part 1 &mdash; Multiple Choice Questions</h4>
+        <div class="qblock"><div class="qt">1. According to the video, habits are behaviours that are...</div><div class="opts"><label><input type="radio" name="t5q1" value="A"> A. carefully planned every time</label><label><input type="radio" name="t5q1" value="B"> B. performed regularly and triggered subconsciously</label><label><input type="radio" name="t5q1" value="C"> C. always harmful</label><label><input type="radio" name="t5q1" value="D"> D. impossible to change</label></div><div class="fb" id="fb_t5q1"></div></div>
+        <div class="qblock"><div class="qt">2. In the example from the video, nail-biting first becomes rewarding because it...</div><div class="opts"><label><input type="radio" name="t5q2" value="A"> A. improves memory</label><label><input type="radio" name="t5q2" value="B"> B. reduces anxiety after reading a stressful email</label><label><input type="radio" name="t5q2" value="C"> C. strengthens fingernails</label><label><input type="radio" name="t5q2" value="D"> D. helps people stay awake</label></div><div class="fb" id="fb_t5q2"></div></div>
+        <div class="qblock"><div class="qt">3. Dopamine is important because it...</div><div class="opts"><label><input type="radio" name="t5q3" value="A"> A. prevents habits from forming</label><label><input type="radio" name="t5q3" value="B"> B. makes people tired</label><label><input type="radio" name="t5q3" value="C"> C. helps create brain changes that reinforce habits</label><label><input type="radio" name="t5q3" value="D"> D. removes anxiety completely</label></div><div class="fb" id="fb_t5q3"></div></div>
+        <div class="qblock"><div class="qt">4. Once a habit is established, it often...</div><div class="opts"><label><input type="radio" name="t5q4" value="A"> A. disappears naturally</label><label><input type="radio" name="t5q4" value="B"> B. requires conscious thought every time</label><label><input type="radio" name="t5q4" value="C"> C. happens before you have time to stop it</label><label><input type="radio" name="t5q4" value="D"> D. only occurs under stress</label></div><div class="fb" id="fb_t5q4"></div></div>
+        <div class="qblock"><div class="qt">5. According to one study, people spend over 40% of their day...</div><div class="opts"><label><input type="radio" name="t5q5" value="A"> A. making important decisions</label><label><input type="radio" name="t5q5" value="B"> B. repeating habitual behaviours</label><label><input type="radio" name="t5q5" value="C"> C. sleeping</label><label><input type="radio" name="t5q5" value="D"> D. using social media</label></div><div class="fb" id="fb_t5q5"></div></div>
+        <div class="qblock"><div class="qt">6. Why are habits useful?</div><div class="opts"><label><input type="radio" name="t5q6" value="A"> A. They always increase intelligence.</label><label><input type="radio" name="t5q6" value="B"> B. They eliminate stress completely.</label><label><input type="radio" name="t5q6" value="C"> C. They save time and mental energy.</label><label><input type="radio" name="t5q6" value="D"> D. They prevent mistakes.</label></div><div class="fb" id="fb_t5q6"></div></div>
+        <div class="qblock"><div class="qt">7. One effective way to break a habit is to...</div><div class="opts"><label><input type="radio" name="t5q7" value="A"> A. rely only on willpower</label><label><input type="radio" name="t5q7" value="B"> B. change the environments and routines that trigger it</label><label><input type="radio" name="t5q7" value="C"> C. ignore the behaviour completely</label><label><input type="radio" name="t5q7" value="D"> D. punish yourself every time it happens</label></div><div class="fb" id="fb_t5q7"></div></div>
+        <div class="qblock"><div class="qt">8. According to the video, moving house or starting a new job can help because...</div><div class="opts"><label><input type="radio" name="t5q8" value="A"> A. people become too busy to have habits</label><label><input type="radio" name="t5q8" value="B"> B. old environmental cues disappear</label><label><input type="radio" name="t5q8" value="C"> C. dopamine stops being produced</label><label><input type="radio" name="t5q8" value="D"> D. people forget their memories</label></div><div class="fb" id="fb_t5q8"></div></div>
+        <div class="qblock"><div class="qt">9. Habit reversal training encourages people to...</div><div class="opts"><label><input type="radio" name="t5q9" value="A"> A. avoid all routines</label><label><input type="radio" name="t5q9" value="B"> B. replace a harmful habit with a less harmful behaviour</label><label><input type="radio" name="t5q9" value="C"> C. think positively without changing behaviour</label><label><input type="radio" name="t5q9" value="D"> D. remove all sources of stress</label></div><div class="fb" id="fb_t5q9"></div></div>
+        <div class="qblock"><div class="qt">10. What is the main message of the video?</div><div class="opts"><label><input type="radio" name="t5q10" value="A"> A. Bad habits can never be changed.</label><label><input type="radio" name="t5q10" value="B"> B. Habits are controlled entirely by willpower.</label><label><input type="radio" name="t5q10" value="C"> C. Understanding how habits work makes them easier to change.</label><label><input type="radio" name="t5q10" value="D"> D. Only psychologists can break habits.</label></div><div class="fb" id="fb_t5q10"></div></div>
+
+        <h4 style="color:#2b6cb0;margin:20px 0 12px;">Part 2 &mdash; Gap Filling</h4>
+        <div class="wbox"><strong>Word Box:</strong> beneficial &nbsp;|&nbsp; dopamine &nbsp;|&nbsp; neuroplasticity &nbsp;|&nbsp; reward &nbsp;|&nbsp; cues &nbsp;|&nbsp; subconsciously &nbsp;|&nbsp; deliberation &nbsp;|&nbsp; anxiety &nbsp;|&nbsp; automated &nbsp;|&nbsp; obstacles &nbsp;|&nbsp; routines &nbsp;|&nbsp; environment &nbsp;|&nbsp; transferred &nbsp;|&nbsp; intervene &nbsp;|&nbsp; patience</div>
+        <div class="gsec">
+            <div class="gs">1. Scientists describe habits as behaviours that are triggered <input class="gi" id="t5g1" placeholder="___"> in response to certain situations.</div>
+            <div class="gs">2. Habits form because the brain learns that a behaviour is <input class="gi" id="t5g2" placeholder="___">.</div>
+            <div class="gs">3. Nail-biting may reduce feelings of <input class="gi" id="t5g3" placeholder="___"> after reading a stressful email.</div>
+            <div class="gs">4. Positive experiences can trigger the release of <input class="gi" id="t5g4" placeholder="___">.</div>
+            <div class="gs">5. Dopamine also supports <input class="gi" id="t5g5" placeholder="___" style="width:170px;"> by helping the brain build new neural connections.</div>
+            <div class="gs">6. The brain links rewards with behaviours and the <input class="gi" id="t5g6" placeholder="___"> around them.</div>
+            <div class="gs">7. Eventually, certain <input class="gi" id="t5g7" placeholder="___"> such as sitting at your desk can trigger the habit automatically.</div>
+            <div class="gs">8. If you perform an action frequently without much <input class="gi" id="t5g8" placeholder="___">, it is probably a habit.</div>
+            <div class="gs">9. Morning <input class="gi" id="t5g9" placeholder="___"> save both time and mental energy.</div>
+            <div class="gs">10. An <input class="gi" id="t5g10" placeholder="___"> routine allows your brain to focus on other things.</div>
+            <div class="gs">11. Creating <input class="gi" id="t5g11" placeholder="___"> can make a bad habit harder to perform.</div>
+            <div class="gs">12. Students who <input class="gi" id="t5g12" placeholder="___"> to new universities showed noticeable changes in their habits.</div>
+            <div class="gs">13. Habit reversal training teaches people when to <input class="gi" id="t5g13" placeholder="___"> before the habit occurs.</div>
+            <div class="gs">14. Breaking habits takes time, so it is important to have <input class="gi" id="t5g14" placeholder="___">.</div>
+            <div class="gs">15. The brain remembers the <input class="gi" id="t5g15" placeholder="___"> that follows a behaviour, making it more likely to happen again.</div>
+        </div>
+
+        <h4 style="color:#2b6cb0;margin:20px 0 12px;">Part 3 &mdash; Vocabulary Matching</h4>
+        <table class="mtbl"><thead><tr><th>#</th><th>Word</th><th>Definition</th></tr></thead><tbody>
+        <tr><td>1</td><td><strong>habit</strong></td><td><select class="msel" id="t5m1"><option value="">&#8212; select &#8212;</option><option value="A">A. the surroundings or conditions in which something happens</option><option value="B">B. careful thinking before making a decision</option><option value="C">C. a behaviour performed regularly and automatically</option><option value="D">D. to step in before something happens</option><option value="E">E. repeated patterns of behaviour</option><option value="F">F. something that triggers a behaviour</option><option value="G">G. the ability of the brain to reorganise itself</option><option value="H">H. something that blocks progress or makes something more difficult</option><option value="I">I. acting without conscious awareness</option><option value="J">J. a feeling of worry or nervousness</option><option value="K">K. something gained because of an action</option><option value="L">L. helpful or producing a good result</option><option value="M">M. a chemical in the brain linked to pleasure and learning</option><option value="N">N. done automatically with little conscious effort</option><option value="O">O. a therapy that replaces harmful habits with healthier behaviours</option></select></td></tr>
+<tr><td>2</td><td><strong>cue</strong></td><td><select class="msel" id="t5m2"><option value="">&#8212; select &#8212;</option><option value="A">A. the surroundings or conditions in which something happens</option><option value="B">B. careful thinking before making a decision</option><option value="C">C. a behaviour performed regularly and automatically</option><option value="D">D. to step in before something happens</option><option value="E">E. repeated patterns of behaviour</option><option value="F">F. something that triggers a behaviour</option><option value="G">G. the ability of the brain to reorganise itself</option><option value="H">H. something that blocks progress or makes something more difficult</option><option value="I">I. acting without conscious awareness</option><option value="J">J. a feeling of worry or nervousness</option><option value="K">K. something gained because of an action</option><option value="L">L. helpful or producing a good result</option><option value="M">M. a chemical in the brain linked to pleasure and learning</option><option value="N">N. done automatically with little conscious effort</option><option value="O">O. a therapy that replaces harmful habits with healthier behaviours</option></select></td></tr>
+<tr><td>3</td><td><strong>beneficial</strong></td><td><select class="msel" id="t5m3"><option value="">&#8212; select &#8212;</option><option value="A">A. the surroundings or conditions in which something happens</option><option value="B">B. careful thinking before making a decision</option><option value="C">C. a behaviour performed regularly and automatically</option><option value="D">D. to step in before something happens</option><option value="E">E. repeated patterns of behaviour</option><option value="F">F. something that triggers a behaviour</option><option value="G">G. the ability of the brain to reorganise itself</option><option value="H">H. something that blocks progress or makes something more difficult</option><option value="I">I. acting without conscious awareness</option><option value="J">J. a feeling of worry or nervousness</option><option value="K">K. something gained because of an action</option><option value="L">L. helpful or producing a good result</option><option value="M">M. a chemical in the brain linked to pleasure and learning</option><option value="N">N. done automatically with little conscious effort</option><option value="O">O. a therapy that replaces harmful habits with healthier behaviours</option></select></td></tr>
+<tr><td>4</td><td><strong>anxiety</strong></td><td><select class="msel" id="t5m4"><option value="">&#8212; select &#8212;</option><option value="A">A. the surroundings or conditions in which something happens</option><option value="B">B. careful thinking before making a decision</option><option value="C">C. a behaviour performed regularly and automatically</option><option value="D">D. to step in before something happens</option><option value="E">E. repeated patterns of behaviour</option><option value="F">F. something that triggers a behaviour</option><option value="G">G. the ability of the brain to reorganise itself</option><option value="H">H. something that blocks progress or makes something more difficult</option><option value="I">I. acting without conscious awareness</option><option value="J">J. a feeling of worry or nervousness</option><option value="K">K. something gained because of an action</option><option value="L">L. helpful or producing a good result</option><option value="M">M. a chemical in the brain linked to pleasure and learning</option><option value="N">N. done automatically with little conscious effort</option><option value="O">O. a therapy that replaces harmful habits with healthier behaviours</option></select></td></tr>
+<tr><td>5</td><td><strong>dopamine</strong></td><td><select class="msel" id="t5m5"><option value="">&#8212; select &#8212;</option><option value="A">A. the surroundings or conditions in which something happens</option><option value="B">B. careful thinking before making a decision</option><option value="C">C. a behaviour performed regularly and automatically</option><option value="D">D. to step in before something happens</option><option value="E">E. repeated patterns of behaviour</option><option value="F">F. something that triggers a behaviour</option><option value="G">G. the ability of the brain to reorganise itself</option><option value="H">H. something that blocks progress or makes something more difficult</option><option value="I">I. acting without conscious awareness</option><option value="J">J. a feeling of worry or nervousness</option><option value="K">K. something gained because of an action</option><option value="L">L. helpful or producing a good result</option><option value="M">M. a chemical in the brain linked to pleasure and learning</option><option value="N">N. done automatically with little conscious effort</option><option value="O">O. a therapy that replaces harmful habits with healthier behaviours</option></select></td></tr>
+<tr><td>6</td><td><strong>neuroplasticity</strong></td><td><select class="msel" id="t5m6"><option value="">&#8212; select &#8212;</option><option value="A">A. the surroundings or conditions in which something happens</option><option value="B">B. careful thinking before making a decision</option><option value="C">C. a behaviour performed regularly and automatically</option><option value="D">D. to step in before something happens</option><option value="E">E. repeated patterns of behaviour</option><option value="F">F. something that triggers a behaviour</option><option value="G">G. the ability of the brain to reorganise itself</option><option value="H">H. something that blocks progress or makes something more difficult</option><option value="I">I. acting without conscious awareness</option><option value="J">J. a feeling of worry or nervousness</option><option value="K">K. something gained because of an action</option><option value="L">L. helpful or producing a good result</option><option value="M">M. a chemical in the brain linked to pleasure and learning</option><option value="N">N. done automatically with little conscious effort</option><option value="O">O. a therapy that replaces harmful habits with healthier behaviours</option></select></td></tr>
+<tr><td>7</td><td><strong>reward</strong></td><td><select class="msel" id="t5m7"><option value="">&#8212; select &#8212;</option><option value="A">A. the surroundings or conditions in which something happens</option><option value="B">B. careful thinking before making a decision</option><option value="C">C. a behaviour performed regularly and automatically</option><option value="D">D. to step in before something happens</option><option value="E">E. repeated patterns of behaviour</option><option value="F">F. something that triggers a behaviour</option><option value="G">G. the ability of the brain to reorganise itself</option><option value="H">H. something that blocks progress or makes something more difficult</option><option value="I">I. acting without conscious awareness</option><option value="J">J. a feeling of worry or nervousness</option><option value="K">K. something gained because of an action</option><option value="L">L. helpful or producing a good result</option><option value="M">M. a chemical in the brain linked to pleasure and learning</option><option value="N">N. done automatically with little conscious effort</option><option value="O">O. a therapy that replaces harmful habits with healthier behaviours</option></select></td></tr>
+<tr><td>8</td><td><strong>deliberation</strong></td><td><select class="msel" id="t5m8"><option value="">&#8212; select &#8212;</option><option value="A">A. the surroundings or conditions in which something happens</option><option value="B">B. careful thinking before making a decision</option><option value="C">C. a behaviour performed regularly and automatically</option><option value="D">D. to step in before something happens</option><option value="E">E. repeated patterns of behaviour</option><option value="F">F. something that triggers a behaviour</option><option value="G">G. the ability of the brain to reorganise itself</option><option value="H">H. something that blocks progress or makes something more difficult</option><option value="I">I. acting without conscious awareness</option><option value="J">J. a feeling of worry or nervousness</option><option value="K">K. something gained because of an action</option><option value="L">L. helpful or producing a good result</option><option value="M">M. a chemical in the brain linked to pleasure and learning</option><option value="N">N. done automatically with little conscious effort</option><option value="O">O. a therapy that replaces harmful habits with healthier behaviours</option></select></td></tr>
+<tr><td>9</td><td><strong>environment</strong></td><td><select class="msel" id="t5m9"><option value="">&#8212; select &#8212;</option><option value="A">A. the surroundings or conditions in which something happens</option><option value="B">B. careful thinking before making a decision</option><option value="C">C. a behaviour performed regularly and automatically</option><option value="D">D. to step in before something happens</option><option value="E">E. repeated patterns of behaviour</option><option value="F">F. something that triggers a behaviour</option><option value="G">G. the ability of the brain to reorganise itself</option><option value="H">H. something that blocks progress or makes something more difficult</option><option value="I">I. acting without conscious awareness</option><option value="J">J. a feeling of worry or nervousness</option><option value="K">K. something gained because of an action</option><option value="L">L. helpful or producing a good result</option><option value="M">M. a chemical in the brain linked to pleasure and learning</option><option value="N">N. done automatically with little conscious effort</option><option value="O">O. a therapy that replaces harmful habits with healthier behaviours</option></select></td></tr>
+<tr><td>10</td><td><strong>routine</strong></td><td><select class="msel" id="t5m10"><option value="">&#8212; select &#8212;</option><option value="A">A. the surroundings or conditions in which something happens</option><option value="B">B. careful thinking before making a decision</option><option value="C">C. a behaviour performed regularly and automatically</option><option value="D">D. to step in before something happens</option><option value="E">E. repeated patterns of behaviour</option><option value="F">F. something that triggers a behaviour</option><option value="G">G. the ability of the brain to reorganise itself</option><option value="H">H. something that blocks progress or makes something more difficult</option><option value="I">I. acting without conscious awareness</option><option value="J">J. a feeling of worry or nervousness</option><option value="K">K. something gained because of an action</option><option value="L">L. helpful or producing a good result</option><option value="M">M. a chemical in the brain linked to pleasure and learning</option><option value="N">N. done automatically with little conscious effort</option><option value="O">O. a therapy that replaces harmful habits with healthier behaviours</option></select></td></tr>
+<tr><td>11</td><td><strong>obstacle</strong></td><td><select class="msel" id="t5m11"><option value="">&#8212; select &#8212;</option><option value="A">A. the surroundings or conditions in which something happens</option><option value="B">B. careful thinking before making a decision</option><option value="C">C. a behaviour performed regularly and automatically</option><option value="D">D. to step in before something happens</option><option value="E">E. repeated patterns of behaviour</option><option value="F">F. something that triggers a behaviour</option><option value="G">G. the ability of the brain to reorganise itself</option><option value="H">H. something that blocks progress or makes something more difficult</option><option value="I">I. acting without conscious awareness</option><option value="J">J. a feeling of worry or nervousness</option><option value="K">K. something gained because of an action</option><option value="L">L. helpful or producing a good result</option><option value="M">M. a chemical in the brain linked to pleasure and learning</option><option value="N">N. done automatically with little conscious effort</option><option value="O">O. a therapy that replaces harmful habits with healthier behaviours</option></select></td></tr>
+<tr><td>12</td><td><strong>intervene</strong></td><td><select class="msel" id="t5m12"><option value="">&#8212; select &#8212;</option><option value="A">A. the surroundings or conditions in which something happens</option><option value="B">B. careful thinking before making a decision</option><option value="C">C. a behaviour performed regularly and automatically</option><option value="D">D. to step in before something happens</option><option value="E">E. repeated patterns of behaviour</option><option value="F">F. something that triggers a behaviour</option><option value="G">G. the ability of the brain to reorganise itself</option><option value="H">H. something that blocks progress or makes something more difficult</option><option value="I">I. acting without conscious awareness</option><option value="J">J. a feeling of worry or nervousness</option><option value="K">K. something gained because of an action</option><option value="L">L. helpful or producing a good result</option><option value="M">M. a chemical in the brain linked to pleasure and learning</option><option value="N">N. done automatically with little conscious effort</option><option value="O">O. a therapy that replaces harmful habits with healthier behaviours</option></select></td></tr>
+<tr><td>13</td><td><strong>subconsciously</strong></td><td><select class="msel" id="t5m13"><option value="">&#8212; select &#8212;</option><option value="A">A. the surroundings or conditions in which something happens</option><option value="B">B. careful thinking before making a decision</option><option value="C">C. a behaviour performed regularly and automatically</option><option value="D">D. to step in before something happens</option><option value="E">E. repeated patterns of behaviour</option><option value="F">F. something that triggers a behaviour</option><option value="G">G. the ability of the brain to reorganise itself</option><option value="H">H. something that blocks progress or makes something more difficult</option><option value="I">I. acting without conscious awareness</option><option value="J">J. a feeling of worry or nervousness</option><option value="K">K. something gained because of an action</option><option value="L">L. helpful or producing a good result</option><option value="M">M. a chemical in the brain linked to pleasure and learning</option><option value="N">N. done automatically with little conscious effort</option><option value="O">O. a therapy that replaces harmful habits with healthier behaviours</option></select></td></tr>
+<tr><td>14</td><td><strong>automated</strong></td><td><select class="msel" id="t5m14"><option value="">&#8212; select &#8212;</option><option value="A">A. the surroundings or conditions in which something happens</option><option value="B">B. careful thinking before making a decision</option><option value="C">C. a behaviour performed regularly and automatically</option><option value="D">D. to step in before something happens</option><option value="E">E. repeated patterns of behaviour</option><option value="F">F. something that triggers a behaviour</option><option value="G">G. the ability of the brain to reorganise itself</option><option value="H">H. something that blocks progress or makes something more difficult</option><option value="I">I. acting without conscious awareness</option><option value="J">J. a feeling of worry or nervousness</option><option value="K">K. something gained because of an action</option><option value="L">L. helpful or producing a good result</option><option value="M">M. a chemical in the brain linked to pleasure and learning</option><option value="N">N. done automatically with little conscious effort</option><option value="O">O. a therapy that replaces harmful habits with healthier behaviours</option></select></td></tr>
+<tr><td>15</td><td><strong>habit reversal training</strong></td><td><select class="msel" id="t5m15"><option value="">&#8212; select &#8212;</option><option value="A">A. the surroundings or conditions in which something happens</option><option value="B">B. careful thinking before making a decision</option><option value="C">C. a behaviour performed regularly and automatically</option><option value="D">D. to step in before something happens</option><option value="E">E. repeated patterns of behaviour</option><option value="F">F. something that triggers a behaviour</option><option value="G">G. the ability of the brain to reorganise itself</option><option value="H">H. something that blocks progress or makes something more difficult</option><option value="I">I. acting without conscious awareness</option><option value="J">J. a feeling of worry or nervousness</option><option value="K">K. something gained because of an action</option><option value="L">L. helpful or producing a good result</option><option value="M">M. a chemical in the brain linked to pleasure and learning</option><option value="N">N. done automatically with little conscious effort</option><option value="O">O. a therapy that replaces harmful habits with healthier behaviours</option></select></td></tr>
+</tbody></table>
+        <div class="brow"><button class="prv" onclick="goToTask(4)">&larr; Previous</button><button class="chk" id="check5" onclick="checkTask5()" disabled>Check Answers</button><button class="nxt" id="next5" disabled onclick="goToTask(6)">Next Task &rarr;</button></div>
+        <button class="sab" id="showAns5" onclick="toggleAns('ans5')">&#9660; Show Answers</button>
+        <div class="apan" id="ans5">
+            <p><strong>MCQ:</strong> 1-B, 2-B, 3-C, 4-C, 5-B, 6-C, 7-B, 8-B, 9-B, 10-C</p>
+            <p><strong>Gap Fill:</strong> 1-subconsciously, 2-beneficial, 3-anxiety, 4-dopamine, 5-neuroplasticity, 6-environment, 7-cues, 8-deliberation, 9-routines, 10-automated, 11-obstacles, 12-transferred, 13-intervene, 14-patience, 15-reward</p>
+            <p><strong>Matching:</strong> 1-C, 2-F, 3-L, 4-J, 5-M, 6-G, 7-K, 8-B, 9-A, 10-E, 11-H, 12-D, 13-I, 14-N, 15-O</p>
+        </div>
+    </div>
+
+    <!-- TASK 6 -->
+    <div class="card" id="task6">
+        <div class="thdr"><div class="tnum">6</div><div><div class="ttitle">Dictation + Comprehension</div><div class="tsub">Listen, complete the gaps, then answer questions</div></div></div>
+        <div class="aplayer"><p>&#127911; Ageing &mdash; BBC Learning English</p><audio controls src="habits.mp3"></audio></div>
+        <h4 style="color:#2b6cb0;margin-bottom:12px;">Part 1 &mdash; Dictation (ONE WORD / SHORT PHRASE)</h4>
+        <div class="gsec">
+<div class="gs"><strong>1.</strong> &hellip;our body is growing <input class="gi" id="d1" placeholder="(1)"></div>
+<div class="gs"><strong>2.</strong> &hellip;we can't avoid <input class="gi" id="d2" placeholder="(2)"></div>
+<div class="gs"><strong>3.</strong> &hellip;how to stay <input class="gi" id="d3" placeholder="(3)" style="width:160px;">, an idiom meaning to keep a youthful outlook on life</div>
+<div class="gs"><strong>4.</strong> &hellip;the oldest recorded person ever lived to the ripe old age of <input class="gi" id="d4" placeholder="(4)"></div>
+<div class="gs"><strong>5.</strong> &hellip;Which country was she from? I'm going to say <input class="gi" id="d5" placeholder="(5)"></div>
+<div class="gs"><strong>6.</strong> &hellip;we would have thought ageing was all to do with our <input class="gi" id="d6" placeholder="(6)"></div>
+<div class="gs"><strong>7.</strong> &hellip;A recent paper said that <input class="gi" id="d7" placeholder="(7)"> of our ageing can be controlled by how we live</div>
+<div class="gs"><strong>8.</strong> &hellip;Professor Harper says much of ageing is determined by our <input class="gi" id="d8" placeholder="(8)"></div>
+<div class="gs"><strong>9.</strong> &hellip;There's obviously things like <input class="gi" id="d9" placeholder="(9)">, but there's also a positive attitude</div>
+<div class="gs"><strong>10.</strong> &hellip;Wonderful <input class="gi" id="d10" placeholder="(10)" style="width:160px;"> have shown that if you're positive, you have far greater health in later life</div>
+<div class="gs"><strong>11.</strong> &hellip;A positive attitude means feeling hopeful, confident, and focused on the <input class="gi" id="d11" placeholder="(11)" style="width:150px;"> in life</div>
+<div class="gs"><strong>12.</strong> &hellip;Twin studies investigate the roles of genetics and <input class="gi" id="d12" placeholder="(12)"> in human development</div>
+<div class="gs"><strong>13.</strong> &hellip;Loneliness can have the same impact as <input class="gi" id="d13" placeholder="(13)">, according to the statistics</div>
+<div class="gs"><strong>14.</strong> &hellip;The Mediterranean diet also includes more <input class="gi" id="d14" placeholder="(14)"> because people spend more time outside</div>
+<div class="gs"><strong>15.</strong> &hellip;People also have <input class="gi" id="d15" placeholder="(15)" style="width:180px;">, where they sit down and share food together</div>
+<div class="gs"><strong>16.</strong> &hellip;Many people also live in <input class="gi" id="d16" placeholder="(16)" style="width:200px;"> households</div>
+<div class="gs"><strong>17.</strong> &hellip;a positive attitude and social <input class="gi" id="d17" placeholder="(17)"> are things we can all do to age well</div>
+<div class="gs"><strong>18.</strong> &hellip;The oldest recorded person actually came from <input class="gi" id="d18" placeholder="(18)"></div>
+<div class="gs"><strong>19.</strong> &hellip;The idiom <em>young at heart</em> means thinking and behaving in a <input class="gi" id="d19" placeholder="(19)"> way despite getting older</div>
+<div class="gs"><strong>20.</strong> &hellip;People with a positive <input class="gi" id="d20" placeholder="(20)"> feel hopeful and confident</div>
+<div class="gs"><strong>21.</strong> &hellip;Twin studies investigate genetics and <input class="gi" id="d21" placeholder="(21)"></div>
+<div class="gs"><strong>22.</strong> &hellip;A Mediterranean <input class="gi" id="d22" placeholder="(22)"> includes foods like vegetables, olive oil and fish</div>
+<div class="gs"><strong>23.</strong> &hellip;At a <input class="gi" id="d23" placeholder="(23)"> meal, people sit together and share food</div>
+<div class="gs"><strong>24.</strong> &hellip;A <input class="gi" id="d24" placeholder="(24)" style="width:200px;"> household includes people from two or more generations</div>
+<div class="gs"><strong>25.</strong> &hellip;Grey hair and wrinkles are common <input class="gi" id="d25" placeholder="(25)"> of ageing</div>
+<div class="gs"><strong>26.</strong> &hellip;Scientists now believe we can influence how we <input class="gi" id="d26" placeholder="(26)"></div>
+<div class="gs"><strong>27.</strong> &hellip;Healthy habits include good diet, exercise and staying socially <input class="gi" id="d27" placeholder="(27)"></div>
+<div class="gs"><strong>28.</strong> &hellip;Loneliness can affect both physical and <input class="gi" id="d28" placeholder="(28)"> health</div>
+<div class="gs"><strong>29.</strong> &hellip;Mediterranean cultures often enjoy regular meals <input class="gi" id="d29" placeholder="(29)"></div>
+<div class="gs"><strong>30.</strong> &hellip;According to Professor Harper, lifestyle can make a real <input class="gi" id="d30" placeholder="(30)"></div>
+</div>
+        <h4 style="color:#2b6cb0;margin:20px 0 12px;">Part 2 &mdash; Comprehension Questions</h4>
+        <div class="qblock"><div class="qt">1. According to Professor Harper, approximately how much of ageing can be influenced by lifestyle?</div><div class="opts"><label><input type="radio" name="t6q1" value="A"> A. 20%</label><label><input type="radio" name="t6q1" value="B"> B. 40%</label><label><input type="radio" name="t6q1" value="C"> C. 60%</label><label><input type="radio" name="t6q1" value="D"> D. 90%</label></div><div class="fb" id="fb_t6q1"></div></div>
+        <div class="qblock"><div class="qt">2. What did the twin studies suggest?</div><div class="opts"><label><input type="radio" name="t6q2" value="A"> A. Twins always age at the same speed.</label><label><input type="radio" name="t6q2" value="B"> B. Positive people tend to enjoy better health later in life.</label><label><input type="radio" name="t6q2" value="C"> C. Diet is more important than exercise.</label><label><input type="radio" name="t6q2" value="D"> D. Genetics completely determines ageing.</label></div><div class="fb" id="fb_t6q2"></div></div>
+        <div class="qblock"><div class="qt">3. According to the programme, loneliness can have a similar impact to:</div><div class="opts"><label><input type="radio" name="t6q3" value="A"> A. Lack of sleep</label><label><input type="radio" name="t6q3" value="B"> B. Drinking coffee</label><label><input type="radio" name="t6q3" value="C"> C. Smoking</label><label><input type="radio" name="t6q3" value="D"> D. Eating too much sugar</label></div><div class="fb" id="fb_t6q3"></div></div>
+        <div class="qblock"><div class="qt">4. Which of the following is NOT mentioned as part of the Mediterranean lifestyle?</div><div class="opts"><label><input type="radio" name="t6q4" value="A"> A. Outdoor exercise</label><label><input type="radio" name="t6q4" value="B"> B. Communal meals</label><label><input type="radio" name="t6q4" value="C"> C. Multigenerational households</label><label><input type="radio" name="t6q4" value="D"> D. Daily gym workouts</label></div><div class="fb" id="fb_t6q4"></div></div>
+        <div class="qblock"><div class="qt">5. What does the idiom "young at heart" mean?</div><div class="opts"><label><input type="radio" name="t6q5" value="A"> A. Looking physically young</label><label><input type="radio" name="t6q5" value="B"> B. Being shorter than average</label><label><input type="radio" name="t6q5" value="C"> C. Keeping a youthful attitude despite getting older</label><label><input type="radio" name="t6q5" value="D"> D. Having children at a young age</label></div><div class="fb" id="fb_t6q5"></div></div>
+        <div class="brow"><button class="prv" onclick="goToTask(5)">&larr; Previous</button><button class="chk" id="check6" onclick="checkTask6()" disabled>Check Answers</button><button class="nxt" id="next6" disabled onclick="goToTask(7)">Next Task &rarr;</button></div>
+        <button class="sab" id="showAns6" onclick="toggleAns('ans6')">&#9660; Show Answers</button>
+        <div class="apan" id="ans6">
+            <p><strong>Dictation:</strong> 1-old, 2-ageing, 3-young at heart, 4-122, 5-Japan, 6-cells, 7-60%, 8-lifestyle, 9-diet, 10-twin studies, 11-good things, 12-environment, 13-smoking, 14-exercise, 15-communal meals, 16-multigenerational, 17-interaction, 18-France, 19-youthful, 20-attitude, 21-environment, 22-diet, 23-communal, 24-multigenerational, 25-signs, 26-age, 27-active, 28-mental, 29-together, 30-difference</p>
+            <p><strong>MCQ:</strong> 1-C, 2-B, 3-C, 4-D, 5-C</p>
+        </div>
+    </div>
+
+    <!-- TASK 7 -->
+    <div class="card" id="task7">
+        <div class="thdr"><div class="tnum">7</div><div><div class="ttitle">Practice Listening</div><div class="tsub">Full IELTS-style listening test</div></div></div>
+        <a class="hlink" href="Listening (33).html" target="_blank">&#127911; Open Practice Listening</a>
+        <div class="brow"><button class="prv" onclick="goToTask(6)">&larr; Previous</button><button class="nxt" onclick="finishDay()">Finish Day 4 &#10003;</button></div>
+    </div>
+
+    <!-- COMPLETION -->
+    <div class="done" id="donescreen">
+        <div class="ico">&#127881;</div>
+        <h2>Day 4 Complete!</h2>
+        <p>Great work! You've completed all tasks for Week 7, Day 4.</p>
+        <div style="margin:30px 0;text-align:left;">
+            <h3 style="color:#2b6cb0;border-bottom:2px solid #2b6cb0;padding-bottom:10px;margin-bottom:15px;">&#128203; Review Your Work</h3>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:15px;">
+                <div onclick="reviewTask(1)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#2b6cb0;margin-bottom:5px;">Task 1</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Mini Reading</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(2)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#2b6cb0;margin-bottom:5px;">Task 2</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Article Reading</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(3)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#2b6cb0;margin-bottom:5px;">Task 3</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Reading</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(4)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#2b6cb0;margin-bottom:5px;">Task 4</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Listening Task</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(5)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#2b6cb0;margin-bottom:5px;">Task 5</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Video + Vocab</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(6)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#2b6cb0;margin-bottom:5px;">Task 6</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Dictation + MCQ</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(7)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#2b6cb0;margin-bottom:5px;">Task 7</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Listening</div><div style="font-size:1.4rem;">&#9989;</div></div>
+            </div>
+        </div>
+        <a href="/student-dashboard.html" class="dbbtn">&larr; Back to Dashboard</a>
+    </div>
+</div>
+<script>
+const SUPABASE_URL='https://nbfceuhuauizyucugejr.supabase.co';
+const SUPABASE_KEY='sb_publishable_0mFIGJkA_DKZfUiDAWFdrA_nXt0hF6H';
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const WEEK=7,DAY=4,TOTAL=7;
+let sid=null,cur=1,t0=Date.now(),stout=null;
+
+// Task 4 answers: ticked = 1,2,3,5,6,7 (not 4,8)
+const T4_CORRECT = new Set([1,2,3,5,6,7]);
+let t4Checked = new Set();
+let t4Done = false;
+
+const dictAns=['old','ageing','young at heart','122','Japan','cells','60%','lifestyle','diet','twin studies','good things','environment','smoking','exercise','communal meals','multigenerational','interaction','France','youthful','attitude','environment','diet','communal','multigenerational','signs','age','active','mental','together','difference'];
+
+const vocab=[
+{w:"1. Obedience (n)",d:"Following instructions from someone in authority"},
+{w:"2. Conformity (n)",d:"Adjusting behaviour to match the group"},
+{w:"3. Social norm (n)",d:"An unwritten rule governing acceptable behaviour"},
+{w:"4. Normative influence (n)",d:"Influence that makes people act to gain approval"},
+{w:"5. Informational influence (n)",d:"Influence based on wanting accurate information"},
+{w:"6. Confederate (n)",d:"A person pretending to be a participant in an experiment"},
+{w:"7. Mere exposure effect (n)",d:"The tendency to like things after repeated exposure"},
+{w:"8. Halo effect (n)",d:"Judging others positively based on one good trait"},
+{w:"9. Egocentric bias (n)",d:"Seeing the world only from your own perspective"},
+{w:"10. Automatic (adj)",d:"Happening without conscious thought"},
+{w:"11. Habit loop (n)",d:"A cue, routine and reward forming a repeated behaviour"},
+{w:"12. Cue (n)",d:"A signal that triggers a habitual behaviour"},
+{w:"13. Routine (n)",d:"The automatic response that makes up a habit"},
+{w:"14. Reward (n)",d:"The benefit that reinforces a habit"},
+{w:"15. Nudge (n)",d:"A gentle push towards better behaviour without removing choice"},
+{w:"16. Choice architecture (n)",d:"Designing environments to encourage better decisions"},
+{w:"17. Default (n)",d:"The pre-set option people get if they make no active choice"},
+{w:"18. Identity (n)",d:"The characteristics that define who someone is"},
+{w:"19. Friction (n)",d:"Resistance that makes a behaviour harder to do"},
+{w:"20. Habit formation (n)",d:"The process by which repeated actions become automatic"},
+{w:"21. Hierarchy (n)",d:"A system in which people are ranked above one another"},
+{w:"22. Regulate (v)",d:"To control or adjust something according to rules"},
+{w:"23. Unanimous (adj)",d:"Agreed by everyone in a group"},
+{w:"24. Rejection (n)",d:"Being refused or excluded by others"},
+{w:"25. Minority (n)",d:"The smaller group within a larger whole"},
+{w:"26. Sensory (adj)",d:"Relating to the physical senses"},
+{w:"27. Confederate (n)",d:"A secret collaborator in an experiment"},
+{w:"28. Pervasive (adj)",d:"Spreading through every part of something"},
+{w:"29. Deliberate (adj)",d:"Done consciously and intentionally"},
+{w:"30. Peer pressure (n)",d:"Influence from people of similar age or status"},
+{w:"31. Conform (v)",d:"To behave according to social expectations"},
+{w:"32. Rebel (v)",d:"To resist or go against authority or convention"},
+{w:"33. Alternative (adj)",d:"Different from the usual or conventional"},
+{w:"34. Conventional (adj)",d:"Following traditional practices and standards"},
+{w:"35. Multicultural (adj)",d:"Relating to several different cultures"},
+{w:"36. Tradition (n)",d:"A long-established custom passed down through generations"},
+{w:"37. Authority (n)",d:"The power or right to give orders or make decisions"},
+{w:"38. Acquaintance (n)",d:"A person you know but are not close friends with"},
+{w:"39. Influence (n)",d:"The power to have an effect on someone or something"},
+{w:"40. Bias (n)",d:"An unfair preference or prejudice"},
+{w:"41. Experiment (n)",d:"A scientific test carried out under controlled conditions"},
+{w:"42. Participant (n)",d:"A person who takes part in an activity or study"},
+{w:"43. Judgement (n)",d:"The ability to form an opinion or make a decision"},
+{w:"44. Evidence (n)",d:"Facts or information showing something is true"},
+{w:"45. Capacity (n)",d:"The ability or power to do something"},
+{w:"46. Cruelty (n)",d:"Behaviour that causes pain or suffering to others"},
+{w:"47. Hierarchical (adj)",d:"Organised in a system with levels of authority"},
+{w:"48. Minority (n)",d:"A smaller group within a larger whole"},
+{w:"49. Fashion trend (n)",d:"A popular style or practice at a particular time"},
+{w:"50. Persist (v)",d:"To continue firmly despite obstacles"},
+];
+
+function toggleCheck(n){
+    if(t4Done) return;
+    const el=document.getElementById("sc"+n);
+    if(t4Checked.has(n)){t4Checked.delete(n);el.classList.remove("checked");el.textContent="";}
+    else{t4Checked.add(n);el.classList.add("checked");el.textContent="✓";}
+    scheduleSave();
+}
+
+function checkTask4(){
+    t4Done=true;
+    const ans=[];
+    for(let i=1;i<=8;i++){
+        const el=document.getElementById("sc"+i);
+        const isChecked=t4Checked.has(i);
+        const shouldBeChecked=T4_CORRECT.has(i);
+        el.classList.remove("correct","incorrect","missed");
+        if(isChecked&&shouldBeChecked){el.classList.add("correct");el.textContent="✓";}
+        else if(isChecked&&!shouldBeChecked){el.classList.add("incorrect");el.textContent="✗";}
+        else if(!isChecked&&shouldBeChecked){el.classList.add("missed");el.textContent="✓";}
+        ans.push({question_id:"t4s"+i,question_type:"gap_fill",student_answer:isChecked?"ticked":"",correct_answer:shouldBeChecked?"ticked":"",is_correct:isChecked===shouldBeChecked});
+    }
+    document.getElementById("showAns4").style.display="inline-block";
+    document.getElementById("next4").disabled=false;
+    saveAnswers(4,ans);saveTP(4);
+}
+
+async function initStu(){
+    const p=new URLSearchParams(window.location.search);
+    if(p.get("teacher")==="true"){sid="teacher-preview";return;}
+    try{
+        const u=localStorage.getItem("user");
+        if(!u){window.location.href="/login.html";return;}
+        const pu=JSON.parse(u);
+        const{data,error}=await db.from("students").select("*").eq("username",pu.username).single();
+        if(error||!data)return;
+        sid=data.id;
+    }catch(e){}
+}
+function buildVocab(){
+    document.getElementById("vgrid").innerHTML=vocab.map(v=>`<div class="vi"><div class="vw">${v.w}</div><div class="vd">${v.d}</div></div>`).join("");
+}
+async function startDay(){
+    document.getElementById("splash").style.display="none";
+    document.getElementById("mc").style.display="block";
+    buildVocab();await initStu();await restoreProgress();setupLive();
+}
+function goToTask(n){
+    document.getElementById("task"+cur).classList.remove("active");cur=n;
+    document.getElementById("task"+n).classList.add("active");
+    document.getElementById("task"+n).scrollIntoView({behavior:"smooth",block:"start"});
+    updProg(n);t0=Date.now();saveResume(n);
+}
+function updProg(n){document.getElementById("pfill").style.width=Math.round(((n-1)/TOTAL)*100)+"%";document.getElementById("plabel").textContent="Task "+n+" of "+TOTAL;}
+function showSavi(){const e=document.getElementById("savi");e.classList.add("show");setTimeout(()=>e.classList.remove("show"),2000);}
+async function saveResume(n){if(!sid||sid==="teacher-preview")return;try{await db.from("student_resume").upsert({student_id:sid,week:WEEK,day:DAY,last_task:n,updated_at:new Date().toISOString()},{onConflict:"student_id"});}catch(e){}}
+function scheduleSave(){clearTimeout(stout);stout=setTimeout(()=>{localStorage.setItem("w"+WEEK+"d"+DAY+"_ans",JSON.stringify(gatherAll()));showSavi();},800);}
+function gatherAll(){
+    const d={};
+    document.querySelectorAll(".gi").forEach(el=>{if(el.id)d[el.id]=el.value;});
+    ["t5q1","t5q2","t5q3","t5q4","t5q5","t5q6","t5q7","t5q8","t5q9","t5q10","t6q1","t6q2","t6q3","t6q4","t6q5"].forEach(n=>{const s=document.querySelector("input[name='"+n+"']:checked");if(s)d[n]=s.value;});
+    document.querySelectorAll("select").forEach(el=>{if(el.id)d[el.id]=el.value;});
+    d["t4checked"]=[...t4Checked];
+    return d;
+}
+async function restoreProgress(){
+    try{
+        const sv=localStorage.getItem("w"+WEEK+"d"+DAY+"_ans");
+        if(sv){
+            const d=JSON.parse(sv);
+            Object.entries(d).forEach(([id,val])=>{const el=document.getElementById(id);if(el&&el.tagName==="INPUT")el.value=val;});
+            ["t5q1","t5q2","t5q3","t5q4","t5q5","t5q6","t5q7","t5q8","t5q9","t5q10","t6q1","t6q2","t6q3","t6q4","t6q5"].forEach(n=>{const val=d[n];if(val){const r=document.querySelector("input[name='"+n+"'][value='"+val+"']");if(r)r.checked=true;}});
+            Object.entries(d).forEach(([id,val])=>{const el=document.getElementById(id);if(el&&el.tagName==="SELECT")el.value=val;});
+            if(d.t4checked){d.t4checked.forEach(n=>{t4Checked.add(n);const el=document.getElementById("sc"+n);if(el){el.classList.add("checked");el.textContent="✓";}});}
+        }
+        if(sid&&sid!=="teacher-preview"){
+            const{data:td}=await db.from("task_progress").select("task_number,status").eq("student_id",sid).eq("week",WEEK).eq("day",DAY);
+            if(td&&td.filter(t=>t.status==="completed").length>=TOTAL){
+                document.getElementById("task1").classList.remove("active");
+                document.getElementById("donescreen").style.display="block";
+                updProg(TOTAL);valAll();makeRO();return;
+            }
+            const{data:res}=await db.from("student_resume").select("last_task").eq("student_id",sid).eq("week",WEEK).eq("day",DAY).single();
+            if(res&&res.last_task>1){document.getElementById("task1").classList.remove("active");cur=res.last_task;document.getElementById("task"+cur).classList.add("active");updProg(cur);}
+        }
+        valAll();
+    }catch(e){}
+}
+function makeRO(){
+    document.querySelectorAll(".gi").forEach(el=>{el.disabled=true;el.style.opacity="0.85";});
+    document.querySelectorAll("input[type=radio]").forEach(el=>el.disabled=true);
+    document.querySelectorAll("select").forEach(el=>el.disabled=true);
+    document.querySelectorAll(".stmt-check").forEach(el=>el.style.pointerEvents="none");
+    document.querySelectorAll(".chk").forEach(el=>el.style.display="none");
+    document.querySelectorAll(".nxt").forEach(el=>el.style.display="none");
+    document.querySelectorAll(".prv").forEach(el=>el.style.display="none");
+    document.querySelectorAll(".sab").forEach(el=>el.style.display="inline-block");
+}
+function setupLive(){
+    ["t1q1","t1q2","t1q3","t1q4","t1q5","t1q6","t1q7"].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener("input",()=>{valT1();scheduleSave();});});
+    ["t5q1","t5q2","t5q3","t5q4","t5q5","t5q6","t5q7","t5q8","t5q9","t5q10"].forEach(n=>{document.querySelectorAll("input[name='"+n+"']").forEach(el=>el.addEventListener("change",()=>{valT5();scheduleSave();}));});
+    for(let i=1;i<=15;i++){const el=document.getElementById("t5g"+i);if(el)el.addEventListener("input",()=>{valT5();scheduleSave();});}
+    for(let i=1;i<=15;i++){const el=document.getElementById("t5m"+i);if(el)el.addEventListener("change",()=>{valT5();scheduleSave();});}
+    ["t6q1","t6q2","t6q3","t6q4","t6q5"].forEach(n=>{document.querySelectorAll("input[name='"+n+"']").forEach(el=>el.addEventListener("change",()=>{valT6();scheduleSave();}));});
+    for(let i=1;i<=30;i++){const el=document.getElementById("d"+i);if(el)el.addEventListener("input",()=>{valT6();scheduleSave();});}
+}
+function valAll(){valT1();valT5();valT6();}
+function valT1(){document.getElementById("check1").disabled=!["t1q1","t1q2","t1q3","t1q4","t1q5","t1q6","t1q7"].every(id=>document.getElementById(id)?.value.trim());}
+function valT5(){
+    const mc=["t5q1","t5q2","t5q3","t5q4","t5q5","t5q6","t5q7","t5q8","t5q9","t5q10"].every(n=>document.querySelector("input[name='"+n+"']:checked"));
+    const gf=Array.from({length:15},(_,i)=>document.getElementById("t5g"+(i+1))?.value.trim()).every(Boolean);
+    const mt=Array.from({length:15},(_,i)=>document.getElementById("t5m"+(i+1))?.value).every(Boolean);
+    document.getElementById("check5").disabled=!(mc&&gf&&mt);
+}
+function valT6(){
+    const dc=Array.from({length:30},(_,i)=>document.getElementById("d"+(i+1))?.value.trim()).every(Boolean);
+    const mc=["t6q1","t6q2","t6q3","t6q4","t6q5"].every(n=>document.querySelector("input[name='"+n+"']:checked"));
+    document.getElementById("check6").disabled=!(dc&&mc);
+}
+const t1ok={t1q1:["social norms","norms"],t1q2:["an automatic process","automatic process","automatic"],t1q3:["thirty-seven percent","37 percent","37%"],t1q4:["avoid social rejection","rejection","desire to belong"],t1q5:["sixty-five percent","65 percent","65%"],t1q6:["obedience","capacity for obedience"],t1q7:["normative influence"]};
+const t5mcq={t5q1:"B",t5q2:"B",t5q3:"C",t5q4:"C",t5q5:"B",t5q6:"C",t5q7:"B",t5q8:"B",t5q9:"B",t5q10:"C"};
+const t5gap={t5g1:"subconsciously",t5g2:"beneficial",t5g3:"anxiety",t5g4:"dopamine",t5g5:"neuroplasticity",t5g6:"environment",t5g7:"cues",t5g8:"deliberation",t5g9:"routines",t5g10:"automated",t5g11:"obstacles",t5g12:"transferred",t5g13:"intervene",t5g14:"patience",t5g15:"reward"};
+const t5mat={t5m1:"C",t5m2:"F",t5m3:"L",t5m4:"J",t5m5:"M",t5m6:"G",t5m7:"K",t5m8:"B",t5m9:"A",t5m10:"E",t5m11:"H",t5m12:"D",t5m13:"I",t5m14:"N",t5m15:"O"};
+const t6mcq={t6q1:"C",t6q2:"B",t6q3:"C",t6q4:"D",t6q5:"C"};
+
+function checkTask1(){
+    const ans=[];
+    Object.entries(t1ok).forEach(([id,opts])=>{
+        const inp=document.getElementById(id);const val=inp.value.trim().toLowerCase();
+        const ok=opts.some(o=>val.includes(o.toLowerCase()));
+        inp.classList.toggle("correct",ok);inp.classList.toggle("incorrect",!ok);
+        ans.push({question_id:id,question_type:"gap_fill",student_answer:inp.value.trim(),correct_answer:opts[0],is_correct:ok});
+    });
+    document.getElementById("showAns1").style.display="inline-block";
+    document.getElementById("next1").disabled=false;
+    saveAnswers(1,ans);saveTP(1);
+}
+function checkTask5(){
+    const ans=[];
+    Object.entries(t5mcq).forEach(([n,correct])=>{
+        const sel=document.querySelector("input[name='"+n+"']:checked");
+        const fb=document.getElementById("fb_"+n);if(!sel)return;
+        const ok=sel.value===correct;
+        fb.textContent=ok?"✅ Correct!":"❌ Incorrect — correct answer: "+correct;
+        fb.className="fb "+(ok?"correct":"incorrect");
+        ans.push({question_id:n,question_type:"mcq",student_answer:sel.value,correct_answer:correct,is_correct:ok});
+    });
+    Object.entries(t5gap).forEach(([id,correct])=>{
+        const inp=document.getElementById(id);const ok=inp.value.trim().toLowerCase()===correct.toLowerCase();
+        inp.classList.toggle("correct",ok);inp.classList.toggle("incorrect",!ok);
+        ans.push({question_id:id,question_type:"gap_fill",student_answer:inp.value.trim(),correct_answer:correct,is_correct:ok});
+    });
+    Object.entries(t5mat).forEach(([id,correct])=>{
+        const sel=document.getElementById(id);const ok=sel.value===correct;
+        sel.classList.toggle("correct",ok);sel.classList.toggle("incorrect",!ok);
+        ans.push({question_id:id,question_type:"matching",student_answer:sel.value,correct_answer:correct,is_correct:ok});
+    });
+    document.getElementById("showAns5").style.display="inline-block";
+    document.getElementById("next5").disabled=false;
+    saveAnswers(5,ans);saveTP(5);
+}
+function checkTask6(){
+    const ans=[];
+    for(let i=1;i<=30;i++){
+        const inp=document.getElementById("d"+i);const correct=dictAns[i-1];
+        const ok=inp.value.trim().toLowerCase()===correct.toLowerCase();
+        inp.classList.toggle("correct",ok);inp.classList.toggle("incorrect",!ok);
+        ans.push({question_id:"d"+i,question_type:"gap_fill",student_answer:inp.value.trim(),correct_answer:correct,is_correct:ok});
+    }
+    Object.entries(t6mcq).forEach(([n,correct])=>{
+        const sel=document.querySelector("input[name='"+n+"']:checked");
+        const fb=document.getElementById("fb_"+n);if(!sel)return;
+        const ok=sel.value===correct;
+        fb.textContent=ok?"✅ Correct!":"❌ Incorrect — correct answer: "+correct;
+        fb.className="fb "+(ok?"correct":"incorrect");
+        ans.push({question_id:n,question_type:"mcq",student_answer:sel.value,correct_answer:correct,is_correct:ok});
+    });
+    document.getElementById("showAns6").style.display="inline-block";
+    document.getElementById("next6").disabled=false;
+    saveAnswers(6,ans);saveTP(6);
+}
+async function saveAnswers(tnum,ans){
+    if(!sid||sid==="teacher-preview")return;
+    try{
+        const rows=ans.map(a=>({student_id:sid,week:WEEK,day:DAY,task_number:tnum,question_id:a.question_id,question_type:a.question_type,student_answer:a.student_answer,correct_answer:a.correct_answer,is_correct:a.is_correct,answered_at:new Date().toISOString()}));
+        await db.from("student_answers").upsert(rows,{onConflict:"student_id,week,day,task_number,question_id"});
+    }catch(e){}
+}
+async function saveTP(n){
+    if(!sid||sid==="teacher-preview")return;
+    try{await db.from("task_progress").upsert({student_id:sid,week:WEEK,day:DAY,task_number:n,status:"completed",time_completed:new Date().toISOString(),time_spent_seconds:Math.round((Date.now()-t0)/1000)},{onConflict:"student_id,week,day,task_number"});}catch(e){}
+}
+async function finishDay(){
+    document.getElementById("task7").classList.remove("active");
+    document.getElementById("donescreen").style.display="block";
+    document.getElementById("donescreen").scrollIntoView({behavior:"smooth"});
+    localStorage.removeItem("w"+WEEK+"d"+DAY+"_ans");
+    for(let i=1;i<=TOTAL;i++)await saveTP(i);
+    if(sid&&sid!=="teacher-preview")await db.from("student_resume").delete().eq("student_id",sid);
+    makeRO();
+}
+function reviewTask(n){
+    document.getElementById("donescreen").style.display="none";cur=n;
+    document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));
+    document.getElementById("task"+n).classList.add("active");
+    document.getElementById("task"+n).scrollIntoView({behavior:"smooth",block:"start"});
+    const ex=document.getElementById("btr");
+    if(!ex){
+        const b=document.createElement("button");b.id="btr";b.textContent="🏆 Back to Results";
+        b.style.cssText="position:fixed;bottom:20px;right:20px;background:#4299e1;color:white;border:none;padding:12px 22px;border-radius:50px;cursor:pointer;font-weight:bold;font-size:0.95rem;z-index:9998;";
+        b.onclick=()=>{b.remove();document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));document.getElementById("donescreen").style.display="block";document.getElementById("donescreen").scrollIntoView({behavior:"smooth"});};
+        document.body.appendChild(b);
+    }
+}
+function toggleVocab(){document.getElementById("vbody").classList.toggle("open");document.getElementById("varr").classList.toggle("open");}
+function toggleAns(id){const d=document.getElementById(id);const b=d.previousElementSibling;d.style.display=d.style.display==="block"?"none":"block";b.textContent=d.style.display==="block"?"▲ Hide Answers":"▼ Show Answers";}
+</script>
+</body>
+</html>
