@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEEK 8 - DAY 1 (Crime & Punishment)</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Segoe UI", sans-serif; background: #fff5f5; color: #333; }
+        #splash { position: fixed; inset: 0; background: linear-gradient(135deg, #e53e3e, #9b2c2c); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; color: white; text-align: center; padding: 20px; }
+        #splash h1 { font-size: 3rem; margin-bottom: 10px; }
+        #splash h2 { font-size: 2rem; margin-bottom: 10px; opacity: 0.9; }
+        #splash p { font-size: 1.2rem; margin-bottom: 40px; opacity: 0.8; }
+        .splash-btn { background: white; color: #9b2c2c; border: none; padding: 18px 60px; font-size: 1.4rem; font-weight: bold; border-radius: 50px; cursor: pointer; }
+        .wrap { max-width: 900px; margin: 0 auto; padding: 20px; }
+        .hdr { background: linear-gradient(135deg, #e53e3e, #9b2c2c); color: white; padding: 25px 30px; border-radius: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; }
+        .hdr h1 { font-size: 1.6rem; }
+        .hdr .topic { opacity: 0.85; font-size: 1rem; margin-top: 4px; }
+        .back-btn { background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 10px 20px; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 0.9rem; }
+        .plabel { text-align: center; color: #9b2c2c; font-size: 0.85rem; margin-bottom: 8px; font-weight: 600; }
+        .pwrap { background: #fed7d7; border-radius: 20px; height: 10px; margin-bottom: 20px; overflow: hidden; }
+        .pfill { background: linear-gradient(90deg, #e53e3e, #9b2c2c); height: 100%; border-radius: 20px; transition: width 0.5s; }
+        .vsec { background: white; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-left: 5px solid #e53e3e; overflow: hidden; }
+        .vtog { width: 100%; background: none; border: none; cursor: pointer; padding: 18px 25px; display: flex; align-items: center; justify-content: space-between; }
+        .vtog h3 { color: #9b2c2c; font-size: 1.1rem; margin: 0; }
+        .vcount { background: #e53e3e; color: white; font-size: 0.75rem; font-weight: bold; padding: 3px 10px; border-radius: 20px; }
+        .varr { color: #9b2c2c; font-size: 1rem; transition: transform 0.3s; }
+        .varr.open { transform: rotate(180deg); }
+        .vbody { display: none; padding: 0 25px 20px; }
+        .vbody.open { display: block; }
+        .vgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+        .vi { background: #fff5f5; padding: 10px 14px; border-radius: 8px; }
+        .vi .vw { font-weight: bold; color: #333; font-size: 0.95rem; }
+        .vi .vd { color: #666; font-size: 0.82rem; margin-top: 2px; }
+        .card { background: white; border-radius: 15px; padding: 28px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); display: none; }
+        .card.active { display: block; }
+        .thdr { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .tnum { background: linear-gradient(135deg, #e53e3e, #9b2c2c); color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; flex-shrink: 0; }
+        .ttitle { font-size: 1.3rem; font-weight: bold; color: #333; }
+        .tsub { color: #888; font-size: 0.9rem; margin-top: 2px; }
+        .plink { display: flex; align-items: center; gap: 12px; background: #fff5f5; padding: 15px 20px; border-radius: 10px; text-decoration: none; color: #333; font-weight: 600; border: 2px solid #fed7d7; transition: all 0.3s; margin-bottom: 12px; }
+        .plink:hover { background: #e53e3e; color: white; }
+        .hlink { display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #e53e3e, #9b2c2c); color: white; padding: 15px 30px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 1rem; margin: 10px 0; }
+        .passage { background: #fff5f5; border: 1px solid #fed7d7; border-radius: 10px; padding: 25px; margin: 15px 0; line-height: 1.8; font-size: 0.97rem; }
+        .passage h3 { color: #9b2c2c; margin-bottom: 15px; font-size: 1.2rem; }
+        .passage p { margin-bottom: 14px; }
+        .hl { font-style: italic; color: #9b2c2c; font-weight: 600; }
+        .qblock { margin-bottom: 20px; padding: 18px; background: #f8f9fa; border-radius: 10px; }
+        .qt { font-weight: 600; margin-bottom: 12px; color: #333; line-height: 1.5; }
+        .opts label { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; border-radius: 8px; cursor: pointer; margin-bottom: 5px; }
+        .opts label:hover { background: #fff5f5; }
+        .opts input[type=radio] { margin-top: 3px; flex-shrink: 0; }
+        .fb { margin-top: 8px; font-weight: bold; font-size: 0.9rem; }
+        .fb.correct { color: #28a745; }
+        .fb.incorrect { color: #dc3545; }
+        .gsec { margin-top: 20px; }
+        .gs { margin-bottom: 14px; line-height: 2; font-size: 1rem; }
+        .gi { border: none; border-bottom: 2px solid #e53e3e; padding: 4px 8px; font-size: 0.95rem; width: 200px; background: transparent; outline: none; color: #333; }
+        .gi.correct { border-bottom-color: #28a745; background: #d4edda33; }
+        .gi.incorrect { border-bottom-color: #dc3545; background: #f8d7da33; }
+        .wbox { background: #fff5f5; border: 2px solid #fed7d7; border-radius: 10px; padding: 12px 18px; margin-bottom: 15px; }
+        .wbox strong { color: #9b2c2c; }
+        .vsel { border: 2px solid #fed7d7; border-radius: 6px; padding: 5px 10px; font-size: 0.9rem; background: white; width: 230px; }
+        .vsel.correct { border-color: #28a745; }
+        .vsel.incorrect { border-color: #dc3545; }
+        .crime-passage { background: #fff5f5; border: 1px solid #fed7d7; border-radius: 10px; padding: 18px 22px; margin: 15px 0 10px; line-height: 1.75; font-size: 0.95rem; }
+        .crime-passage h4 { color: #9b2c2c; margin-bottom: 10px; font-size: 1rem; font-weight: 700; }
+        .crime-passage p { margin-bottom: 8px; }
+        .brow { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+        .chk { background: linear-gradient(135deg, #e53e3e, #9b2c2c); color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
+        .chk:disabled { background: #ccc; cursor: not-allowed; }
+        .nxt { background: #28a745; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
+        .nxt:disabled { background: #ccc; cursor: not-allowed; }
+        .prv { background: #6c757d; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
+        .sab { background: #ffc107; color: #333; border: none; padding: 10px 22px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.88rem; display: none; margin-top: 10px; }
+        .apan { display: none; background: #fffbea; border: 2px solid #ffc107; border-radius: 10px; padding: 15px; margin-top: 12px; }
+        .apan p { margin-bottom: 6px; font-size: 0.9rem; }
+        .done { text-align: center; padding: 60px 20px; display: none; }
+        .done .ico { font-size: 5rem; margin-bottom: 20px; }
+        .done h2 { font-size: 2.2rem; color: #9b2c2c; margin-bottom: 10px; }
+        .done p { color: #666; font-size: 1rem; margin-bottom: 30px; }
+        .dbbtn { background: linear-gradient(135deg, #e53e3e, #9b2c2c); color: white; padding: 16px 40px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 1.1rem; display: inline-block; }
+        .savi { position: fixed; bottom: 20px; right: 20px; background: #e53e3e; color: white; padding: 10px 18px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; opacity: 0; transition: opacity 0.4s; z-index: 9000; pointer-events: none; }
+        .savi.show { opacity: 1; }
+    </style>
+</head>
+<body>
+<div id="splash">
+    <h1>&#9878; WEEK 8</h1>
+    <h2>DAY 1</h2>
+    <p>Topic: Crime &amp; Punishment</p>
+    <button class="splash-btn" onclick="startDay()">LET'S GO!</button>
+</div>
+<div class="savi" id="savi">&#10003; Progress saved</div>
+<div class="wrap" id="mc" style="display:none;">
+    <div class="hdr">
+        <div><h1>&#9878; Week 8 &mdash; Day 1</h1><div class="topic">Topic: Crime &amp; Punishment</div></div>
+        <a href="/student-dashboard.html" class="back-btn">&larr; Dashboard</a>
+    </div>
+    <div class="plabel" id="plabel">Task 0 of 7</div>
+    <div class="pwrap"><div class="pfill" id="pfill" style="width:0%"></div></div>
+    <div class="vsec">
+        <button class="vtog" onclick="toggleVocab()">
+            <div style="display:flex;align-items:center;gap:10px;"><h3>&#128214; Today's Vocabulary</h3><span class="vcount">50 words</span></div>
+            <span class="varr" id="varr">&#9660;</span>
+        </button>
+        <div class="vbody" id="vbody"><div class="vgrid" id="vgrid"></div></div>
+    </div>
+
+    <!-- TASK 1 -->
+    <div class="card active" id="task1">
+        <div class="thdr"><div class="tnum">1</div><div><div class="ttitle">Mini Reading</div><div class="tsub">Read and answer &mdash; NO MORE THAN THREE WORDS from the passage</div></div></div>
+        <div class="passage">
+            <h3>Crime, Justice and Society</h3>
+            <p>Crime is among the oldest and most persistent of social phenomena. Every known society has developed formal or informal systems to define which acts are prohibited, to identify those responsible, and to impose <span class="hl">(1) consequences</span> on those who violate collective norms. What counts as a crime, however, is neither fixed nor universal — it is shaped by history, culture, politics and power, and has shifted dramatically across time and place.</p>
+            <p>Modern criminal justice systems typically pursue several distinct goals, which are not always easy to reconcile. <span class="hl">(2) Deterrence</span> aims to discourage offending by making the anticipated costs of crime outweigh its benefits, either for the individual offender or for potential offenders in the wider population. <span class="hl">(3) Rehabilitation</span> takes a different approach, treating crime not primarily as a moral failing to be punished but as a behaviour rooted in social, psychological or economic circumstances that can, with appropriate intervention, be changed. <span class="hl">(4) Retribution</span>, meanwhile, holds that punishment is justified in its own right as a proportionate response to wrongdoing, regardless of its practical effects.</p>
+            <p>The relationship between poverty and crime has been extensively studied, though the nature of the relationship remains contested. Consistent evidence shows that individuals from economically deprived backgrounds are significantly overrepresented in prison populations across most countries, though researchers disagree about whether this reflects a genuine causal link between poverty and offending, or whether it is better explained by differential policing, <span class="hl">(5) systemic bias</span> within the justice system, and the limited resources available to low-income defendants to mount an effective legal defence.</p>
+            <p>In recent decades, many countries have experimented with alternative approaches to traditional <span class="hl">(6) incarceration</span>, including restorative justice programmes in which offenders meet with the victims of their crimes to take responsibility and agree reparations. Evidence suggests that such programmes can reduce <span class="hl">(7) reoffending rates</span> and increase victim satisfaction compared with conventional court proceedings, though they remain controversial and are not universally available.</p>
+        </div>
+        <h4 style="color:#9b2c2c;margin:20px 0 12px;">Answer &mdash; NO MORE THAN THREE WORDS:</h4>
+        <div class="gsec">
+            <div class="gs">1. What do societies impose on those who violate norms?<br><input class="gi" id="t1q1" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">2. What approach aims to discourage offending by raising its costs?<br><input class="gi" id="t1q2" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">3. What approach treats crime as behaviour rooted in circumstances that can be changed?<br><input class="gi" id="t1q3" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">4. What holds that punishment is justified as a proportionate response to wrongdoing?<br><input class="gi" id="t1q4" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">5. What does research suggest may explain overrepresentation of the poor in prisons?<br><input class="gi" id="t1q5" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">6. What alternative to incarceration involves offenders meeting their victims?<br><input class="gi" id="t1q6" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">7. What do restorative programmes appear to reduce compared with conventional courts?<br><input class="gi" id="t1q7" placeholder="___" style="width:300px;margin-top:8px;"></div>
+        </div>
+        <div class="brow">
+            <button class="chk" id="check1" onclick="checkTask1()" disabled>Check Answers</button>
+            <button class="nxt" id="next1" disabled onclick="goToTask(2)">Next Task &rarr;</button>
+        </div>
+        <button class="sab" id="showAns1" onclick="toggleAns('ans1')">&#9660; Show Answers</button>
+        <div class="apan" id="ans1"><p><strong>Answers:</strong> 1-consequences, 2-deterrence, 3-rehabilitation, 4-retribution, 5-systemic bias, 6-restorative justice, 7-reoffending rates</p></div>
+    </div>
+
+    <!-- TASK 2 -->
+    <div class="card" id="task2">
+        <div class="thdr"><div class="tnum">2</div><div><div class="ttitle">Article Reading</div><div class="tsub">Read the article carefully</div></div></div>
+        <a class="plink" href="article 1.pdf" target="_blank"><span style="font-size:1.5rem;">&#128196;</span> Crime &amp; Punishment &mdash; Article 1</a>
+        <div class="brow"><button class="prv" onclick="goToTask(1)">&larr; Previous</button><button class="nxt" onclick="goToTask(3)">Next Task &rarr;</button></div>
+    </div>
+
+    <!-- TASK 3 -->
+    <div class="card" id="task3">
+        <div class="thdr"><div class="tnum">3</div><div><div class="ttitle">Practice Reading</div><div class="tsub">IELTS-style reading test</div></div></div>
+        <a class="hlink" href="Reading (35).html" target="_blank">&#128214; Open Practice Reading</a>
+        <div class="brow"><button class="prv" onclick="goToTask(2)">&larr; Previous</button><button class="nxt" onclick="goToTask(4)">Next Task &rarr;</button></div>
+    </div>
+
+    <!-- TASK 4 -->
+    <div class="card" id="task4">
+        <div class="thdr"><div class="tnum">4</div><div><div class="ttitle">Vocabulary in Context</div><div class="tsub">Choose the correct word for each sentence</div></div></div>
+        <div class="gsec">
+            <div class="gs">1. The judge sentenced him to five years in prison as a form of <select class="vsel" id="t4v1"><option value="">select</option><option value="retribution">retribution</option><option value="rehabilitation">rehabilitation</option><option value="deterrence">deterrence</option></select> for his crimes.</div>
+            <div class="gs">2. The government launched a new <select class="vsel" id="t4v2"><option value="">select</option><option value="rehabilitation">rehabilitation</option><option value="incarceration">incarceration</option><option value="reoffending">reoffending</option></select> programme to help prisoners reintegrate into society.</div>
+            <div class="gs">3. After leaving prison, many ex-offenders struggle to find work, which increases the risk of <select class="vsel" id="t4v3"><option value="">select</option><option value="reoffending">reoffending</option><option value="deterrence">deterrence</option><option value="retribution">retribution</option></select>.</div>
+            <div class="gs">4. The death penalty was once believed to act as a strong <select class="vsel" id="t4v4"><option value="">select</option><option value="deterrent">deterrent</option><option value="verdict">verdict</option><option value="sentence">sentence</option></select> against serious crime.</div>
+            <div class="gs">5. The <select class="vsel" id="t4v5"><option value="">select</option><option value="defendant">defendant</option><option value="prosecutor">prosecutor</option><option value="magistrate">magistrate</option></select> entered a plea of not guilty and asked for the case to go to trial.</div>
+            <div class="gs">6. The jury delivered a unanimous <select class="vsel" id="t4v6"><option value="">select</option><option value="verdict">verdict</option><option value="sentence">sentence</option><option value="conviction">conviction</option></select> of guilty after three days of deliberation.</div>
+            <div class="gs">7. She was placed under house arrest rather than being sent to prison, as the judge considered <select class="vsel" id="t4v7"><option value="">select</option><option value="incarceration">incarceration</option><option value="acquittal">acquittal</option><option value="probation">probation</option></select> unnecessarily harsh.</div>
+            <div class="gs">8. The victim and offender participated in a <select class="vsel" id="t4v8"><option value="">select</option><option value="restorative justice">restorative justice</option><option value="custodial sentence">custodial sentence</option><option value="criminal record">criminal record</option></select> programme to address the harm caused.</div>
+            <div class="gs">9. Studies show that <select class="vsel" id="t4v9"><option value="">select</option><option value="systemic bias">systemic bias</option><option value="forensic evidence">forensic evidence</option><option value="community service">community service</option></select> in policing may explain why certain groups are over-arrested.</div>
+            <div class="gs">10. The lawyer argued that the <select class="vsel" id="t4v10"><option value="">select</option><option value="forensic evidence">forensic evidence</option><option value="reoffending rate">reoffending rate</option><option value="criminal justice">criminal justice</option></select> proved his client was not at the scene of the crime.</div>
+        </div>
+        <div class="brow"><button class="prv" onclick="goToTask(3)">&larr; Previous</button><button class="chk" id="check4" onclick="checkTask4()" disabled>Check Answers</button><button class="nxt" id="next4" disabled onclick="goToTask(5)">Next Task &rarr;</button></div>
+        <button class="sab" id="showAns4" onclick="toggleAns('ans4')">&#9660; Show Answers</button>
+        <div class="apan" id="ans4"><p><strong>Answers:</strong> 1-retribution, 2-rehabilitation, 3-reoffending, 4-deterrent, 5-defendant, 6-verdict, 7-incarceration, 8-restorative justice, 9-systemic bias, 10-forensic evidence</p></div>
+    </div>
+    <!-- TASK 5 -->
+    <div class="card" id="task5">
+        <div class="thdr"><div class="tnum">5</div><div><div class="ttitle">Extended Vocabulary Task</div><div class="tsub">Complete each sentence with the correct word from the box below</div></div></div>
+        <div class="wbox"><strong>Word Box:</strong> acquittal &nbsp;|&nbsp; alibi &nbsp;|&nbsp; appeal &nbsp;|&nbsp; bail &nbsp;|&nbsp; burglary &nbsp;|&nbsp; conviction &nbsp;|&nbsp; custody &nbsp;|&nbsp; defendant &nbsp;|&nbsp; deterrence &nbsp;|&nbsp; evidence &nbsp;|&nbsp; fine &nbsp;|&nbsp; fraud &nbsp;|&nbsp; incarceration &nbsp;|&nbsp; manslaughter &nbsp;|&nbsp; parole &nbsp;|&nbsp; penalty &nbsp;|&nbsp; probation &nbsp;|&nbsp; prosecution &nbsp;|&nbsp; verdict &nbsp;|&nbsp; witness</div>
+        <div class="gsec">
+            <div class="gs">1. The jury's final decision about whether someone is guilty or innocent is called a <input class="gi" id="t5w1" placeholder="___">.</div>
+            <div class="gs">2. A person charged with a crime who appears in court is referred to as the <input class="gi" id="t5w2" placeholder="___">.</div>
+            <div class="gs">3. The legal process of trying to prove that someone is guilty of a crime is called the <input class="gi" id="t5w3" placeholder="___">.</div>
+            <div class="gs">4. A finding of not guilty — when the defendant is cleared of all charges — is called an <input class="gi" id="t5w4" placeholder="___">.</div>
+            <div class="gs">5. A formal declaration that someone is guilty of a criminal offence is called a <input class="gi" id="t5w5" placeholder="___">.</div>
+            <div class="gs">6. Someone who sees an event or crime happen and can provide information about it is called a <input class="gi" id="t5w6" placeholder="___">.</div>
+            <div class="gs">7. A sum of money paid as a punishment for a minor offence is called a <input class="gi" id="t5w7" placeholder="___">.</div>
+            <div class="gs">8. A monetary sum paid to a court to allow a suspect to be released before trial is called <input class="gi" id="t5w8" placeholder="___">.</div>
+            <div class="gs">9. When a prisoner is released before completing their sentence, subject to good behaviour, this is called <input class="gi" id="t5w9" placeholder="___">.</div>
+            <div class="gs">10. A court order requiring someone to be supervised in the community rather than imprisoned is called <input class="gi" id="t5w10" placeholder="___">.</div>
+            <div class="gs">11. Information or objects presented in court to help prove guilt or innocence is called <input class="gi" id="t5w11" placeholder="___">.</div>
+            <div class="gs">12. A claim that someone was elsewhere when a crime took place is called an <input class="gi" id="t5w12" placeholder="___">.</div>
+            <div class="gs">13. The act of breaking into a building in order to commit a crime, especially theft, is called <input class="gi" id="t5w13" placeholder="___">.</div>
+            <div class="gs">14. The unlawful killing of a person without the intention to do so is called <input class="gi" id="t5w14" placeholder="___">.</div>
+            <div class="gs">15. Deliberately deceiving people to gain money or an advantage is called <input class="gi" id="t5w15" placeholder="___">.</div>
+            <div class="gs">16. The state of being held under arrest or in prison is known as being in <input class="gi" id="t5w16" placeholder="___">.</div>
+            <div class="gs">17. The imprisonment of a person as punishment for a crime is called <input class="gi" id="t5w17" placeholder="___">.</div>
+            <div class="gs">18. The punishment given for breaking the law is called a <input class="gi" id="t5w18" placeholder="___">.</div>
+            <div class="gs">19. Making punishment severe enough to stop people from committing crime is the principle of <input class="gi" id="t5w19" placeholder="___">.</div>
+            <div class="gs">20. When a court decision is formally challenged in a higher court, this is called an <input class="gi" id="t5w20" placeholder="___">.</div>
+        </div>
+        <div class="brow"><button class="prv" onclick="goToTask(4)">&larr; Previous</button><button class="chk" id="check5" onclick="checkTask5()" disabled>Check Answers</button><button class="nxt" id="next5" disabled onclick="goToTask(6)">Next Task &rarr;</button></div>
+        <button class="sab" id="showAns5" onclick="toggleAns('ans5')">&#9660; Show Answers</button>
+        <div class="apan" id="ans5"><p><strong>Answers:</strong> 1-verdict, 2-defendant, 3-prosecution, 4-acquittal, 5-conviction, 6-witness, 7-fine, 8-bail, 9-parole, 10-probation, 11-evidence, 12-alibi, 13-burglary, 14-manslaughter, 15-fraud, 16-custody, 17-incarceration, 18-penalty, 19-deterrence, 20-appeal</p></div>
+    </div>
+
+    <!-- TASK 6 -->
+    <div class="card" id="task6">
+        <div class="thdr"><div class="tnum">6</div><div><div class="ttitle">Reading Comprehension</div><div class="tsub">Read five short passages about crime and answer the questions</div></div></div>
+
+        <div class="crime-passage">
+            <h4>&#9878; Passage A &mdash; The Purpose of Punishment</h4>
+            <p>Philosophers and criminologists have long debated why societies punish criminal behaviour. Three main theories dominate the debate. Retributivists argue that punishment is a moral necessity: wrongdoers deserve to suffer in proportion to the harm they have caused, regardless of whether punishment makes society safer. Consequentialists, by contrast, justify punishment only when it produces good outcomes — such as deterring future crime, incapacitating dangerous individuals, or rehabilitating offenders. A third view, restorative justice, focuses not on suffering but on repairing the harm done to victims and restoring social relationships. Each theory leads to very different conclusions about the appropriate form and severity of punishment.</p>
+        </div>
+        <div class="qblock"><div class="qt">1. What do retributivists believe about punishment?</div><div class="opts"><label><input type="radio" name="t6q1" value="A"> A. Punishment should only be used if it reduces crime rates.</label><label><input type="radio" name="t6q1" value="B"> B. Wrongdoers deserve to suffer in proportion to the harm they caused, regardless of outcomes.</label><label><input type="radio" name="t6q1" value="C"> C. The focus should be on repairing harm rather than imposing suffering.</label><label><input type="radio" name="t6q1" value="D"> D. All offenders should receive the same punishment.</label></div><div class="fb" id="fb_t6q1"></div></div>
+        <div class="qblock"><div class="qt">2. What distinguishes restorative justice from the other two approaches?</div><div class="opts"><label><input type="radio" name="t6q2" value="A"> A. It focuses on causing greater suffering to deter others.</label><label><input type="radio" name="t6q2" value="B"> B. It ignores the role of the victim completely.</label><label><input type="radio" name="t6q2" value="C"> C. It prioritises repairing harm and restoring social relationships rather than punishing the offender.</label><label><input type="radio" name="t6q2" value="D"> D. It requires offenders to pay fines rather than serve prison time.</label></div><div class="fb" id="fb_t6q2"></div></div>
+
+        <div class="crime-passage">
+            <h4>&#9878; Passage B &mdash; White-Collar Crime</h4>
+            <p>White-collar crime — a term coined by sociologist Edwin Sutherland in 1939 — refers to financially motivated, non-violent offences committed by people in positions of trust, typically in business or professional settings. Examples include fraud, embezzlement, insider trading, money laundering and tax evasion. White-collar crimes often go undetected for years and can cause enormous financial harm to individuals, companies and governments. Despite this, perpetrators are statistically less likely to receive custodial sentences than street criminals. Critics argue that this disparity reflects the social and economic power of white-collar offenders, who are typically better resourced to mount an effective legal defence and who are judged by social peers more likely to be sympathetic to them.</p>
+        </div>
+        <div class="qblock"><div class="qt">3. Why do critics argue that white-collar criminals receive lighter sentences?</div><div class="opts"><label><input type="radio" name="t6q3" value="A"> A. Because white-collar crime causes less harm than street crime.</label><label><input type="radio" name="t6q3" value="B"> B. Because white-collar crimes are committed less frequently.</label><label><input type="radio" name="t6q3" value="C"> C. Because perpetrators have greater social power, better legal resources, and more sympathetic judges.</label><label><input type="radio" name="t6q3" value="D"> D. Because the law does not recognise white-collar crime as a serious offence.</label></div><div class="fb" id="fb_t6q3"></div></div>
+        <div class="qblock"><div class="qt">4. Which of the following is NOT mentioned as an example of white-collar crime?</div><div class="opts"><label><input type="radio" name="t6q4" value="A"> A. Insider trading</label><label><input type="radio" name="t6q4" value="B"> B. Money laundering</label><label><input type="radio" name="t6q4" value="C"> C. Burglary</label><label><input type="radio" name="t6q4" value="D"> D. Tax evasion</label></div><div class="fb" id="fb_t6q4"></div></div>
+
+        <div class="crime-passage">
+            <h4>&#9878; Passage C &mdash; Prisons and Recidivism</h4>
+            <p>High rates of reoffending — often called recidivism — represent one of the most persistent challenges facing criminal justice systems worldwide. In many countries, over half of all released prisoners are reconvicted within a few years of leaving custody. Research consistently identifies several factors that increase recidivism risk: lack of stable housing, unemployment, substance dependence, and weak social support networks. Effective post-release programmes addressing these issues — including supported housing, employment training, drug treatment and mentoring — have been shown to reduce reoffending significantly. However, such programmes require substantial investment and political will, and remain underfunded in many jurisdictions, where spending on punishment continues to far outweigh spending on prevention and rehabilitation.</p>
+        </div>
+        <div class="qblock"><div class="qt">5. What does the passage identify as a key factor increasing the risk of reoffending?</div><div class="opts"><label><input type="radio" name="t6q5" value="A"> A. The length of the original prison sentence</label><label><input type="radio" name="t6q5" value="B"> B. The type of crime originally committed</label><label><input type="radio" name="t6q5" value="C"> C. Lack of stable housing, unemployment, and weak social support</label><label><input type="radio" name="t6q5" value="D"> D. The age of the offender when first convicted</label></div><div class="fb" id="fb_t6q5"></div></div>
+        <div class="qblock"><div class="qt">6. What does the passage suggest about spending on rehabilitation?</div><div class="opts"><label><input type="radio" name="t6q6" value="A"> A. It is adequate in most countries.</label><label><input type="radio" name="t6q6" value="B"> B. It remains underfunded compared with spending on punishment.</label><label><input type="radio" name="t6q6" value="C"> C. It is the main focus of criminal justice policy globally.</label><label><input type="radio" name="t6q6" value="D"> D. It has no measurable effect on reoffending rates.</label></div><div class="fb" id="fb_t6q6"></div></div>
+
+        <div class="crime-passage">
+            <h4>&#9878; Passage D &mdash; Crime and Social Inequality</h4>
+            <p>Criminologists have long noted a strong correlation between socioeconomic deprivation and crime. People from disadvantaged backgrounds are disproportionately represented both among those who commit crimes and among victims of crime. Several explanations have been proposed. Strain theory suggests that crime results from the tension between socially approved goals — such as wealth and status — and the limited legitimate means available to those at the bottom of the social hierarchy to achieve them. Social disorganisation theory links crime to the breakdown of community institutions, informal social controls, and collective cohesion in deprived urban areas. Others argue that apparent links between deprivation and crime are partly an artefact of selective law enforcement, in which poorer communities face heavier policing and stricter prosecution.</p>
+        </div>
+        <div class="qblock"><div class="qt">7. According to strain theory, why does crime occur?</div><div class="opts"><label><input type="radio" name="t6q7" value="A"> A. Because criminals are born with criminal personalities.</label><label><input type="radio" name="t6q7" value="B"> B. Because communities lose their sense of collective identity.</label><label><input type="radio" name="t6q7" value="C"> C. Because of the tension between desired goals and limited legitimate means to achieve them.</label><label><input type="radio" name="t6q7" value="D"> D. Because law enforcement is too lenient in deprived areas.</label></div><div class="fb" id="fb_t6q7"></div></div>
+        <div class="qblock"><div class="qt">8. What alternative explanation does the passage offer for the link between poverty and crime statistics?</div><div class="opts"><label><input type="radio" name="t6q8" value="A"> A. Poorer people are genetically more likely to commit crime.</label><label><input type="radio" name="t6q8" value="B"> B. Poorer people have fewer moral values.</label><label><input type="radio" name="t6q8" value="C"> C. Selective policing and stricter prosecution of poorer communities may inflate crime statistics.</label><label><input type="radio" name="t6q8" value="D"> D. Crime is always higher in rural areas than urban areas.</label></div><div class="fb" id="fb_t6q8"></div></div>
+
+        <div class="crime-passage">
+            <h4>&#9878; Passage E &mdash; Cybercrime</h4>
+            <p>The rapid expansion of digital technology has given rise to a new and rapidly evolving category of crime: cybercrime. This broad term encompasses offences ranging from hacking and identity theft to online fraud, ransomware attacks and the distribution of illegal content. Unlike traditional crime, cybercrime can be committed across national borders, often with near-total anonymity, making detection and prosecution extremely challenging. Victims range from individuals and small businesses to governments and critical national infrastructure. The global cost of cybercrime is estimated to run into trillions of dollars annually. Responses have included the development of specialist cybercrime units, international law enforcement cooperation, and increasing pressure on technology companies to improve digital security and cooperate with investigative authorities.</p>
+        </div>
+        <div class="qblock"><div class="qt">9. What makes cybercrime particularly difficult to investigate and prosecute?</div><div class="opts"><label><input type="radio" name="t6q9" value="A"> A. It only affects large corporations and governments.</label><label><input type="radio" name="t6q9" value="B"> B. There are no laws covering digital offences in most countries.</label><label><input type="radio" name="t6q9" value="C"> C. It can be committed across borders with near-total anonymity.</label><label><input type="radio" name="t6q9" value="D"> D. Technology companies refuse to cooperate with authorities.</label></div><div class="fb" id="fb_t6q9"></div></div>
+        <div class="qblock"><div class="qt">10. Which of the following is mentioned as a response to cybercrime?</div><div class="opts"><label><input type="radio" name="t6q10" value="A"> A. Banning the use of the internet in certain countries</label><label><input type="radio" name="t6q10" value="B"> B. International law enforcement cooperation and specialist cybercrime units</label><label><input type="radio" name="t6q10" value="C"> C. Requiring all online activity to be conducted under real names</label><label><input type="radio" name="t6q10" value="D"> D. Increasing prison sentences for all types of crime</label></div><div class="fb" id="fb_t6q10"></div></div>
+        <div class="brow"><button class="prv" onclick="goToTask(5)">&larr; Previous</button><button class="chk" id="check6" onclick="checkTask6()" disabled>Check Answers</button><button class="nxt" id="next6" disabled onclick="goToTask(7)">Next Task &rarr;</button></div>
+        <button class="sab" id="showAns6" onclick="toggleAns('ans6')">&#9660; Show Answers</button>
+        <div class="apan" id="ans6"><p><strong>Answers:</strong> 1-B, 2-C, 3-C, 4-C, 5-C, 6-B, 7-C, 8-C, 9-C, 10-B</p></div>
+    </div>
+
+    <!-- TASK 7 -->
+    <div class="card" id="task7">
+        <div class="thdr"><div class="tnum">7</div><div><div class="ttitle">Practice Listening</div><div class="tsub">Full IELTS-style listening test</div></div></div>
+        <a class="hlink" href="Listening (35).html" target="_blank">&#127911; Open Practice Listening</a>
+        <div class="brow"><button class="prv" onclick="goToTask(6)">&larr; Previous</button><button class="nxt" onclick="finishDay()">Finish Day 1 &#10003;</button></div>
+    </div>
+
+    <!-- COMPLETION -->
+    <div class="done" id="donescreen">
+        <div class="ico">&#127881;</div>
+        <h2>Day 1 Complete!</h2>
+        <p>Great start! You've completed all tasks for Week 8, Day 1.</p>
+        <div style="margin:30px 0;text-align:left;">
+            <h3 style="color:#9b2c2c;border-bottom:2px solid #9b2c2c;padding-bottom:10px;margin-bottom:15px;">&#128203; Review Your Work</h3>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:15px;">
+                <div onclick="reviewTask(1)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#9b2c2c;margin-bottom:5px;">Task 1</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Mini Reading</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(2)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#9b2c2c;margin-bottom:5px;">Task 2</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Article Reading</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(3)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#9b2c2c;margin-bottom:5px;">Task 3</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Reading</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(4)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#9b2c2c;margin-bottom:5px;">Task 4</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Vocabulary</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(5)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#9b2c2c;margin-bottom:5px;">Task 5</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Extended Vocab</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(6)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#9b2c2c;margin-bottom:5px;">Task 6</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Reading Comprehension</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(7)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#9b2c2c;margin-bottom:5px;">Task 7</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Listening</div><div style="font-size:1.4rem;">&#9989;</div></div>
+            </div>
+        </div>
+        <a href="/student-dashboard.html" class="dbbtn">&larr; Back to Dashboard</a>
+    </div>
+</div>
+<script>
+const SUPABASE_URL='https://nbfceuhuauizyucugejr.supabase.co';
+const SUPABASE_KEY='sb_publishable_0mFIGJkA_DKZfUiDAWFdrA_nXt0hF6H';
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const WEEK=8,DAY=1,TOTAL=7;
+let sid=null,cur=1,t0=Date.now(),stout=null;
+
+const vocab=[
+{w:"1. Crime (n)",d:"An act that breaks the law"},
+{w:"2. Criminal (n)",d:"A person who has committed a crime"},
+{w:"3. Offender (n)",d:"A person who commits a criminal offence"},
+{w:"4. Victim (n)",d:"A person harmed by a crime"},
+{w:"5. Punishment (n)",d:"A penalty imposed for breaking the law"},
+{w:"6. Sentence (n)",d:"The punishment decided by a court"},
+{w:"7. Verdict (n)",d:"The jury's decision of guilty or not guilty"},
+{w:"8. Conviction (n)",d:"A formal finding that someone is guilty"},
+{w:"9. Acquittal (n)",d:"A finding of not guilty; being cleared of charges"},
+{w:"10. Defendant (n)",d:"The person charged with a crime in court"},
+{w:"11. Prosecution (n)",d:"The legal process of trying to prove guilt"},
+{w:"12. Defence (n)",d:"The legal team representing the accused"},
+{w:"13. Jury (n)",d:"A group of citizens who decide guilt or innocence"},
+{w:"14. Judge (n)",d:"The person presiding over a court case"},
+{w:"15. Evidence (n)",d:"Facts or objects used to prove something in court"},
+{w:"16. Alibi (n)",d:"A claim of being elsewhere when a crime was committed"},
+{w:"17. Witness (n)",d:"A person who saw an event and can give testimony"},
+{w:"18. Bail (n)",d:"Money paid to secure release before trial"},
+{w:"19. Parole (n)",d:"Early release from prison under conditions"},
+{w:"20. Probation (n)",d:"Community supervision instead of imprisonment"},
+{w:"21. Fine (n)",d:"A financial penalty for breaking the law"},
+{w:"22. Custody (n)",d:"Being held under arrest or imprisoned"},
+{w:"23. Incarceration (n)",d:"Imprisonment as punishment"},
+{w:"24. Penalty (n)",d:"The punishment set for an offence"},
+{w:"25. Appeal (n)",d:"A request for a higher court to review a decision"},
+{w:"26. Deterrence (n)",d:"Using punishment to discourage future crime"},
+{w:"27. Rehabilitation (n)",d:"Helping offenders change and reintegrate into society"},
+{w:"28. Retribution (n)",d:"Punishment as deserved payback for wrongdoing"},
+{w:"29. Recidivism (n)",d:"Reoffending after previous conviction"},
+{w:"30. Restorative justice (n)",d:"An approach focused on repairing harm and reconciliation"},
+{w:"31. Burglary (n)",d:"Breaking into a building to commit a crime"},
+{w:"32. Fraud (n)",d:"Deception for financial gain"},
+{w:"33. Manslaughter (n)",d:"Unintentional killing of a person"},
+{w:"34. Embezzlement (n)",d:"Theft or misuse of funds entrusted to you"},
+{w:"35. Insider trading (n)",d:"Illegal use of privileged information to trade stocks"},
+{w:"36. Money laundering (n)",d:"Concealing illegally obtained money"},
+{w:"37. Tax evasion (n)",d:"Illegally avoiding paying taxes"},
+{w:"38. Hacking (n)",d:"Unauthorised access to computer systems"},
+{w:"39. Ransomware (n)",d:"Malicious software that holds data hostage for payment"},
+{w:"40. Forensic (adj)",d:"Relating to scientific techniques used in crime investigation"},
+{w:"41. Systemic bias (n)",d:"Unfairness built into a system or institution"},
+{w:"42. Strain theory (n)",d:"Crime results from tension between goals and limited means"},
+{w:"43. Recidivism rate (n)",d:"The percentage of offenders who reoffend after release"},
+{w:"44. Custodial sentence (n)",d:"A prison sentence"},
+{w:"45. Community service (n)",d:"Unpaid work done as a form of punishment"},
+{w:"46. Criminal record (n)",d:"An official list of a person's past crimes"},
+{w:"47. White-collar crime (n)",d:"Non-violent financial crime by professionals"},
+{w:"48. Cybercrime (n)",d:"Criminal activities conducted via the internet"},
+{w:"49. Identity theft (n)",d:"Stealing someone's personal information to commit fraud"},
+{w:"50. Anonymity (n)",d:"The state of being unknown or unidentifiable"},
+];
+
+const t5ok={t5w1:"verdict",t5w2:"defendant",t5w3:"prosecution",t5w4:"acquittal",t5w5:"conviction",t5w6:"witness",t5w7:"fine",t5w8:"bail",t5w9:"parole",t5w10:"probation",t5w11:"evidence",t5w12:"alibi",t5w13:"burglary",t5w14:"manslaughter",t5w15:"fraud",t5w16:"custody",t5w17:"incarceration",t5w18:"penalty",t5w19:"deterrence",t5w20:"appeal"};
+const t4ok={t4v1:"retribution",t4v2:"rehabilitation",t4v3:"reoffending",t4v4:"deterrent",t4v5:"defendant",t4v6:"verdict",t4v7:"incarceration",t4v8:"restorative justice",t4v9:"systemic bias",t4v10:"forensic evidence"};
+const t1ok={t1q1:["consequences"],t1q2:["deterrence"],t1q3:["rehabilitation"],t1q4:["retribution"],t1q5:["systemic bias"],t1q6:["restorative justice"],t1q7:["reoffending rates","reoffending"]};
+const t6mcq={t6q1:"B",t6q2:"C",t6q3:"C",t6q4:"C",t6q5:"C",t6q6:"B",t6q7:"C",t6q8:"C",t6q9:"C",t6q10:"B"};
+
+async function initStu(){
+    const p=new URLSearchParams(window.location.search);
+    if(p.get("teacher")==="true"){sid="teacher-preview";return;}
+    try{const u=localStorage.getItem("user");if(!u){window.location.href="/login.html";return;}const pu=JSON.parse(u);const{data,error}=await db.from("students").select("*").eq("username",pu.username).single();if(error||!data)return;sid=data.id;}catch(e){}
+}
+function buildVocab(){document.getElementById("vgrid").innerHTML=vocab.map(v=>`<div class="vi"><div class="vw">${v.w}</div><div class="vd">${v.d}</div></div>`).join("");}
+async function startDay(){document.getElementById("splash").style.display="none";document.getElementById("mc").style.display="block";buildVocab();await initStu();await restoreProgress();setupLive();}
+function goToTask(n){document.getElementById("task"+cur).classList.remove("active");cur=n;document.getElementById("task"+n).classList.add("active");document.getElementById("task"+n).scrollIntoView({behavior:"smooth",block:"start"});updProg(n);t0=Date.now();saveResume(n);}
+function updProg(n){document.getElementById("pfill").style.width=Math.round(((n-1)/TOTAL)*100)+"%";document.getElementById("plabel").textContent="Task "+n+" of "+TOTAL;}
+function showSavi(){const e=document.getElementById("savi");e.classList.add("show");setTimeout(()=>e.classList.remove("show"),2000);}
+async function saveResume(n){if(!sid||sid==="teacher-preview")return;try{await db.from("student_resume").upsert({student_id:sid,week:WEEK,day:DAY,last_task:n,updated_at:new Date().toISOString()},{onConflict:"student_id"});}catch(e){}}
+function scheduleSave(){clearTimeout(stout);stout=setTimeout(()=>{localStorage.setItem("w"+WEEK+"d"+DAY+"_ans",JSON.stringify(gatherAll()));showSavi();},800);}
+function gatherAll(){
+    const d={};
+    document.querySelectorAll(".gi").forEach(el=>{if(el.id)d[el.id]=el.value;});
+    ["t6q1","t6q2","t6q3","t6q4","t6q5","t6q6","t6q7","t6q8","t6q9","t6q10"].forEach(n=>{const s=document.querySelector("input[name='"+n+"']:checked");if(s)d[n]=s.value;});
+    document.querySelectorAll("select").forEach(el=>{if(el.id)d[el.id]=el.value;});
+    return d;
+}
+async function restoreProgress(){
+    try{
+        const sv=localStorage.getItem("w"+WEEK+"d"+DAY+"_ans");
+        if(sv){const d=JSON.parse(sv);Object.entries(d).forEach(([id,val])=>{const el=document.getElementById(id);if(el&&el.tagName==="INPUT")el.value=val;});["t6q1","t6q2","t6q3","t6q4","t6q5","t6q6","t6q7","t6q8","t6q9","t6q10"].forEach(n=>{const val=d[n];if(val){const r=document.querySelector("input[name='"+n+"'][value='"+val+"']");if(r)r.checked=true;}});Object.entries(d).forEach(([id,val])=>{const el=document.getElementById(id);if(el&&el.tagName==="SELECT")el.value=val;});}
+        if(sid&&sid!=="teacher-preview"){
+            const{data:td}=await db.from("task_progress").select("task_number,status").eq("student_id",sid).eq("week",WEEK).eq("day",DAY);
+            if(td&&td.filter(t=>t.status==="completed").length>=TOTAL){document.getElementById("task1").classList.remove("active");document.getElementById("donescreen").style.display="block";updProg(TOTAL);valAll();makeRO();return;}
+            const{data:res}=await db.from("student_resume").select("last_task").eq("student_id",sid).eq("week",WEEK).eq("day",DAY).single();
+            if(res&&res.last_task>1){document.getElementById("task1").classList.remove("active");cur=res.last_task;document.getElementById("task"+cur).classList.add("active");updProg(cur);}
+        }
+        valAll();
+    }catch(e){}
+}
+function makeRO(){document.querySelectorAll(".gi").forEach(el=>{el.disabled=true;el.style.opacity="0.85";});document.querySelectorAll("input[type=radio]").forEach(el=>el.disabled=true);document.querySelectorAll("select").forEach(el=>el.disabled=true);document.querySelectorAll(".chk").forEach(el=>el.style.display="none");document.querySelectorAll(".nxt").forEach(el=>el.style.display="none");document.querySelectorAll(".prv").forEach(el=>el.style.display="none");document.querySelectorAll(".sab").forEach(el=>el.style.display="inline-block");}
+function setupLive(){
+    ["t1q1","t1q2","t1q3","t1q4","t1q5","t1q6","t1q7"].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener("input",()=>{valT1();scheduleSave();});});
+    for(let i=1;i<=10;i++){const el=document.getElementById("t4v"+i);if(el)el.addEventListener("change",()=>{valT4();scheduleSave();});}
+    for(let i=1;i<=20;i++){const el=document.getElementById("t5w"+i);if(el)el.addEventListener("input",()=>{valT5();scheduleSave();});}
+    ["t6q1","t6q2","t6q3","t6q4","t6q5","t6q6","t6q7","t6q8","t6q9","t6q10"].forEach(n=>{document.querySelectorAll("input[name='"+n+"']").forEach(el=>el.addEventListener("change",()=>{valT6();scheduleSave();}));});
+}
+function valAll(){valT1();valT4();valT5();valT6();}
+function valT1(){document.getElementById("check1").disabled=!["t1q1","t1q2","t1q3","t1q4","t1q5","t1q6","t1q7"].every(id=>document.getElementById(id)?.value.trim());}
+function valT4(){document.getElementById("check4").disabled=!Array.from({length:10},(_,i)=>document.getElementById("t4v"+(i+1))?.value).every(Boolean);}
+function valT5(){document.getElementById("check5").disabled=!Array.from({length:20},(_,i)=>document.getElementById("t5w"+(i+1))?.value.trim()).every(Boolean);}
+function valT6(){document.getElementById("check6").disabled=!["t6q1","t6q2","t6q3","t6q4","t6q5","t6q6","t6q7","t6q8","t6q9","t6q10"].every(n=>document.querySelector("input[name='"+n+"']:checked"));}
+
+function checkTask1(){
+    const ans=[];
+    Object.entries(t1ok).forEach(([id,opts])=>{const inp=document.getElementById(id);const val=inp.value.trim().toLowerCase();const ok=opts.some(o=>val.includes(o.toLowerCase()));inp.classList.toggle("correct",ok);inp.classList.toggle("incorrect",!ok);ans.push({question_id:id,question_type:"gap_fill",student_answer:inp.value.trim(),correct_answer:opts[0],is_correct:ok});});
+    document.getElementById("showAns1").style.display="inline-block";document.getElementById("next1").disabled=false;saveAnswers(1,ans);saveTP(1);
+}
+function checkTask4(){
+    const ans=[];
+    Object.entries(t4ok).forEach(([id,correct])=>{const sel=document.getElementById(id);const ok=sel.value===correct;sel.classList.toggle("correct",ok);sel.classList.toggle("incorrect",!ok);ans.push({question_id:id,question_type:"matching",student_answer:sel.value,correct_answer:correct,is_correct:ok});});
+    document.getElementById("showAns4").style.display="inline-block";document.getElementById("next4").disabled=false;saveAnswers(4,ans);saveTP(4);
+}
+function checkTask5(){
+    const ans=[];
+    Object.entries(t5ok).forEach(([id,correct])=>{const inp=document.getElementById(id);const ok=inp.value.trim().toLowerCase()===correct.toLowerCase();inp.classList.toggle("correct",ok);inp.classList.toggle("incorrect",!ok);ans.push({question_id:id,question_type:"gap_fill",student_answer:inp.value.trim(),correct_answer:correct,is_correct:ok});});
+    document.getElementById("showAns5").style.display="inline-block";document.getElementById("next5").disabled=false;saveAnswers(5,ans);saveTP(5);
+}
+function checkTask6(){
+    const ans=[];
+    Object.entries(t6mcq).forEach(([n,correct])=>{const sel=document.querySelector("input[name='"+n+"']:checked");const fb=document.getElementById("fb_"+n);if(!sel)return;const ok=sel.value===correct;fb.textContent=ok?"✅ Correct!":"❌ Incorrect — correct answer: "+correct;fb.className="fb "+(ok?"correct":"incorrect");ans.push({question_id:n,question_type:"mcq",student_answer:sel.value,correct_answer:correct,is_correct:ok});});
+    document.getElementById("showAns6").style.display="inline-block";document.getElementById("next6").disabled=false;saveAnswers(6,ans);saveTP(6);
+}
+async function saveAnswers(tnum,ans){if(!sid||sid==="teacher-preview")return;try{const rows=ans.map(a=>({student_id:sid,week:WEEK,day:DAY,task_number:tnum,question_id:a.question_id,question_type:a.question_type,student_answer:a.student_answer,correct_answer:a.correct_answer,is_correct:a.is_correct,answered_at:new Date().toISOString()}));await db.from("student_answers").upsert(rows,{onConflict:"student_id,week,day,task_number,question_id"});}catch(e){}}
+async function saveTP(n){if(!sid||sid==="teacher-preview")return;try{await db.from("task_progress").upsert({student_id:sid,week:WEEK,day:DAY,task_number:n,status:"completed",time_completed:new Date().toISOString(),time_spent_seconds:Math.round((Date.now()-t0)/1000)},{onConflict:"student_id,week,day,task_number"});}catch(e){}}
+async function finishDay(){document.getElementById("task7").classList.remove("active");document.getElementById("donescreen").style.display="block";document.getElementById("donescreen").scrollIntoView({behavior:"smooth"});localStorage.removeItem("w"+WEEK+"d"+DAY+"_ans");for(let i=1;i<=TOTAL;i++)await saveTP(i);if(sid&&sid!=="teacher-preview")await db.from("student_resume").delete().eq("student_id",sid);makeRO();}
+function reviewTask(n){document.getElementById("donescreen").style.display="none";cur=n;document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));document.getElementById("task"+n).classList.add("active");document.getElementById("task"+n).scrollIntoView({behavior:"smooth",block:"start"});const ex=document.getElementById("btr");if(!ex){const b=document.createElement("button");b.id="btr";b.textContent="🏆 Back to Results";b.style.cssText="position:fixed;bottom:20px;right:20px;background:#e53e3e;color:white;border:none;padding:12px 22px;border-radius:50px;cursor:pointer;font-weight:bold;font-size:0.95rem;z-index:9998;";b.onclick=()=>{b.remove();document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));document.getElementById("donescreen").style.display="block";document.getElementById("donescreen").scrollIntoView({behavior:"smooth"});};document.body.appendChild(b);}}
+function toggleVocab(){document.getElementById("vbody").classList.toggle("open");document.getElementById("varr").classList.toggle("open");}
+function toggleAns(id){const d=document.getElementById(id);const b=d.previousElementSibling;d.style.display=d.style.display==="block"?"none":"block";b.textContent=d.style.display==="block"?"▲ Hide Answers":"▼ Show Answers";}
+</script>
+</body>
+</html>
