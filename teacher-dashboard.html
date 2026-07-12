@@ -244,6 +244,24 @@
         <div class="day-num">Day 5</div><div class="day-label">Psychology</div><div class="day-topic">Psychology Review</div>
     </a>
 </div>
+        <div style="margin-top:20px; color:#9b2c2c; font-weight:600; font-size:0.95rem;">⚖️ Week 8: Crime & Punishment</div>
+<div class="materials-grid" style="margin-top:10px;">
+    <a href="/week8/day1/day1.html?teacher=true" class="material-card" style="background: linear-gradient(135deg, #e53e3e 0%, #9b2c2c 100%);">
+        <div class="day-num">Day 1</div><div class="day-label">Crime</div><div class="day-topic">Crime, Justice & Society</div>
+    </a>
+    <a href="/week8/day2/day2.html?teacher=true" class="material-card" style="background: linear-gradient(135deg, #e53e3e 0%, #9b2c2c 100%);">
+        <div class="day-num">Day 2</div><div class="day-label">Crime</div><div class="day-topic">Topic TBD</div>
+    </a>
+    <a href="/week8/day3/day3.html?teacher=true" class="material-card" style="background: linear-gradient(135deg, #e53e3e 0%, #9b2c2c 100%);">
+        <div class="day-num">Day 3</div><div class="day-label">Crime</div><div class="day-topic">Topic TBD</div>
+    </a>
+    <a href="/week8/day4/day4.html?teacher=true" class="material-card" style="background: linear-gradient(135deg, #e53e3e 0%, #9b2c2c 100%);">
+        <div class="day-num">Day 4</div><div class="day-label">Crime</div><div class="day-topic">Topic TBD</div>
+    </a>
+    <a href="/week8/day5/day5.html?teacher=true" class="material-card" style="background: linear-gradient(135deg, #e53e3e 0%, #9b2c2c 100%);">
+        <div class="day-num">Day 5</div><div class="day-label">Crime</div><div class="day-topic">Crime Review</div>
+    </a>
+</div>
     </div>
     <div class="students-section">
         <div class="section-header">
@@ -293,7 +311,8 @@
         4: { 1:7, 2:7, 3:7, 4:7, 5:7 },
         5: { 1:7, 2:7, 3:7, 4:7, 5:7 } ,
         6: { 1:7, 2:7, 3:7, 4:7, 5:7 } ,
-        7: { 1:7, 2:7, 3:7, 4:7, 5:7 }
+        7: { 1:7, 2:7, 3:7, 4:7, 5:7 }.
+        8: { 1:7, 2:7, 3:7, 4:7, 5:7 }
     };
     window.addEventListener('load', async () => {
         const userStr = localStorage.getItem('user');
@@ -400,7 +419,7 @@
                 supabaseClient.from('essay_submissions').select('*').eq('student_id', studentId).order('week').order('day').order('task_number'),
                 supabaseClient.from('student_answers').select('*').eq('student_id', studentId).order('week').order('day').order('task_number').order('question_id')
             ]);
-            const weeks = [1, 2, 3, 4, 5, 6, 7];
+            const weeks = [1, 2, 3, 4, 5, 6, 7, 8];
             let tabsHtml = '<div class="day-tabs" id="weekTabs">';
             weeks.forEach((w, i) => { tabsHtml += `<button class="day-tab ${i === 0 ? 'active' : ''}" onclick="switchWeekTab(${w})">Week ${w}</button>`; });
             tabsHtml += '</div>';
