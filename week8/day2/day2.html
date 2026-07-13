@@ -1,1 +1,386 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEEK 8 - DAY 2 (Crime & Punishment)</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Segoe UI", sans-serif; background: #fff5f5; color: #333; }
+        #splash { position: fixed; inset: 0; background: linear-gradient(135deg, #e53e3e, #9b2c2c); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; color: white; text-align: center; padding: 20px; }
+        #splash h1 { font-size: 3rem; margin-bottom: 10px; }
+        #splash h2 { font-size: 2rem; margin-bottom: 10px; opacity: 0.9; }
+        #splash p { font-size: 1.2rem; margin-bottom: 40px; opacity: 0.8; }
+        .splash-btn { background: white; color: #9b2c2c; border: none; padding: 18px 60px; font-size: 1.4rem; font-weight: bold; border-radius: 50px; cursor: pointer; }
+        .wrap { max-width: 900px; margin: 0 auto; padding: 20px; }
+        .hdr { background: linear-gradient(135deg, #e53e3e, #9b2c2c); color: white; padding: 25px 30px; border-radius: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; }
+        .hdr h1 { font-size: 1.6rem; }
+        .hdr .topic { opacity: 0.85; font-size: 1rem; margin-top: 4px; }
+        .back-btn { background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 10px 20px; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 0.9rem; }
+        .plabel { text-align: center; color: #9b2c2c; font-size: 0.85rem; margin-bottom: 8px; font-weight: 600; }
+        .pwrap { background: #fed7d7; border-radius: 20px; height: 10px; margin-bottom: 20px; overflow: hidden; }
+        .pfill { background: linear-gradient(90deg, #e53e3e, #9b2c2c); height: 100%; border-radius: 20px; transition: width 0.5s; }
+        .vsec { background: white; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-left: 5px solid #e53e3e; overflow: hidden; }
+        .vtog { width: 100%; background: none; border: none; cursor: pointer; padding: 18px 25px; display: flex; align-items: center; justify-content: space-between; }
+        .vtog h3 { color: #9b2c2c; font-size: 1.1rem; margin: 0; }
+        .vcount { background: #e53e3e; color: white; font-size: 0.75rem; font-weight: bold; padding: 3px 10px; border-radius: 20px; }
+        .varr { color: #9b2c2c; font-size: 1rem; transition: transform 0.3s; }
+        .varr.open { transform: rotate(180deg); }
+        .vbody { display: none; padding: 0 25px 20px; }
+        .vbody.open { display: block; }
+        .vgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+        .vi { background: #fff5f5; padding: 10px 14px; border-radius: 8px; }
+        .vi .vw { font-weight: bold; color: #333; font-size: 0.95rem; }
+        .vi .vd { color: #666; font-size: 0.82rem; margin-top: 2px; }
+        .card { background: white; border-radius: 15px; padding: 28px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); display: none; }
+        .card.active { display: block; }
+        .thdr { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .tnum { background: linear-gradient(135deg, #e53e3e, #9b2c2c); color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; flex-shrink: 0; }
+        .ttitle { font-size: 1.3rem; font-weight: bold; color: #333; }
+        .tsub { color: #888; font-size: 0.9rem; margin-top: 2px; }
+        .plink { display: flex; align-items: center; gap: 12px; background: #fff5f5; padding: 15px 20px; border-radius: 10px; text-decoration: none; color: #333; font-weight: 600; border: 2px solid #fed7d7; transition: all 0.3s; margin-bottom: 12px; }
+        .plink:hover { background: #e53e3e; color: white; }
+        .hlink { display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #e53e3e, #9b2c2c); color: white; padding: 15px 30px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 1rem; margin: 10px 0; }
+        .passage { background: #fff5f5; border: 1px solid #fed7d7; border-radius: 10px; padding: 25px; margin: 15px 0; line-height: 1.8; font-size: 0.97rem; }
+        .passage h3 { color: #9b2c2c; margin-bottom: 15px; font-size: 1.2rem; }
+        .passage p { margin-bottom: 14px; }
+        .hl { font-style: italic; color: #9b2c2c; font-weight: 600; }
+        .qblock { margin-bottom: 20px; padding: 18px; background: #f8f9fa; border-radius: 10px; }
+        .qt { font-weight: 600; margin-bottom: 12px; color: #333; line-height: 1.5; }
+        .opts label { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; border-radius: 8px; cursor: pointer; margin-bottom: 5px; }
+        .opts label:hover { background: #fff5f5; }
+        .opts input[type=radio] { margin-top: 3px; flex-shrink: 0; }
+        .fb { margin-top: 8px; font-weight: bold; font-size: 0.9rem; }
+        .fb.correct { color: #28a745; }
+        .fb.incorrect { color: #dc3545; }
+        .gsec { margin-top: 20px; }
+        .gs { margin-bottom: 14px; line-height: 2; font-size: 1rem; }
+        .gi { border: none; border-bottom: 2px solid #e53e3e; padding: 4px 8px; font-size: 0.95rem; width: 200px; background: transparent; outline: none; color: #333; }
+        .gi.correct { border-bottom-color: #28a745; background: #d4edda33; }
+        .gi.incorrect { border-bottom-color: #dc3545; background: #f8d7da33; }
+        .wbox { background: #fff5f5; border: 2px solid #fed7d7; border-radius: 10px; padding: 12px 18px; margin-bottom: 15px; }
+        .wbox strong { color: #9b2c2c; }
+        .vsel { border: 2px solid #fed7d7; border-radius: 6px; padding: 5px 10px; font-size: 0.9rem; background: white; width: 230px; }
+        .vsel.correct { border-color: #28a745; }
+        .vsel.incorrect { border-color: #dc3545; }
+        .crime-passage { background: #fff5f5; border: 1px solid #fed7d7; border-radius: 10px; padding: 18px 22px; margin: 15px 0 10px; line-height: 1.75; font-size: 0.95rem; }
+        .crime-passage h4 { color: #9b2c2c; margin-bottom: 10px; font-size: 1rem; font-weight: 700; }
+        .crime-passage p { margin-bottom: 8px; }
+        .brow { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+        .chk { background: linear-gradient(135deg, #e53e3e, #9b2c2c); color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
+        .chk:disabled { background: #ccc; cursor: not-allowed; }
+        .nxt { background: #28a745; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
+        .nxt:disabled { background: #ccc; cursor: not-allowed; }
+        .prv { background: #6c757d; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
+        .sab { background: #ffc107; color: #333; border: none; padding: 10px 22px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.88rem; display: none; margin-top: 10px; }
+        .apan { display: none; background: #fffbea; border: 2px solid #ffc107; border-radius: 10px; padding: 15px; margin-top: 12px; }
+        .apan p { margin-bottom: 6px; font-size: 0.9rem; }
+        .done { text-align: center; padding: 60px 20px; display: none; }
+        .done .ico { font-size: 5rem; margin-bottom: 20px; }
+        .done h2 { font-size: 2.2rem; color: #9b2c2c; margin-bottom: 10px; }
+        .done p { color: #666; font-size: 1rem; margin-bottom: 30px; }
+        .dbbtn { background: linear-gradient(135deg, #e53e3e, #9b2c2c); color: white; padding: 16px 40px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 1.1rem; display: inline-block; }
+        .savi { position: fixed; bottom: 20px; right: 20px; background: #e53e3e; color: white; padding: 10px 18px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; opacity: 0; transition: opacity 0.4s; z-index: 9000; pointer-events: none; }
+        .savi.show { opacity: 1; }
+    </style>
+</head>
+<body>
+<div id="splash">
+    <h1>&#9878; WEEK 8</h1>
+    <h2>DAY 2</h2>
+    <p>Topic: Crime &amp; Punishment</p>
+    <button class="splash-btn" onclick="startDay()">LET'S GO!</button>
+</div>
+<div class="savi" id="savi">&#10003; Progress saved</div>
+<div class="wrap" id="mc" style="display:none;">
+    <div class="hdr">
+        <div><h1>&#9878; Week 8 &mdash; Day 2</h1><div class="topic">Topic: Crime &amp; Punishment</div></div>
+        <a href="/student-dashboard.html" class="back-btn">&larr; Dashboard</a>
+    </div>
+    <div class="plabel" id="plabel">Task 0 of 7</div>
+    <div class="pwrap"><div class="pfill" id="pfill" style="width:0%"></div></div>
+    <div class="vsec">
+        <button class="vtog" onclick="toggleVocab()">
+            <div style="display:flex;align-items:center;gap:10px;"><h3>&#128214; Today's Vocabulary</h3><span class="vcount">50 words</span></div>
+            <span class="varr" id="varr">&#9660;</span>
+        </button>
+        <div class="vbody" id="vbody"><div class="vgrid" id="vgrid"></div></div>
+    </div>
+
+    <!-- TASK 1 -->
+    <div class="card active" id="task1">
+        <div class="thdr"><div class="tnum">1</div><div><div class="ttitle">Mini Reading</div><div class="tsub">Read and answer &mdash; NO MORE THAN THREE WORDS from the passage</div></div></div>
+        <div class="passage">
+            <h3>The Prison System: Costs, Crises and Alternatives</h3>
+            <p>Prison is the dominant response to serious crime in most countries, yet its effectiveness as an instrument of social policy remains deeply contested. The costs of <span class="hl">(1) mass incarceration</span> are enormous, both financially and in human terms. In the United States, the prison population exceeds two million people — the largest in the world in absolute numbers — at an annual cost running into tens of billions of dollars. In England and Wales, reoffending by ex-prisoners costs the economy an estimated eighteen billion pounds per year in crime, court proceedings and re-imprisonment.</p>
+            <p>Critics of the prison system argue that incarceration frequently makes things worse rather than better. Prisons expose first-time or minor offenders to experienced criminals, disrupt <span class="hl">(2) family ties</span> and employment, and create the conditions for radicalisation and the acquisition of criminal skills. Studies consistently show that short prison sentences, in particular, are among the least effective sanctions available — producing poorer outcomes on almost every measure than equivalent <span class="hl">(3) community sentences</span>, which keep offenders in society while requiring them to undertake unpaid work, attend programmes addressing their offending behaviour, or submit to electronic monitoring.</p>
+            <p>Several countries have experimented with radical approaches to reducing their reliance on imprisonment. Finland reduced its prison population by nearly two-thirds over several decades through a deliberate policy of <span class="hl">(4) decarceration</span>, combined with investment in welfare, education and drug treatment. Norway's prisons are designed around the principle of <span class="hl">(5) normalisation</span> — the idea that prison conditions should differ as little as possible from life outside, to preserve prisoners' capacity to function in society after release. The results are striking: Norway has one of the lowest <span class="hl">(6) reoffending rates</span> in the world, at around twenty percent, compared with figures approaching sixty percent in the United Kingdom and United States.</p>
+            <p>Defenders of imprisonment argue that it serves an irreplaceable function in protecting the public from dangerous individuals, and that the apparent success of Nordic models reflects cultural and social factors that cannot simply be transplanted elsewhere. The debate, however, has generated renewed interest in expanding the range of <span class="hl">(7) sentencing options</span> available to judges, with growing support for community-based, therapeutic and restorative alternatives to custodial punishment.</p>
+        </div>
+        <h4 style="color:#9b2c2c;margin:20px 0 12px;">Answer &mdash; NO MORE THAN THREE WORDS:</h4>
+        <div class="gsec">
+            <div class="gs">1. What term describes the large-scale imprisonment of people?<br><input class="gi" id="t1q1" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">2. What do prison sentences often disrupt, alongside employment?<br><input class="gi" id="t1q2" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">3. What type of sentences keep offenders in society while addressing behaviour?<br><input class="gi" id="t1q3" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">4. What policy did Finland pursue to reduce its prison population?<br><input class="gi" id="t1q4" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">5. On what principle are Norwegian prisons designed?<br><input class="gi" id="t1q5" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">6. What does Norway have one of the lowest of, compared to the UK?<br><input class="gi" id="t1q6" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">7. What are judges increasingly being given a wider range of?<br><input class="gi" id="t1q7" placeholder="___" style="width:300px;margin-top:8px;"></div>
+        </div>
+        <div class="brow">
+            <button class="chk" id="check1" onclick="checkTask1()" disabled>Check Answers</button>
+            <button class="nxt" id="next1" disabled onclick="goToTask(2)">Next Task &rarr;</button>
+        </div>
+        <button class="sab" id="showAns1" onclick="toggleAns('ans1')">&#9660; Show Answers</button>
+        <div class="apan" id="ans1"><p><strong>Answers:</strong> 1-mass incarceration, 2-family ties, 3-community sentences, 4-decarceration, 5-normalisation, 6-reoffending rates, 7-sentencing options</p></div>
+    </div>
+
+    <!-- TASK 2 -->
+    <div class="card" id="task2">
+        <div class="thdr"><div class="tnum">2</div><div><div class="ttitle">Article Reading</div><div class="tsub">Read the article carefully</div></div></div>
+        <a class="plink" href="article 2.pdf" target="_blank"><span style="font-size:1.5rem;">&#128196;</span> Crime &amp; Punishment &mdash; Article 2</a>
+        <div class="brow"><button class="prv" onclick="goToTask(1)">&larr; Previous</button><button class="nxt" onclick="goToTask(3)">Next Task &rarr;</button></div>
+    </div>
+
+    <!-- TASK 3 -->
+    <div class="card" id="task3">
+        <div class="thdr"><div class="tnum">3</div><div><div class="ttitle">Practice Reading</div><div class="tsub">IELTS-style reading test</div></div></div>
+        <a class="hlink" href="Reading (36).html" target="_blank">&#128214; Open Practice Reading</a>
+        <div class="brow"><button class="prv" onclick="goToTask(2)">&larr; Previous</button><button class="nxt" onclick="goToTask(4)">Next Task &rarr;</button></div>
+    </div>
+
+    <!-- TASK 4 -->
+    <div class="card" id="task4">
+        <div class="thdr"><div class="tnum">4</div><div><div class="ttitle">Vocabulary in Context</div><div class="tsub">Choose the correct word for each sentence</div></div></div>
+        <div class="gsec">
+            <div class="gs">1. The country's approach to crime led to <select class="vsel" id="t4v1"><option value="">select</option><option value="mass incarceration">mass incarceration</option><option value="restorative justice">restorative justice</option><option value="decarceration">decarceration</option></select>, with millions of people in prison at enormous public cost.</div>
+            <div class="gs">2. Unlike a prison sentence, a <select class="vsel" id="t4v2"><option value="">select</option><option value="community sentence">community sentence</option><option value="custodial sentence">custodial sentence</option><option value="suspended sentence">suspended sentence</option></select> allows the offender to remain in society while serving their punishment.</div>
+            <div class="gs">3. Finland's policy of <select class="vsel" id="t4v3"><option value="">select</option><option value="decarceration">decarceration</option><option value="rehabilitation">rehabilitation</option><option value="incapacitation">incapacitation</option></select> dramatically reduced its prison population over several decades.</div>
+            <div class="gs">4. Norway's low <select class="vsel" id="t4v4"><option value="">select</option><option value="reoffending rate">reoffending rate</option><option value="conviction rate">conviction rate</option><option value="crime rate">crime rate</option></select> is frequently cited as evidence that humane prisons work better than harsh ones.</div>
+            <div class="gs">5. The principle of <select class="vsel" id="t4v5"><option value="">select</option><option value="normalisation">normalisation</option><option value="deterrence">deterrence</option><option value="retribution">retribution</option></select> holds that prison life should resemble ordinary life as much as possible.</div>
+            <div class="gs">6. Judges now have a wider range of <select class="vsel" id="t4v6"><option value="">select</option><option value="sentencing options">sentencing options</option><option value="criminal records">criminal records</option><option value="bail conditions">bail conditions</option></select>, including electronic tagging and unpaid work orders.</div>
+            <div class="gs">7. The offender was fitted with an <select class="vsel" id="t4v7"><option value="">select</option><option value="electronic tag">electronic tag</option><option value="ankle bracelet">ankle bracelet</option><option value="identity bracelet">identity bracelet</option></select> so that authorities could monitor his movements.</div>
+            <div class="gs">8. She was given a <select class="vsel" id="t4v8"><option value="">select</option><option value="suspended sentence">suspended sentence</option><option value="life sentence">life sentence</option><option value="mandatory sentence">mandatory sentence</option></select> — she would only go to prison if she committed another offence within two years.</div>
+            <div class="gs">9. The judge ordered him to complete two hundred hours of <select class="vsel" id="t4v9"><option value="">select</option><option value="community service">community service</option><option value="restorative justice">restorative justice</option><option value="probation">probation</option></select> as an alternative to a short prison term.</div>
+            <div class="gs">10. Critics argue that <select class="vsel" id="t4v10"><option value="">select</option><option value="radicalisation">radicalisation</option><option value="rehabilitation">rehabilitation</option><option value="reintegration">reintegration</option></select> in prisons is a serious risk, particularly for young first-time offenders.</div>
+        </div>
+        <div class="brow"><button class="prv" onclick="goToTask(3)">&larr; Previous</button><button class="chk" id="check4" onclick="checkTask4()" disabled>Check Answers</button><button class="nxt" id="next4" disabled onclick="goToTask(5)">Next Task &rarr;</button></div>
+        <button class="sab" id="showAns4" onclick="toggleAns('ans4')">&#9660; Show Answers</button>
+        <div class="apan" id="ans4"><p><strong>Answers:</strong> 1-mass incarceration, 2-community sentence, 3-decarceration, 4-reoffending rate, 5-normalisation, 6-sentencing options, 7-electronic tag, 8-suspended sentence, 9-community service, 10-radicalisation</p></div>
+    </div>
+    <!-- TASK 5 -->
+    <div class="card" id="task5">
+        <div class="thdr"><div class="tnum">5</div><div><div class="ttitle">Extended Vocabulary Task</div><div class="tsub">Complete each sentence with the correct word from the box below</div></div></div>
+        <div class="wbox"><strong>Word Box:</strong> acquitted &nbsp;|&nbsp; arson &nbsp;|&nbsp; assault &nbsp;|&nbsp; blackmail &nbsp;|&nbsp; bribery &nbsp;|&nbsp; conspiracy &nbsp;|&nbsp; contempt &nbsp;|&nbsp; corruption &nbsp;|&nbsp; criminal &nbsp;|&nbsp; defamation &nbsp;|&nbsp; extortion &nbsp;|&nbsp; grievous &nbsp;|&nbsp; harassment &nbsp;|&nbsp; hijacking &nbsp;|&nbsp; homicide &nbsp;|&nbsp; kidnapping &nbsp;|&nbsp; perjury &nbsp;|&nbsp; shoplifting &nbsp;|&nbsp; stalking &nbsp;|&nbsp; trespassing</div>
+        <div class="gsec">
+            <div class="gs">1. The unlawful killing of one person by another is legally referred to as <input class="gi" id="t5w1" placeholder="___">.</div>
+            <div class="gs">2. Deliberately setting fire to property is known as <input class="gi" id="t5w2" placeholder="___">.</div>
+            <div class="gs">3. Taking someone by force and holding them against their will, usually for ransom, is called <input class="gi" id="t5w3" placeholder="___">.</div>
+            <div class="gs">4. Physically attacking another person is a crime known as <input class="gi" id="t5w4" placeholder="___">.</div>
+            <div class="gs">5. Causing extremely serious physical injury to another person is described as <input class="gi" id="t5w5" placeholder="___"> bodily harm.</div>
+            <div class="gs">6. Stealing goods from a shop without paying for them is called <input class="gi" id="t5w6" placeholder="___">.</div>
+            <div class="gs">7. Repeatedly following or contacting someone in a way that causes fear is called <input class="gi" id="t5w7" placeholder="___">.</div>
+            <div class="gs">8. Persistent unwanted behaviour targeted at a person is known as <input class="gi" id="t5w8" placeholder="___">.</div>
+            <div class="gs">9. Threatening to reveal embarrassing information unless money is paid is called <input class="gi" id="t5w9" placeholder="___">.</div>
+            <div class="gs">10. Demanding money or favours through threats or force is called <input class="gi" id="t5w10" placeholder="___">.</div>
+            <div class="gs">11. Giving or receiving money to influence someone in a position of power is called <input class="gi" id="t5w11" placeholder="___">.</div>
+            <div class="gs">12. Dishonest or fraudulent conduct by people in power is known as <input class="gi" id="t5w12" placeholder="___">.</div>
+            <div class="gs">13. Lying under oath in a court of law is the crime of <input class="gi" id="t5w13" placeholder="___">.</div>
+            <div class="gs">14. Deliberately damaging someone's reputation through false statements is called <input class="gi" id="t5w14" placeholder="___">.</div>
+            <div class="gs">15. Taking control of a vehicle, aircraft or ship by force is known as <input class="gi" id="t5w15" placeholder="___">.</div>
+            <div class="gs">16. Entering someone's property without permission is called <input class="gi" id="t5w16" placeholder="___">.</div>
+            <div class="gs">17. Planning a crime with one or more other people is known as <input class="gi" id="t5w17" placeholder="___">.</div>
+            <div class="gs">18. Showing disrespect for the authority of a court is called <input class="gi" id="t5w18" placeholder="___"> of court.</div>
+            <div class="gs">19. When a person is found not guilty and cleared of all charges, they are said to be <input class="gi" id="t5w19" placeholder="___">.</div>
+            <div class="gs">20. A person who has been found guilty of breaking the law is described as a <input class="gi" id="t5w20" placeholder="___">.</div>
+        </div>
+        <div class="brow"><button class="prv" onclick="goToTask(4)">&larr; Previous</button><button class="chk" id="check5" onclick="checkTask5()" disabled>Check Answers</button><button class="nxt" id="next5" disabled onclick="goToTask(6)">Next Task &rarr;</button></div>
+        <button class="sab" id="showAns5" onclick="toggleAns('ans5')">&#9660; Show Answers</button>
+        <div class="apan" id="ans5"><p><strong>Answers:</strong> 1-homicide, 2-arson, 3-kidnapping, 4-assault, 5-grievous, 6-shoplifting, 7-stalking, 8-harassment, 9-blackmail, 10-extortion, 11-bribery, 12-corruption, 13-perjury, 14-defamation, 15-hijacking, 16-trespassing, 17-conspiracy, 18-contempt, 19-acquitted, 20-criminal</p></div>
+    </div>
+
+    <!-- TASK 6 -->
+    <div class="card" id="task6">
+        <div class="thdr"><div class="tnum">6</div><div><div class="ttitle">Reading Comprehension</div><div class="tsub">Read five short passages about punishment systems and answer the questions</div></div></div>
+
+        <div class="crime-passage">
+            <h4>&#9878; Passage A &mdash; The Death Penalty</h4>
+            <p>Capital punishment — the execution of a person by the state as punishment for a crime — remains one of the most contentious issues in criminal justice. Around 55 countries retain the death penalty, including the United States, China, Iran and Saudi Arabia. Proponents argue that it serves as an ultimate deterrent against the most serious crimes, provides justice for victims' families, and permanently eliminates the risk of reoffending. Critics counter that there is no reliable evidence that capital punishment deters crime more effectively than long-term imprisonment, that it carries an irreversible risk of executing innocent people, and that it constitutes a violation of the fundamental human right to life. The global trend over the past century has been towards abolition: more than two thirds of the world's countries have now abandoned the practice in law or in fact.</p>
+        </div>
+        <div class="qblock"><div class="qt">1. What is the global trend regarding the death penalty over the past century?</div><div class="opts"><label><input type="radio" name="t6q1" value="A"> A. More countries are reintroducing it.</label><label><input type="radio" name="t6q1" value="B"> B. The number of countries using it has remained stable.</label><label><input type="radio" name="t6q1" value="C"> C. More than two thirds of countries have abolished or stopped using it.</label><label><input type="radio" name="t6q1" value="D"> D. Only democratic countries retain the death penalty.</label></div><div class="fb" id="fb_t6q1"></div></div>
+        <div class="qblock"><div class="qt">2. What is one argument critics make against the death penalty?</div><div class="opts"><label><input type="radio" name="t6q2" value="A"> A. It is too expensive to carry out.</label><label><input type="radio" name="t6q2" value="B"> B. It provides no closure for victims' families.</label><label><input type="radio" name="t6q2" value="C"> C. It carries an irreversible risk of executing innocent people.</label><label><input type="radio" name="t6q2" value="D"> D. It is only used in authoritarian countries.</label></div><div class="fb" id="fb_t6q2"></div></div>
+
+        <div class="crime-passage">
+            <h4>&#9878; Passage B &mdash; The Nordic Prison Model</h4>
+            <p>Scandinavia — and particularly Norway — has attracted global attention for its approach to criminal justice. Norwegian prisons such as Halden and Bastøy are famous for their humane conditions: individual cells, access to education and vocational training, shared kitchens and communal spaces. The philosophy underpinning the system is that rehabilitation, not punishment, is the primary purpose of imprisonment. Prisoners are treated as people who will eventually return to society and need to be equipped to do so successfully. Norway's reoffending rate of around twenty percent contrasts sharply with rates of fifty to sixty percent in the UK and US. Critics, however, question whether this success can be attributed to the prisons themselves, or whether it reflects the broader social safety net, low inequality and high social trust that characterise Scandinavian societies more generally.</p>
+        </div>
+        <div class="qblock"><div class="qt">3. What is the primary philosophy behind the Norwegian prison system?</div><div class="opts"><label><input type="radio" name="t6q3" value="A"> A. Prisoners should be punished as harshly as possible.</label><label><input type="radio" name="t6q3" value="B"> B. Rehabilitation is the main purpose of imprisonment.</label><label><input type="radio" name="t6q3" value="C"> C. Prisons should isolate dangerous people permanently.</label><label><input type="radio" name="t6q3" value="D"> D. Short sentences are more effective than long ones.</label></div><div class="fb" id="fb_t6q3"></div></div>
+        <div class="qblock"><div class="qt">4. What concern do critics raise about attributing Norway's success to its prisons?</div><div class="opts"><label><input type="radio" name="t6q4" value="A"> A. The data on reoffending rates is unreliable.</label><label><input type="radio" name="t6q4" value="B"> B. Norwegian prisons are actually very strict.</label><label><input type="radio" name="t6q4" value="C"> C. The success may reflect wider social factors rather than the prison model itself.</label><label><input type="radio" name="t6q4" value="D"> D. Most prisoners in Norway reoffend within one year.</label></div><div class="fb" id="fb_t6q4"></div></div>
+
+        <div class="crime-passage">
+            <h4>&#9878; Passage C &mdash; Mandatory Minimum Sentences</h4>
+            <p>Mandatory minimum sentencing laws require judges to impose a fixed minimum prison term for certain offences, regardless of the individual circumstances of the case. Introduced in many countries during the 1980s and 1990s as part of "tough on crime" political agendas, mandatory minimums were intended to create consistency in sentencing, deter offenders, and remove judicial discretion seen as leading to unduly lenient outcomes. Critics argue that such laws have contributed significantly to prison overcrowding, are racially disproportionate in their application, and prevent judges from tailoring sentences to the specific details of individual cases. Several US states and jurisdictions have begun to reform or repeal mandatory minimum laws following evidence of their unintended consequences.</p>
+        </div>
+        <div class="qblock"><div class="qt">5. What was a stated purpose of mandatory minimum sentencing laws?</div><div class="opts"><label><input type="radio" name="t6q5" value="A"> A. To give judges more power to decide sentences.</label><label><input type="radio" name="t6q5" value="B"> B. To create consistency in sentencing and deter offenders.</label><label><input type="radio" name="t6q5" value="C"> C. To reduce the prison population.</label><label><input type="radio" name="t6q5" value="D"> D. To focus resources on rehabilitation programmes.</label></div><div class="fb" id="fb_t6q5"></div></div>
+        <div class="qblock"><div class="qt">6. What is one criticism of mandatory minimum sentences mentioned in the passage?</div><div class="opts"><label><input type="radio" name="t6q6" value="A"> A. They give too much power to juries.</label><label><input type="radio" name="t6q6" value="B"> B. They have contributed to prison overcrowding and racial disproportion.</label><label><input type="radio" name="t6q6" value="C"> C. They are too lenient for serious offenders.</label><label><input type="radio" name="t6q6" value="D"> D. They were only ever used in the United States.</label></div><div class="fb" id="fb_t6q6"></div></div>
+
+        <div class="crime-passage">
+            <h4>&#9878; Passage D &mdash; Youth Justice</h4>
+            <p>Young people who commit crimes pose a particular challenge for justice systems. Most jurisdictions treat juvenile offenders differently from adults, recognising that adolescent brains are still developing and that young people are more amenable to rehabilitation than adults with established criminal histories. Youth courts typically emphasise welfare and educational interventions over punishment, and many offences that would result in custody for adults are dealt with through cautions, referral orders or supervision in the community. However, the age at which young people can be held criminally responsible varies widely: from ten in England and Wales to fifteen in Norway. Critics of low ages of criminal responsibility argue that children this young cannot fully understand the consequences of their actions and that early contact with the justice system often accelerates rather than prevents a criminal career.</p>
+        </div>
+        <div class="qblock"><div class="qt">7. Why do most justice systems treat juvenile offenders differently from adults?</div><div class="opts"><label><input type="radio" name="t6q7" value="A"> A. Because young people's crimes are never serious.</label><label><input type="radio" name="t6q7" value="B"> B. Because adolescent brains are still developing and young people are more open to rehabilitation.</label><label><input type="radio" name="t6q7" value="C"> C. Because it is cheaper to deal with young offenders in the community.</label><label><input type="radio" name="t6q7" value="D"> D. Because youth courts are less formal than adult courts.</label></div><div class="fb" id="fb_t6q7"></div></div>
+        <div class="qblock"><div class="qt">8. What concern do critics raise about low ages of criminal responsibility?</div><div class="opts"><label><input type="radio" name="t6q8" value="A"> A. It means young people avoid punishment for serious crimes.</label><label><input type="radio" name="t6q8" value="B"> B. It makes the justice system too lenient.</label><label><input type="radio" name="t6q8" value="C"> C. Children this young may not understand their actions, and early contact with justice can accelerate criminal careers.</label><label><input type="radio" name="t6q8" value="D"> D. Youth courts are too expensive to run.</label></div><div class="fb" id="fb_t6q8"></div></div>
+
+        <div class="crime-passage">
+            <h4>&#9878; Passage E &mdash; Restorative Justice in Practice</h4>
+            <p>Restorative justice programmes bring together offenders, victims and sometimes members of the wider community to discuss the impact of a crime and agree how it can be repaired. Unlike conventional court proceedings, which focus on establishing guilt and imposing punishment, restorative processes centre on dialogue, acknowledgement of harm, and the active participation of those most directly affected. Research evidence from multiple countries suggests that restorative justice, when delivered well, reduces reoffending more effectively than conventional sentencing, increases victim satisfaction, and reduces victims' experience of post-traumatic symptoms. Restorative approaches are most commonly used for less serious offences, though they are increasingly being piloted for more serious crimes, including cases of serious violence, where both parties consent to participation.</p>
+        </div>
+        <div class="qblock"><div class="qt">9. How does restorative justice differ from conventional court proceedings?</div><div class="opts"><label><input type="radio" name="t6q9" value="A"> A. It is only available to first-time offenders.</label><label><input type="radio" name="t6q9" value="B"> B. It focuses on dialogue, acknowledgement of harm and active participation rather than guilt and punishment.</label><label><input type="radio" name="t6q9" value="C"> C. It always results in the offender avoiding a prison sentence.</label><label><input type="radio" name="t6q9" value="D"> D. It requires a jury to decide the outcome.</label></div><div class="fb" id="fb_t6q9"></div></div>
+        <div class="qblock"><div class="qt">10. What does research suggest about the effectiveness of restorative justice?</div><div class="opts"><label><input type="radio" name="t6q10" value="A"> A. It is only effective for very minor offences.</label><label><input type="radio" name="t6q10" value="B"> B. It has no measurable effect on victims' wellbeing.</label><label><input type="radio" name="t6q10" value="C"> C. It reduces reoffending more effectively than conventional sentencing and improves victim satisfaction.</label><label><input type="radio" name="t6q10" value="D"> D. It is more expensive than traditional court processes.</label></div><div class="fb" id="fb_t6q10"></div></div>
+        <div class="brow"><button class="prv" onclick="goToTask(5)">&larr; Previous</button><button class="chk" id="check6" onclick="checkTask6()" disabled>Check Answers</button><button class="nxt" id="next6" disabled onclick="goToTask(7)">Next Task &rarr;</button></div>
+        <button class="sab" id="showAns6" onclick="toggleAns('ans6')">&#9660; Show Answers</button>
+        <div class="apan" id="ans6"><p><strong>Answers:</strong> 1-C, 2-C, 3-B, 4-C, 5-B, 6-B, 7-B, 8-C, 9-B, 10-C</p></div>
+    </div>
+
+    <!-- TASK 7 -->
+    <div class="card" id="task7">
+        <div class="thdr"><div class="tnum">7</div><div><div class="ttitle">Practice Listening</div><div class="tsub">Full IELTS-style listening test</div></div></div>
+        <a class="hlink" href="Listening (36).html" target="_blank">&#127911; Open Practice Listening</a>
+        <div class="brow"><button class="prv" onclick="goToTask(6)">&larr; Previous</button><button class="nxt" onclick="finishDay()">Finish Day 2 &#10003;</button></div>
+    </div>
+
+    <!-- COMPLETION -->
+    <div class="done" id="donescreen">
+        <div class="ico">&#127881;</div>
+        <h2>Day 2 Complete!</h2>
+        <p>Excellent work! You've completed all tasks for Week 8, Day 2.</p>
+        <div style="margin:30px 0;text-align:left;">
+            <h3 style="color:#9b2c2c;border-bottom:2px solid #9b2c2c;padding-bottom:10px;margin-bottom:15px;">&#128203; Review Your Work</h3>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:15px;">
+                <div onclick="reviewTask(1)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#9b2c2c;margin-bottom:5px;">Task 1</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Mini Reading</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(2)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#9b2c2c;margin-bottom:5px;">Task 2</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Article Reading</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(3)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#9b2c2c;margin-bottom:5px;">Task 3</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Reading</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(4)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#9b2c2c;margin-bottom:5px;">Task 4</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Vocabulary</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(5)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#9b2c2c;margin-bottom:5px;">Task 5</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Extended Vocab</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(6)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#9b2c2c;margin-bottom:5px;">Task 6</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Reading Comprehension</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(7)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#9b2c2c;margin-bottom:5px;">Task 7</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Listening</div><div style="font-size:1.4rem;">&#9989;</div></div>
+            </div>
+        </div>
+        <a href="/student-dashboard.html" class="dbbtn">&larr; Back to Dashboard</a>
+    </div>
+</div>
+<script>
+const SUPABASE_URL='https://nbfceuhuauizyucugejr.supabase.co';
+const SUPABASE_KEY='sb_publishable_0mFIGJkA_DKZfUiDAWFdrA_nXt0hF6H';
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const WEEK=8,DAY=2,TOTAL=7;
+let sid=null,cur=1,t0=Date.now(),stout=null;
+
+const vocab=[
+{w:"1. Mass incarceration (n)",d:"The large-scale imprisonment of people"},
+{w:"2. Community sentence (n)",d:"A non-custodial punishment served in the community"},
+{w:"3. Decarceration (n)",d:"The deliberate reduction of a prison population"},
+{w:"4. Normalisation (n)",d:"Making prison life resemble normal life"},
+{w:"5. Reoffending rate (n)",d:"The percentage of ex-prisoners who commit further crimes"},
+{w:"6. Sentencing options (n)",d:"The range of punishments available to a judge"},
+{w:"7. Electronic tag (n)",d:"A device worn to monitor an offender's movements"},
+{w:"8. Suspended sentence (n)",d:"A sentence not served unless another offence is committed"},
+{w:"9. Radicalisation (n)",d:"The process of adopting extreme beliefs, often in prison"},
+{w:"10. Homicide (n)",d:"The unlawful killing of a person"},
+{w:"11. Arson (n)",d:"The crime of deliberately setting fire to property"},
+{w:"12. Kidnapping (n)",d:"Taking someone by force and holding them against their will"},
+{w:"13. Assault (n)",d:"Physically attacking another person"},
+{w:"14. Grievous bodily harm (n)",d:"Extremely serious physical injury caused to another person"},
+{w:"15. Shoplifting (n)",d:"Stealing goods from a shop"},
+{w:"16. Stalking (n)",d:"Repeatedly following or contacting someone causing fear"},
+{w:"17. Harassment (n)",d:"Persistent unwanted behaviour targeted at a person"},
+{w:"18. Blackmail (n)",d:"Threatening to reveal information unless money is paid"},
+{w:"19. Extortion (n)",d:"Demanding money or favours through threats"},
+{w:"20. Bribery (n)",d:"Giving or receiving money to influence someone in power"},
+{w:"21. Corruption (n)",d:"Dishonest conduct by people in positions of power"},
+{w:"22. Perjury (n)",d:"Lying under oath in a court of law"},
+{w:"23. Defamation (n)",d:"Damaging someone's reputation through false statements"},
+{w:"24. Hijacking (n)",d:"Taking forcible control of a vehicle or aircraft"},
+{w:"25. Trespassing (n)",d:"Entering property without permission"},
+{w:"26. Conspiracy (n)",d:"Planning a crime with one or more other people"},
+{w:"27. Contempt of court (n)",d:"Showing disrespect for the authority of a court"},
+{w:"28. Capital punishment (n)",d:"Execution by the state as punishment for a crime"},
+{w:"29. Abolition (n)",d:"The formal ending of a practice or law"},
+{w:"30. Deterrent (n)",d:"Something that discourages people from committing crime"},
+{w:"31. Juvenile offender (n)",d:"A young person who commits a crime"},
+{w:"32. Age of criminal responsibility (n)",d:"The minimum age at which a person can be prosecuted"},
+{w:"33. Youth court (n)",d:"A court that deals with offences by young people"},
+{w:"34. Caution (n)",d:"An official warning given instead of prosecution"},
+{w:"35. Referral order (n)",d:"A youth justice measure involving a panel meeting"},
+{w:"36. Mandatory minimum (n)",d:"A fixed minimum prison term required by law"},
+{w:"37. Judicial discretion (n)",d:"A judge's freedom to choose the appropriate sentence"},
+{w:"38. Prison overcrowding (n)",d:"When a prison holds more people than it was designed for"},
+{w:"39. Restorative justice (n)",d:"An approach focusing on repairing harm through dialogue"},
+{w:"40. Dialogue (n)",d:"A conversation between two or more people"},
+{w:"41. Acknowledgement (n)",d:"Accepting or recognising that something is true"},
+{w:"42. Post-traumatic (adj)",d:"Occurring after a traumatic experience"},
+{w:"43. Consent (n)",d:"Agreement to something happening"},
+{w:"44. Welfare (n)",d:"The health, happiness and wellbeing of a person"},
+{w:"45. Vocational training (n)",d:"Education in practical skills for a trade or occupation"},
+{w:"46. Social safety net (n)",d:"Government support systems for people in need"},
+{w:"47. Inequality (n)",d:"Unfair differences in wealth or opportunity"},
+{w:"48. Custodial (adj)",d:"Relating to or involving imprisonment"},
+{w:"49. Leniency (n)",d:"The quality of being merciful or less strict than expected"},
+{w:"50. Irreversible (adj)",d:"Impossible to undo or reverse"},
+];
+
+const t1ok={t1q1:["mass incarceration"],t1q2:["family ties"],t1q3:["community sentences"],t1q4:["decarceration"],t1q5:["normalisation","normalization"],t1q6:["reoffending rates","reoffending rate"],t1q7:["sentencing options"]};
+const t4ok={t4v1:"mass incarceration",t4v2:"community sentence",t4v3:"decarceration",t4v4:"reoffending rate",t4v5:"normalisation",t4v6:"sentencing options",t4v7:"electronic tag",t4v8:"suspended sentence",t4v9:"community service",t4v10:"radicalisation"};
+const t5ok={t5w1:"homicide",t5w2:"arson",t5w3:"kidnapping",t5w4:"assault",t5w5:"grievous",t5w6:"shoplifting",t5w7:"stalking",t5w8:"harassment",t5w9:"blackmail",t5w10:"extortion",t5w11:"bribery",t5w12:"corruption",t5w13:"perjury",t5w14:"defamation",t5w15:"hijacking",t5w16:"trespassing",t5w17:"conspiracy",t5w18:"contempt",t5w19:"acquitted",t5w20:"criminal"};
+const t6mcq={t6q1:"C",t6q2:"C",t6q3:"B",t6q4:"C",t6q5:"B",t6q6:"B",t6q7:"B",t6q8:"C",t6q9:"B",t6q10:"C"};
+
+async function initStu(){const p=new URLSearchParams(window.location.search);if(p.get("teacher")==="true"){sid="teacher-preview";return;}try{const u=localStorage.getItem("user");if(!u){window.location.href="/login.html";return;}const pu=JSON.parse(u);const{data,error}=await db.from("students").select("*").eq("username",pu.username).single();if(error||!data)return;sid=data.id;}catch(e){}}
+function buildVocab(){document.getElementById("vgrid").innerHTML=vocab.map(v=>`<div class="vi"><div class="vw">${v.w}</div><div class="vd">${v.d}</div></div>`).join("");}
+async function startDay(){document.getElementById("splash").style.display="none";document.getElementById("mc").style.display="block";buildVocab();await initStu();await restoreProgress();setupLive();}
+function goToTask(n){document.getElementById("task"+cur).classList.remove("active");cur=n;document.getElementById("task"+n).classList.add("active");document.getElementById("task"+n).scrollIntoView({behavior:"smooth",block:"start"});updProg(n);t0=Date.now();saveResume(n);}
+function updProg(n){document.getElementById("pfill").style.width=Math.round(((n-1)/TOTAL)*100)+"%";document.getElementById("plabel").textContent="Task "+n+" of "+TOTAL;}
+function showSavi(){const e=document.getElementById("savi");e.classList.add("show");setTimeout(()=>e.classList.remove("show"),2000);}
+async function saveResume(n){if(!sid||sid==="teacher-preview")return;try{await db.from("student_resume").upsert({student_id:sid,week:WEEK,day:DAY,last_task:n,updated_at:new Date().toISOString()},{onConflict:"student_id"});}catch(e){}}
+function scheduleSave(){clearTimeout(stout);stout=setTimeout(()=>{localStorage.setItem("w"+WEEK+"d"+DAY+"_ans",JSON.stringify(gatherAll()));showSavi();},800);}
+function gatherAll(){const d={};document.querySelectorAll(".gi").forEach(el=>{if(el.id)d[el.id]=el.value;});["t6q1","t6q2","t6q3","t6q4","t6q5","t6q6","t6q7","t6q8","t6q9","t6q10"].forEach(n=>{const s=document.querySelector("input[name='"+n+"']:checked");if(s)d[n]=s.value;});document.querySelectorAll("select").forEach(el=>{if(el.id)d[el.id]=el.value;});return d;}
+async function restoreProgress(){
+    try{
+        const sv=localStorage.getItem("w"+WEEK+"d"+DAY+"_ans");
+        if(sv){const d=JSON.parse(sv);Object.entries(d).forEach(([id,val])=>{const el=document.getElementById(id);if(el&&el.tagName==="INPUT")el.value=val;});["t6q1","t6q2","t6q3","t6q4","t6q5","t6q6","t6q7","t6q8","t6q9","t6q10"].forEach(n=>{const val=d[n];if(val){const r=document.querySelector("input[name='"+n+"'][value='"+val+"']");if(r)r.checked=true;}});Object.entries(d).forEach(([id,val])=>{const el=document.getElementById(id);if(el&&el.tagName==="SELECT")el.value=val;});}
+        if(sid&&sid!=="teacher-preview"){
+            const{data:td}=await db.from("task_progress").select("task_number,status").eq("student_id",sid).eq("week",WEEK).eq("day",DAY);
+            if(td&&td.filter(t=>t.status==="completed").length>=TOTAL){document.getElementById("task1").classList.remove("active");document.getElementById("donescreen").style.display="block";updProg(TOTAL);valAll();makeRO();return;}
+            const{data:res}=await db.from("student_resume").select("last_task").eq("student_id",sid).eq("week",WEEK).eq("day",DAY).single();
+            if(res&&res.last_task>1){document.getElementById("task1").classList.remove("active");cur=res.last_task;document.getElementById("task"+cur).classList.add("active");updProg(cur);}
+        }
+        valAll();
+    }catch(e){}
+}
+function makeRO(){document.querySelectorAll(".gi").forEach(el=>{el.disabled=true;el.style.opacity="0.85";});document.querySelectorAll("input[type=radio]").forEach(el=>el.disabled=true);document.querySelectorAll("select").forEach(el=>el.disabled=true);document.querySelectorAll(".chk").forEach(el=>el.style.display="none");document.querySelectorAll(".nxt").forEach(el=>el.style.display="none");document.querySelectorAll(".prv").forEach(el=>el.style.display="none");document.querySelectorAll(".sab").forEach(el=>el.style.display="inline-block");}
+function setupLive(){
+    ["t1q1","t1q2","t1q3","t1q4","t1q5","t1q6","t1q7"].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener("input",()=>{valT1();scheduleSave();});});
+    for(let i=1;i<=10;i++){const el=document.getElementById("t4v"+i);if(el)el.addEventListener("change",()=>{valT4();scheduleSave();});}
+    for(let i=1;i<=20;i++){const el=document.getElementById("t5w"+i);if(el)el.addEventListener("input",()=>{valT5();scheduleSave();});}
+    ["t6q1","t6q2","t6q3","t6q4","t6q5","t6q6","t6q7","t6q8","t6q9","t6q10"].forEach(n=>{document.querySelectorAll("input[name='"+n+"']").forEach(el=>el.addEventListener("change",()=>{valT6();scheduleSave();}));});
+}
+function valAll(){valT1();valT4();valT5();valT6();}
+function valT1(){document.getElementById("check1").disabled=!["t1q1","t1q2","t1q3","t1q4","t1q5","t1q6","t1q7"].every(id=>document.getElementById(id)?.value.trim());}
+function valT4(){document.getElementById("check4").disabled=!Array.from({length:10},(_,i)=>document.getElementById("t4v"+(i+1))?.value).every(Boolean);}
+function valT5(){document.getElementById("check5").disabled=!Array.from({length:20},(_,i)=>document.getElementById("t5w"+(i+1))?.value.trim()).every(Boolean);}
+function valT6(){document.getElementById("check6").disabled=!["t6q1","t6q2","t6q3","t6q4","t6q5","t6q6","t6q7","t6q8","t6q9","t6q10"].every(n=>document.querySelector("input[name='"+n+"']:checked"));}
+function checkTask1(){const ans=[];Object.entries(t1ok).forEach(([id,opts])=>{const inp=document.getElementById(id);const val=inp.value.trim().toLowerCase();const ok=opts.some(o=>val.includes(o.toLowerCase()));inp.classList.toggle("correct",ok);inp.classList.toggle("incorrect",!ok);ans.push({question_id:id,question_type:"gap_fill",student_answer:inp.value.trim(),correct_answer:opts[0],is_correct:ok});});document.getElementById("showAns1").style.display="inline-block";document.getElementById("next1").disabled=false;saveAnswers(1,ans);saveTP(1);}
+function checkTask4(){const ans=[];Object.entries(t4ok).forEach(([id,correct])=>{const sel=document.getElementById(id);const ok=sel.value===correct;sel.classList.toggle("correct",ok);sel.classList.toggle("incorrect",!ok);ans.push({question_id:id,question_type:"matching",student_answer:sel.value,correct_answer:correct,is_correct:ok});});document.getElementById("showAns4").style.display="inline-block";document.getElementById("next4").disabled=false;saveAnswers(4,ans);saveTP(4);}
+function checkTask5(){const ans=[];Object.entries(t5ok).forEach(([id,correct])=>{const inp=document.getElementById(id);const ok=inp.value.trim().toLowerCase()===correct.toLowerCase();inp.classList.toggle("correct",ok);inp.classList.toggle("incorrect",!ok);ans.push({question_id:id,question_type:"gap_fill",student_answer:inp.value.trim(),correct_answer:correct,is_correct:ok});});document.getElementById("showAns5").style.display="inline-block";document.getElementById("next5").disabled=false;saveAnswers(5,ans);saveTP(5);}
+function checkTask6(){const ans=[];Object.entries(t6mcq).forEach(([n,correct])=>{const sel=document.querySelector("input[name='"+n+"']:checked");const fb=document.getElementById("fb_"+n);if(!sel)return;const ok=sel.value===correct;fb.textContent=ok?"✅ Correct!":"❌ Incorrect — correct answer: "+correct;fb.className="fb "+(ok?"correct":"incorrect");ans.push({question_id:n,question_type:"mcq",student_answer:sel.value,correct_answer:correct,is_correct:ok});});document.getElementById("showAns6").style.display="inline-block";document.getElementById("next6").disabled=false;saveAnswers(6,ans);saveTP(6);}
+async function saveAnswers(tnum,ans){if(!sid||sid==="teacher-preview")return;try{const rows=ans.map(a=>({student_id:sid,week:WEEK,day:DAY,task_number:tnum,question_id:a.question_id,question_type:a.question_type,student_answer:a.student_answer,correct_answer:a.correct_answer,is_correct:a.is_correct,answered_at:new Date().toISOString()}));await db.from("student_answers").upsert(rows,{onConflict:"student_id,week,day,task_number,question_id"});}catch(e){}}
+async function saveTP(n){if(!sid||sid==="teacher-preview")return;try{await db.from("task_progress").upsert({student_id:sid,week:WEEK,day:DAY,task_number:n,status:"completed",time_completed:new Date().toISOString(),time_spent_seconds:Math.round((Date.now()-t0)/1000)},{onConflict:"student_id,week,day,task_number"});}catch(e){}}
+async function finishDay(){document.getElementById("task7").classList.remove("active");document.getElementById("donescreen").style.display="block";document.getElementById("donescreen").scrollIntoView({behavior:"smooth"});localStorage.removeItem("w"+WEEK+"d"+DAY+"_ans");for(let i=1;i<=TOTAL;i++)await saveTP(i);if(sid&&sid!=="teacher-preview")await db.from("student_resume").delete().eq("student_id",sid);makeRO();}
+function reviewTask(n){document.getElementById("donescreen").style.display="none";cur=n;document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));document.getElementById("task"+n).classList.add("active");document.getElementById("task"+n).scrollIntoView({behavior:"smooth",block:"start"});const ex=document.getElementById("btr");if(!ex){const b=document.createElement("button");b.id="btr";b.textContent="🏆 Back to Results";b.style.cssText="position:fixed;bottom:20px;right:20px;background:#e53e3e;color:white;border:none;padding:12px 22px;border-radius:50px;cursor:pointer;font-weight:bold;font-size:0.95rem;z-index:9998;";b.onclick=()=>{b.remove();document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));document.getElementById("donescreen").style.display="block";document.getElementById("donescreen").scrollIntoView({behavior:"smooth"});};document.body.appendChild(b);}}
+function toggleVocab(){document.getElementById("vbody").classList.toggle("open");document.getElementById("varr").classList.toggle("open");}
+function toggleAns(id){const d=document.getElementById(id);const b=d.previousElementSibling;d.style.display=d.style.display==="block"?"none":"block";b.textContent=d.style.display==="block"?"▲ Hide Answers":"▼ Show Answers";}
+</script>
+</body>
+</html>
