@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WEEK 8 - DAY 3 (Crime & Punishment)</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Segoe UI", sans-serif; background: #fff5f5; color: #333; }
+        #splash { position: fixed; inset: 0; background: linear-gradient(135deg, #e53e3e, #9b2c2c); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; color: white; text-align: center; padding: 20px; }
+        #splash h1 { font-size: 3rem; margin-bottom: 10px; }
+        #splash h2 { font-size: 2rem; margin-bottom: 10px; opacity: 0.9; }
+        #splash p { font-size: 1.2rem; margin-bottom: 40px; opacity: 0.8; }
+        .splash-btn { background: white; color: #9b2c2c; border: none; padding: 18px 60px; font-size: 1.4rem; font-weight: bold; border-radius: 50px; cursor: pointer; }
+        .wrap { max-width: 900px; margin: 0 auto; padding: 20px; }
+        .hdr { background: linear-gradient(135deg, #e53e3e, #9b2c2c); color: white; padding: 25px 30px; border-radius: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; }
+        .hdr h1 { font-size: 1.6rem; }
+        .hdr .topic { opacity: 0.85; font-size: 1rem; margin-top: 4px; }
+        .back-btn { background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 10px 20px; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 0.9rem; }
+        .plabel { text-align: center; color: #9b2c2c; font-size: 0.85rem; margin-bottom: 8px; font-weight: 600; }
+        .pwrap { background: #fed7d7; border-radius: 20px; height: 10px; margin-bottom: 20px; overflow: hidden; }
+        .pfill { background: linear-gradient(90deg, #e53e3e, #9b2c2c); height: 100%; border-radius: 20px; transition: width 0.5s; }
+        .vsec { background: white; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-left: 5px solid #e53e3e; overflow: hidden; }
+        .vtog { width: 100%; background: none; border: none; cursor: pointer; padding: 18px 25px; display: flex; align-items: center; justify-content: space-between; }
+        .vtog h3 { color: #9b2c2c; font-size: 1.1rem; margin: 0; }
+        .vcount { background: #e53e3e; color: white; font-size: 0.75rem; font-weight: bold; padding: 3px 10px; border-radius: 20px; }
+        .varr { color: #9b2c2c; font-size: 1rem; transition: transform 0.3s; }
+        .varr.open { transform: rotate(180deg); }
+        .vbody { display: none; padding: 0 25px 20px; }
+        .vbody.open { display: block; }
+        .vgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+        .vi { background: #fff5f5; padding: 10px 14px; border-radius: 8px; }
+        .vi .vw { font-weight: bold; color: #333; font-size: 0.95rem; }
+        .vi .vd { color: #666; font-size: 0.82rem; margin-top: 2px; }
+        .card { background: white; border-radius: 15px; padding: 28px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); display: none; }
+        .card.active { display: block; }
+        .thdr { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .tnum { background: linear-gradient(135deg, #e53e3e, #9b2c2c); color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; flex-shrink: 0; }
+        .ttitle { font-size: 1.3rem; font-weight: bold; color: #333; }
+        .tsub { color: #888; font-size: 0.9rem; margin-top: 2px; }
+        .plink { display: flex; align-items: center; gap: 12px; background: #fff5f5; padding: 15px 20px; border-radius: 10px; text-decoration: none; color: #333; font-weight: 600; border: 2px solid #fed7d7; transition: all 0.3s; margin-bottom: 12px; }
+        .plink:hover { background: #e53e3e; color: white; }
+        .hlink { display: inline-flex; align-items: center; gap: 10px; background: linear-gradient(135deg, #e53e3e, #9b2c2c); color: white; padding: 15px 30px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 1rem; margin: 10px 0; }
+        .passage { background: #fff5f5; border: 1px solid #fed7d7; border-radius: 10px; padding: 25px; margin: 15px 0; line-height: 1.8; font-size: 0.97rem; }
+        .passage h3 { color: #9b2c2c; margin-bottom: 15px; font-size: 1.2rem; }
+        .passage p { margin-bottom: 14px; }
+        .hl { font-style: italic; color: #9b2c2c; font-weight: 600; }
+        .qblock { margin-bottom: 20px; padding: 18px; background: #f8f9fa; border-radius: 10px; }
+        .qt { font-weight: 600; margin-bottom: 12px; color: #333; line-height: 1.5; }
+        .opts label { display: flex; align-items: flex-start; gap: 10px; padding: 8px 12px; border-radius: 8px; cursor: pointer; margin-bottom: 5px; }
+        .opts label:hover { background: #fff5f5; }
+        .opts input[type=radio] { margin-top: 3px; flex-shrink: 0; }
+        .fb { margin-top: 8px; font-weight: bold; font-size: 0.9rem; }
+        .fb.correct { color: #28a745; }
+        .fb.incorrect { color: #dc3545; }
+        .gsec { margin-top: 20px; }
+        .gs { margin-bottom: 14px; line-height: 2; font-size: 1rem; }
+        .gi { border: none; border-bottom: 2px solid #e53e3e; padding: 4px 8px; font-size: 0.95rem; width: 200px; background: transparent; outline: none; color: #333; }
+        .gi.correct { border-bottom-color: #28a745; background: #d4edda33; }
+        .gi.incorrect { border-bottom-color: #dc3545; background: #f8d7da33; }
+        .wbox { background: #fff5f5; border: 2px solid #fed7d7; border-radius: 10px; padding: 12px 18px; margin-bottom: 15px; }
+        .wbox strong { color: #9b2c2c; }
+        .vsel { border: 2px solid #fed7d7; border-radius: 6px; padding: 5px 10px; font-size: 0.9rem; background: white; width: 230px; }
+        .vsel.correct { border-color: #28a745; }
+        .vsel.incorrect { border-color: #dc3545; }
+        .crime-passage { background: #fff5f5; border: 1px solid #fed7d7; border-radius: 10px; padding: 18px 22px; margin: 15px 0 10px; line-height: 1.75; font-size: 0.95rem; }
+        .crime-passage h4 { color: #9b2c2c; margin-bottom: 10px; font-size: 1rem; font-weight: 700; }
+        .crime-passage p { margin-bottom: 8px; }
+        .brow { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+        .chk { background: linear-gradient(135deg, #e53e3e, #9b2c2c); color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
+        .chk:disabled { background: #ccc; cursor: not-allowed; }
+        .nxt { background: #28a745; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
+        .nxt:disabled { background: #ccc; cursor: not-allowed; }
+        .prv { background: #6c757d; color: white; border: none; padding: 12px 28px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
+        .sab { background: #ffc107; color: #333; border: none; padding: 10px 22px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.88rem; display: none; margin-top: 10px; }
+        .apan { display: none; background: #fffbea; border: 2px solid #ffc107; border-radius: 10px; padding: 15px; margin-top: 12px; }
+        .apan p { margin-bottom: 6px; font-size: 0.9rem; }
+        .done { text-align: center; padding: 60px 20px; display: none; }
+        .done .ico { font-size: 5rem; margin-bottom: 20px; }
+        .done h2 { font-size: 2.2rem; color: #9b2c2c; margin-bottom: 10px; }
+        .done p { color: #666; font-size: 1rem; margin-bottom: 30px; }
+        .dbbtn { background: linear-gradient(135deg, #e53e3e, #9b2c2c); color: white; padding: 16px 40px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 1.1rem; display: inline-block; }
+        .savi { position: fixed; bottom: 20px; right: 20px; background: #e53e3e; color: white; padding: 10px 18px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; opacity: 0; transition: opacity 0.4s; z-index: 9000; pointer-events: none; }
+        .savi.show { opacity: 1; }
+    </style>
+</head>
+<body>
+<div id="splash">
+    <h1>&#9878; WEEK 8</h1>
+    <h2>DAY 3</h2>
+    <p>Topic: Crime &amp; Punishment</p>
+    <button class="splash-btn" onclick="startDay()">LET'S GO!</button>
+</div>
+<div class="savi" id="savi">&#10003; Progress saved</div>
+<div class="wrap" id="mc" style="display:none;">
+    <div class="hdr">
+        <div><h1>&#9878; Week 8 &mdash; Day 3</h1><div class="topic">Topic: Crime &amp; Punishment</div></div>
+        <a href="/student-dashboard.html" class="back-btn">&larr; Dashboard</a>
+    </div>
+    <div class="plabel" id="plabel">Task 0 of 7</div>
+    <div class="pwrap"><div class="pfill" id="pfill" style="width:0%"></div></div>
+    <div class="vsec">
+        <button class="vtog" onclick="toggleVocab()">
+            <div style="display:flex;align-items:center;gap:10px;"><h3>&#128214; Today's Vocabulary</h3><span class="vcount">50 words</span></div>
+            <span class="varr" id="varr">&#9660;</span>
+        </button>
+        <div class="vbody" id="vbody"><div class="vgrid" id="vgrid"></div></div>
+    </div>
+
+    <!-- TASK 1 -->
+    <div class="card active" id="task1">
+        <div class="thdr"><div class="tnum">1</div><div><div class="ttitle">Mini Reading</div><div class="tsub">Read and answer &mdash; NO MORE THAN THREE WORDS from the passage</div></div></div>
+        <div class="passage">
+            <h3>Policing, Evidence and the Courts</h3>
+            <p>The criminal justice process begins long before a case reaches court. When a crime is reported or detected, police must gather sufficient <span class="hl">(1) evidence</span> to justify an arrest and, ultimately, a prosecution. This evidence may take many forms — witness statements, physical traces left at the scene, digital data, or the results of <span class="hl">(2) forensic analysis</span> conducted by specialists in pathology, toxicology or digital investigation. The standard of evidence required varies depending on the stage of the proceedings: police need only a reasonable suspicion to make an arrest, but a prosecution requires evidence sufficient to establish guilt <span class="hl">(3) beyond reasonable doubt</span> — the highest evidential standard in law.</p>
+            <p>Once charged, a defendant is entitled to legal representation. In most democratic systems, those who cannot afford a lawyer are provided with one at public expense through a system of <span class="hl">(4) legal aid</span>. The right to a fair trial — including the right to know the charges against you, to challenge the evidence presented, and to be presumed innocent until proven guilty — is enshrined in international human rights law and forms the foundation of modern criminal procedure.</p>
+            <p>In court, the prosecution bears the <span class="hl">(5) burden of proof</span>: it must demonstrate the defendant's guilt; the defence does not have to prove innocence. Evidence is tested through a process of examination and <span class="hl">(6) cross-examination</span>, in which lawyers from both sides question witnesses about their accounts. In jury trials, it is the jury — a panel of ordinary citizens — who ultimately decides whether the evidence is sufficient to support a conviction. In cases without a jury, that responsibility falls to the judge, who acts as <span class="hl">(7) trier of fact</span> as well as arbiter of law.</p>
+        </div>
+        <h4 style="color:#9b2c2c;margin:20px 0 12px;">Answer &mdash; NO MORE THAN THREE WORDS:</h4>
+        <div class="gsec">
+            <div class="gs">1. What must police gather to justify an arrest?<br><input class="gi" id="t1q1" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">2. What type of analysis may be conducted by specialists in pathology or toxicology?<br><input class="gi" id="t1q2" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">3. What is the highest evidential standard required for a conviction?<br><input class="gi" id="t1q3" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">4. What system provides lawyers to defendants who cannot afford one?<br><input class="gi" id="t1q4" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">5. What must the prosecution demonstrate in court?<br><input class="gi" id="t1q5" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">6. What process allows lawyers from both sides to question witnesses?<br><input class="gi" id="t1q6" placeholder="___" style="width:300px;margin-top:8px;"></div>
+            <div class="gs">7. What role does the judge take on in cases without a jury?<br><input class="gi" id="t1q7" placeholder="___" style="width:300px;margin-top:8px;"></div>
+        </div>
+        <div class="brow">
+            <button class="chk" id="check1" onclick="checkTask1()" disabled>Check Answers</button>
+            <button class="nxt" id="next1" disabled onclick="goToTask(2)">Next Task &rarr;</button>
+        </div>
+        <button class="sab" id="showAns1" onclick="toggleAns('ans1')">&#9660; Show Answers</button>
+        <div class="apan" id="ans1"><p><strong>Answers:</strong> 1-evidence, 2-forensic analysis, 3-beyond reasonable doubt, 4-legal aid, 5-(the defendant's guilt/) burden of proof, 6-cross-examination, 7-trier of fact</p></div>
+    </div>
+
+    <!-- TASK 2 -->
+    <div class="card" id="task2">
+        <div class="thdr"><div class="tnum">2</div><div><div class="ttitle">Article Reading</div><div class="tsub">Read the article carefully</div></div></div>
+        <a class="plink" href="article 3.pdf" target="_blank"><span style="font-size:1.5rem;">&#128196;</span> Crime &amp; Punishment &mdash; Article 3</a>
+        <div class="brow"><button class="prv" onclick="goToTask(1)">&larr; Previous</button><button class="nxt" onclick="goToTask(3)">Next Task &rarr;</button></div>
+    </div>
+
+    <!-- TASK 3 -->
+    <div class="card" id="task3">
+        <div class="thdr"><div class="tnum">3</div><div><div class="ttitle">Practice Reading</div><div class="tsub">IELTS-style reading test</div></div></div>
+        <a class="hlink" href="Reading (37).html" target="_blank">&#128214; Open Practice Reading</a>
+        <div class="brow"><button class="prv" onclick="goToTask(2)">&larr; Previous</button><button class="nxt" onclick="goToTask(4)">Next Task &rarr;</button></div>
+    </div>
+
+    <!-- TASK 4 -->
+    <div class="card" id="task4">
+        <div class="thdr"><div class="tnum">4</div><div><div class="ttitle">Vocabulary in Context</div><div class="tsub">Choose the correct word for each sentence</div></div></div>
+        <div class="gsec">
+            <div class="gs">1. The police collected <select class="vsel" id="t4v1"><option value="">select</option><option value="forensic evidence">forensic evidence</option><option value="circumstantial evidence">circumstantial evidence</option><option value="hearsay evidence">hearsay evidence</option></select> from the crime scene, including fingerprints and DNA samples.</div>
+            <div class="gs">2. In criminal law, the defendant is presumed innocent and the prosecution must prove guilt <select class="vsel" id="t4v2"><option value="">select</option><option value="beyond reasonable doubt">beyond reasonable doubt</option><option value="on balance of probabilities">on balance of probabilities</option><option value="beyond all doubt">beyond all doubt</option></select>.</div>
+            <div class="gs">3. The defendant could not afford a lawyer and applied for <select class="vsel" id="t4v3"><option value="">select</option><option value="legal aid">legal aid</option><option value="legal advice">legal advice</option><option value="legal costs">legal costs</option></select> to have one provided at public expense.</div>
+            <div class="gs">4. During the trial, the defence lawyer subjected the key witness to a rigorous <select class="vsel" id="t4v4"><option value="">select</option><option value="cross-examination">cross-examination</option><option value="police interview">police interview</option><option value="witness statement">witness statement</option></select>, pointing out inconsistencies in her account.</div>
+            <div class="gs">5. The <select class="vsel" id="t4v5"><option value="">select</option><option value="burden of proof">burden of proof</option><option value="standard of proof">standard of proof</option><option value="weight of evidence">weight of evidence</option></select> lies with the prosecution — the defendant does not have to prove innocence.</div>
+            <div class="gs">6. The case was dismissed because the evidence was deemed <select class="vsel" id="t4v6"><option value="">select</option><option value="inadmissible">inadmissible</option><option value="insufficient">insufficient</option><option value="inconclusive">inconclusive</option></select> — it had been obtained through an illegal search.</div>
+            <div class="gs">7. The suspect was placed in an <select class="vsel" id="t4v7"><option value="">select</option><option value="identity parade">identity parade</option><option value="custody suite">custody suite</option><option value="police station">police station</option></select> so that witnesses could attempt to identify the perpetrator.</div>
+            <div class="gs">8. The judge directed the jury to reach a <select class="vsel" id="t4v8"><option value="">select</option><option value="unanimous verdict">unanimous verdict</option><option value="majority verdict">majority verdict</option><option value="conditional verdict">conditional verdict</option></select>, meaning all twelve members must agree.</div>
+            <div class="gs">9. After three days of deliberation, the jury returned a <select class="vsel" id="t4v9"><option value="">select</option><option value="guilty verdict">guilty verdict</option><option value="not guilty plea">not guilty plea</option><option value="hung jury">hung jury</option></select> — they could not reach agreement and a retrial was ordered.</div>
+            <div class="gs">10. The defendant chose to <select class="vsel" id="t4v10"><option value="">select</option><option value="plead guilty">plead guilty</option><option value="plead not guilty">plead not guilty</option><option value="appeal the sentence">appeal the sentence</option></select> in exchange for a reduced sentence under a plea bargain agreement.</div>
+        </div>
+        <div class="brow"><button class="prv" onclick="goToTask(3)">&larr; Previous</button><button class="chk" id="check4" onclick="checkTask4()" disabled>Check Answers</button><button class="nxt" id="next4" disabled onclick="goToTask(5)">Next Task &rarr;</button></div>
+        <button class="sab" id="showAns4" onclick="toggleAns('ans4')">&#9660; Show Answers</button>
+        <div class="apan" id="ans4"><p><strong>Answers:</strong> 1-forensic evidence, 2-beyond reasonable doubt, 3-legal aid, 4-cross-examination, 5-burden of proof, 6-inadmissible, 7-identity parade, 8-unanimous verdict, 9-hung jury, 10-plead guilty</p></div>
+    </div>
+    <!-- TASK 5 -->
+    <div class="card" id="task5">
+        <div class="thdr"><div class="tnum">5</div><div><div class="ttitle">Extended Vocabulary Task</div><div class="tsub">Complete each sentence with the correct word or phrase from the box</div></div></div>
+        <div class="wbox"><strong>Word Box:</strong> acquit &nbsp;|&nbsp; arraignment &nbsp;|&nbsp; barrister &nbsp;|&nbsp; charge &nbsp;|&nbsp; circumstantial &nbsp;|&nbsp; corroborate &nbsp;|&nbsp; cross-examine &nbsp;|&nbsp; detain &nbsp;|&nbsp; exonerate &nbsp;|&nbsp; extradite &nbsp;|&nbsp; hearsay &nbsp;|&nbsp; inadmissible &nbsp;|&nbsp; indict &nbsp;|&nbsp; judiciary &nbsp;|&nbsp; jurisdiction &nbsp;|&nbsp; mitigating &nbsp;|&nbsp; perpetrator &nbsp;|&nbsp; plea bargain &nbsp;|&nbsp; precedent &nbsp;|&nbsp; solicitor</div>
+        <div class="gsec">
+            <div class="gs">1. A lawyer who represents clients in the higher courts and presents cases before judges is called a <input class="gi" id="t5w1" placeholder="___">.</div>
+            <div class="gs">2. A lawyer who advises clients and handles legal matters outside of court is called a <input class="gi" id="t5w2" placeholder="___">.</div>
+            <div class="gs">3. The collective body of judges in a country is referred to as the <input class="gi" id="t5w3" placeholder="___">.</div>
+            <div class="gs">4. The legal authority of a court to hear a particular type of case is called its <input class="gi" id="t5w4" placeholder="___">.</div>
+            <div class="gs">5. To formally accuse someone of a crime and bring them to trial is to <input class="gi" id="t5w5" placeholder="___"> them.</div>
+            <div class="gs">6. The first court appearance where a defendant is formally told the charges against them is called an <input class="gi" id="t5w6" placeholder="___">.</div>
+            <div class="gs">7. To formally accuse someone of a serious crime through a grand jury is to <input class="gi" id="t5w7" placeholder="___"> them.</div>
+            <div class="gs">8. To hold a suspect in custody before or during a trial is to <input class="gi" id="t5w8" placeholder="___"> them.</div>
+            <div class="gs">9. To question a witness called by the opposing side in a trial is to <input class="gi" id="t5w9" placeholder="___"> them.</div>
+            <div class="gs">10. To find a defendant not guilty and free them from the charges is to <input class="gi" id="t5w10" placeholder="___"> them.</div>
+            <div class="gs">11. To officially clear someone of blame or criminal charges is to <input class="gi" id="t5w11" placeholder="___"> them.</div>
+            <div class="gs">12. To confirm or support a statement or piece of evidence with additional proof is to <input class="gi" id="t5w12" placeholder="___"> it.</div>
+            <div class="gs">13. To transfer a criminal suspect from one country to another to face trial is to <input class="gi" id="t5w13" placeholder="___"> them.</div>
+            <div class="gs">14. Evidence that is not directly proving a fact but allows conclusions to be drawn is called <input class="gi" id="t5w14" placeholder="___"> evidence.</div>
+            <div class="gs">15. Evidence based on what someone else said, rather than direct observation, is called <input class="gi" id="t5w15" placeholder="___"> evidence.</div>
+            <div class="gs">16. Evidence that cannot be used in court because it was obtained improperly is called <input class="gi" id="t5w16" placeholder="___">.</div>
+            <div class="gs">17. Factors that reduce the severity of a sentence because they partially excuse the offender's behaviour are called <input class="gi" id="t5w17" placeholder="___"> circumstances.</div>
+            <div class="gs">18. An agreement where a defendant pleads guilty to a lesser charge in exchange for a reduced sentence is called a <input class="gi" id="t5w18" placeholder="___">.</div>
+            <div class="gs">19. A previous court decision that guides how future similar cases are decided is called a legal <input class="gi" id="t5w19" placeholder="___">.</div>
+            <div class="gs">20. The person who actually commits a crime is called the <input class="gi" id="t5w20" placeholder="___">.</div>
+        </div>
+        <div class="brow"><button class="prv" onclick="goToTask(4)">&larr; Previous</button><button class="chk" id="check5" onclick="checkTask5()" disabled>Check Answers</button><button class="nxt" id="next5" disabled onclick="goToTask(6)">Next Task &rarr;</button></div>
+        <button class="sab" id="showAns5" onclick="toggleAns('ans5')">&#9660; Show Answers</button>
+        <div class="apan" id="ans5"><p><strong>Answers:</strong> 1-barrister, 2-solicitor, 3-judiciary, 4-jurisdiction, 5-charge, 6-arraignment, 7-indict, 8-detain, 9-cross-examine, 10-acquit, 11-exonerate, 12-corroborate, 13-extradite, 14-circumstantial, 15-hearsay, 16-inadmissible, 17-mitigating, 18-plea bargain, 19-precedent, 20-perpetrator</p></div>
+    </div>
+
+    <!-- TASK 6 -->
+    <div class="card" id="task6">
+        <div class="thdr"><div class="tnum">6</div><div><div class="ttitle">Reading Comprehension</div><div class="tsub">Read five short passages about policing and courts and answer the questions</div></div></div>
+
+        <div class="crime-passage">
+            <h4>&#9878; Passage A &mdash; The Role of the Police</h4>
+            <p>The police serve multiple and sometimes conflicting functions in modern societies. Their most visible role is reactive: responding to reported crimes, gathering evidence, apprehending suspects and presenting cases to the prosecution. But policing also has a significant preventive dimension — uniformed officers patrolling communities, building relationships with residents, and intervening before crimes occur. In recent decades, models of community policing have emphasised the importance of public trust: research consistently shows that communities are more likely to report crimes and cooperate with investigations when they trust the police, and that heavy-handed or discriminatory policing tends to reduce this cooperation and undermine the effectiveness of law enforcement more broadly. The relationship between police and the communities they serve is therefore not merely an ethical question but a practical one with direct consequences for crime detection rates.</p>
+        </div>
+        <div class="qblock"><div class="qt">1. Why is public trust in the police important from a practical perspective?</div><div class="opts"><label><input type="radio" name="t6q1" value="A"> A. It reduces the cost of running police forces.</label><label><input type="radio" name="t6q1" value="B"> B. It makes officers feel more motivated.</label><label><input type="radio" name="t6q1" value="C"> C. Communities are more likely to report crimes and cooperate with investigations when they trust the police.</label><label><input type="radio" name="t6q1" value="D"> D. It allows the police to patrol less frequently.</label></div><div class="fb" id="fb_t6q1"></div></div>
+        <div class="qblock"><div class="qt">2. What does the passage suggest is a consequence of heavy-handed policing?</div><div class="opts"><label><input type="radio" name="t6q2" value="A"> A. It increases crime detection rates.</label><label><input type="radio" name="t6q2" value="B"> B. It reduces public cooperation and undermines law enforcement effectiveness.</label><label><input type="radio" name="t6q2" value="C"> C. It deters criminals more effectively than community policing.</label><label><input type="radio" name="t6q2" value="D"> D. It has no measurable effect on communities.</label></div><div class="fb" id="fb_t6q2"></div></div>
+
+        <div class="crime-passage">
+            <h4>&#9878; Passage B &mdash; Miscarriages of Justice</h4>
+            <p>A miscarriage of justice occurs when a person is wrongly convicted of a crime they did not commit. Such cases represent one of the most serious failures of any criminal justice system, and their consequences for the individuals concerned — who may spend years or decades in prison — are devastating. Among the most common causes of wrongful conviction are eyewitness misidentification, false confessions (often obtained under pressure or through coercive interrogation techniques), unreliable forensic evidence, and the concealment of exculpatory information by prosecutors. In recent decades, DNA evidence has played a transformative role in identifying wrongful convictions: in the United States alone, more than 375 people have been exonerated through DNA testing since 1989. These cases have prompted significant reforms to investigation procedures, interrogation practices and the rules governing disclosure of evidence to the defence.</p>
+        </div>
+        <div class="qblock"><div class="qt">3. What role has DNA evidence played in criminal justice in recent decades?</div><div class="opts"><label><input type="radio" name="t6q3" value="A"> A. It has made eyewitness testimony unnecessary.</label><label><input type="radio" name="t6q3" value="B"> B. It has increased the number of wrongful convictions.</label><label><input type="radio" name="t6q3" value="C"> C. It has been used to identify and correct wrongful convictions.</label><label><input type="radio" name="t6q3" value="D"> D. It is only used in cases involving violent crime.</label></div><div class="fb" id="fb_t6q3"></div></div>
+        <div class="qblock"><div class="qt">4. Which of the following is NOT mentioned as a cause of wrongful conviction?</div><div class="opts"><label><input type="radio" name="t6q4" value="A"> A. Eyewitness misidentification</label><label><input type="radio" name="t6q4" value="B"> B. False confessions</label><label><input type="radio" name="t6q4" value="C"> C. Ineffective legal representation</label><label><input type="radio" name="t6q4" value="D"> D. Concealment of exculpatory information</label></div><div class="fb" id="fb_t6q4"></div></div>
+
+        <div class="crime-passage">
+            <h4>&#9878; Passage C &mdash; Organised Crime</h4>
+            <p>Organised crime refers to coordinated criminal enterprises run by groups or networks for financial profit. Unlike opportunistic or impulsive offending, organised crime is characterised by structure, planning, division of labour and the use of violence or corruption to protect operations and eliminate competition. Major categories include drug trafficking, human trafficking, money laundering, illegal arms dealing and cybercrime. Organised crime groups often operate across national borders, exploiting differences in legal systems and the limited capacity of individual states to pursue investigations beyond their own jurisdiction. International bodies such as Interpol and Europol coordinate cross-border enforcement efforts, while instruments such as asset freezing and anti-money laundering legislation target the financial infrastructure that sustains criminal networks. Despite these efforts, the global revenues of organised crime are estimated to run into hundreds of billions of dollars annually.</p>
+        </div>
+        <div class="qblock"><div class="qt">5. What distinguishes organised crime from opportunistic offending?</div><div class="opts"><label><input type="radio" name="t6q5" value="A"> A. Organised crime involves less violence.</label><label><input type="radio" name="t6q5" value="B"> B. Organised crime is characterised by structure, planning, division of labour and use of corruption.</label><label><input type="radio" name="t6q5" value="C"> C. Organised crime is always conducted online.</label><label><input type="radio" name="t6q5" value="D"> D. Organised crime operates only within a single country.</label></div><div class="fb" id="fb_t6q5"></div></div>
+        <div class="qblock"><div class="qt">6. What tools does the passage mention for targeting the finances of criminal networks?</div><div class="opts"><label><input type="radio" name="t6q6" value="A"> A. Increased prison sentences and identity parades</label><label><input type="radio" name="t6q6" value="B"> B. Asset freezing and anti-money laundering legislation</label><label><input type="radio" name="t6q6" value="C"> C. Community policing and restorative justice programmes</label><label><input type="radio" name="t6q6" value="D"> D. Electronic tagging and curfew orders</label></div><div class="fb" id="fb_t6q6"></div></div>
+
+        <div class="crime-passage">
+            <h4>&#9878; Passage D &mdash; The Right to a Fair Trial</h4>
+            <p>The right to a fair trial is one of the cornerstones of modern human rights law, enshrined in Article 6 of the European Convention on Human Rights and equivalent provisions in legal systems worldwide. Key elements include: the right to be informed promptly of any charges; the right to adequate time and facilities to prepare a defence; the right to legal representation, including free legal aid for those who cannot afford a lawyer; the right to examine witnesses and challenge the evidence against you; the right to an independent and impartial tribunal; and the presumption of innocence until proven guilty. Courts have repeatedly held that violations of these principles — such as trials conducted in secret, coerced confessions or the denial of legal representation — render any resulting conviction unsafe and liable to be overturned on appeal.</p>
+        </div>
+        <div class="qblock"><div class="qt">7. What does the presumption of innocence mean in practice?</div><div class="opts"><label><input type="radio" name="t6q7" value="A"> A. The defendant must prove they did not commit the crime.</label><label><input type="radio" name="t6q7" value="B"> B. A defendant is considered innocent and the prosecution must prove guilt.</label><label><input type="radio" name="t6q7" value="C"> C. The judge decides guilt before the trial begins.</label><label><input type="radio" name="t6q7" value="D"> D. Only previous offenders are assumed to be guilty.</label></div><div class="fb" id="fb_t6q7"></div></div>
+        <div class="qblock"><div class="qt">8. What happens to a conviction obtained through violation of fair trial rights?</div><div class="opts"><label><input type="radio" name="t6q8" value="A"> A. The sentence is increased.</label><label><input type="radio" name="t6q8" value="B"> B. The defendant is automatically released.</label><label><input type="radio" name="t6q8" value="C"> C. The conviction may be declared unsafe and overturned on appeal.</label><label><input type="radio" name="t6q8" value="D"> D. The case is retried with the same jury.</label></div><div class="fb" id="fb_t6q8"></div></div>
+
+        <div class="crime-passage">
+            <h4>&#9878; Passage E &mdash; Plea Bargaining</h4>
+            <p>Plea bargaining is an agreement between a defendant and the prosecution in which the defendant agrees to plead guilty — either to the original charge or to a lesser offence — in exchange for a more lenient sentence or the dropping of additional charges. The practice is widespread in the United States, where the vast majority of criminal convictions result from guilty pleas rather than jury trials. Proponents argue that plea bargaining reduces the burden on courts, saves time and money, and gives defendants certainty about their outcome. Critics counter that it places undue pressure on innocent defendants to plead guilty rather than risk a heavier sentence at trial, that it removes public scrutiny from the justice process, and that it may result in inconsistent outcomes that undermine the principle of equal justice under law. Several countries that have traditionally avoided the practice are increasingly introducing it to manage growing court backlogs.</p>
+        </div>
+        <div class="qblock"><div class="qt">9. What is the main concern critics raise about plea bargaining?</div><div class="opts"><label><input type="radio" name="t6q9" value="A"> A. It makes trials last too long.</label><label><input type="radio" name="t6q9" value="B"> B. It is too expensive for the state.</label><label><input type="radio" name="t6q9" value="C"> C. It may pressure innocent defendants to plead guilty and removes public scrutiny from justice.</label><label><input type="radio" name="t6q9" value="D"> D. It is only available to wealthy defendants.</label></div><div class="fb" id="fb_t6q9"></div></div>
+        <div class="qblock"><div class="qt">10. Why are some countries introducing plea bargaining for the first time?</div><div class="opts"><label><input type="radio" name="t6q10" value="A"> A. To increase the number of jury trials</label><label><input type="radio" name="t6q10" value="B"> B. To manage growing backlogs of cases in courts</label><label><input type="radio" name="t6q10" value="C"> C. To give defendants more power in the justice system</label><label><input type="radio" name="t6q10" value="D"> D. To reduce the length of prison sentences</label></div><div class="fb" id="fb_t6q10"></div></div>
+        <div class="brow"><button class="prv" onclick="goToTask(5)">&larr; Previous</button><button class="chk" id="check6" onclick="checkTask6()" disabled>Check Answers</button><button class="nxt" id="next6" disabled onclick="goToTask(7)">Next Task &rarr;</button></div>
+        <button class="sab" id="showAns6" onclick="toggleAns('ans6')">&#9660; Show Answers</button>
+        <div class="apan" id="ans6"><p><strong>Answers:</strong> 1-C, 2-B, 3-C, 4-C, 5-B, 6-B, 7-B, 8-C, 9-C, 10-B</p></div>
+    </div>
+
+    <!-- TASK 7 -->
+    <div class="card" id="task7">
+        <div class="thdr"><div class="tnum">7</div><div><div class="ttitle">Practice Listening</div><div class="tsub">Full IELTS-style listening test</div></div></div>
+        <a class="hlink" href="Listening (37).html" target="_blank">&#127911; Open Practice Listening</a>
+        <div class="brow"><button class="prv" onclick="goToTask(6)">&larr; Previous</button><button class="nxt" onclick="finishDay()">Finish Day 3 &#10003;</button></div>
+    </div>
+
+    <!-- COMPLETION -->
+    <div class="done" id="donescreen">
+        <div class="ico">&#127881;</div>
+        <h2>Day 3 Complete!</h2>
+        <p>Well done! You've completed all tasks for Week 8, Day 3.</p>
+        <div style="margin:30px 0;text-align:left;">
+            <h3 style="color:#9b2c2c;border-bottom:2px solid #9b2c2c;padding-bottom:10px;margin-bottom:15px;">&#128203; Review Your Work</h3>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:15px;">
+                <div onclick="reviewTask(1)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#9b2c2c;margin-bottom:5px;">Task 1</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Mini Reading</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(2)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#9b2c2c;margin-bottom:5px;">Task 2</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Article Reading</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(3)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#9b2c2c;margin-bottom:5px;">Task 3</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Reading</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(4)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#9b2c2c;margin-bottom:5px;">Task 4</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Vocabulary</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(5)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#9b2c2c;margin-bottom:5px;">Task 5</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Extended Vocab</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(6)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#9b2c2c;margin-bottom:5px;">Task 6</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Reading Comprehension</div><div style="font-size:1.4rem;">&#9989;</div></div>
+                <div onclick="reviewTask(7)" style="background:white;border:2px solid #28a745;border-radius:12px;padding:20px;text-align:center;cursor:pointer;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'"><div style="font-weight:bold;color:#9b2c2c;margin-bottom:5px;">Task 7</div><div style="color:#888;font-size:0.85rem;margin-bottom:10px;">Practice Listening</div><div style="font-size:1.4rem;">&#9989;</div></div>
+            </div>
+        </div>
+        <a href="/student-dashboard.html" class="dbbtn">&larr; Back to Dashboard</a>
+    </div>
+</div>
+<script>
+const SUPABASE_URL='https://nbfceuhuauizyucugejr.supabase.co';
+const SUPABASE_KEY='sb_publishable_0mFIGJkA_DKZfUiDAWFdrA_nXt0hF6H';
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const WEEK=8,DAY=3,TOTAL=7;
+let sid=null,cur=1,t0=Date.now(),stout=null;
+
+const vocab=[
+{w:"1. Evidence (n)",d:"Facts or objects used to prove something in court"},
+{w:"2. Forensic analysis (n)",d:"Scientific examination of evidence by specialists"},
+{w:"3. Beyond reasonable doubt (phrase)",d:"The highest evidential standard required for conviction"},
+{w:"4. Legal aid (n)",d:"Public funding to provide lawyers to those who cannot afford one"},
+{w:"5. Burden of proof (n)",d:"The obligation to prove the facts in a legal dispute"},
+{w:"6. Cross-examination (n)",d:"Questioning of a witness by the opposing side"},
+{w:"7. Trier of fact (n)",d:"The person or body deciding the facts in a case"},
+{w:"8. Inadmissible (adj)",d:"Not allowed to be used as evidence in court"},
+{w:"9. Identity parade (n)",d:"A procedure where witnesses try to identify a suspect"},
+{w:"10. Unanimous verdict (n)",d:"A decision agreed upon by all members of a jury"},
+{w:"11. Hung jury (n)",d:"A jury that cannot reach a unanimous decision"},
+{w:"12. Plea bargain (n)",d:"An agreement to plead guilty in exchange for a lighter sentence"},
+{w:"13. Barrister (n)",d:"A lawyer who represents clients in higher courts"},
+{w:"14. Solicitor (n)",d:"A lawyer who advises clients and handles legal matters"},
+{w:"15. Judiciary (n)",d:"The collective body of judges in a legal system"},
+{w:"16. Jurisdiction (n)",d:"The legal authority of a court over a type of case"},
+{w:"17. Arraignment (n)",d:"First court appearance where charges are formally stated"},
+{w:"18. Indict (v)",d:"To formally charge someone with a serious crime"},
+{w:"19. Detain (v)",d:"To hold a person in custody"},
+{w:"20. Acquit (v)",d:"To find a defendant not guilty"},
+{w:"21. Exonerate (v)",d:"To officially clear someone of blame or charges"},
+{w:"22. Corroborate (v)",d:"To confirm evidence with additional proof"},
+{w:"23. Extradite (v)",d:"To transfer a suspect to another country for trial"},
+{w:"24. Circumstantial evidence (n)",d:"Evidence that implies a fact but does not prove it directly"},
+{w:"25. Hearsay evidence (n)",d:"Evidence based on what another person said"},
+{w:"26. Mitigating circumstances (n)",d:"Factors that reduce the severity of a sentence"},
+{w:"27. Perpetrator (n)",d:"The person who actually commits a crime"},
+{w:"28. Precedent (n)",d:"A past case that guides future legal decisions"},
+{w:"29. Miscarriage of justice (n)",d:"A wrongful conviction of an innocent person"},
+{w:"30. Exculpatory (adj)",d:"Tending to clear someone of blame or fault"},
+{w:"31. Community policing (n)",d:"Policing that emphasises building community relationships"},
+{w:"32. Organised crime (n)",d:"Coordinated criminal enterprises run for profit"},
+{w:"33. Drug trafficking (n)",d:"The illegal trade and distribution of drugs"},
+{w:"34. Human trafficking (n)",d:"The illegal movement of people for exploitation"},
+{w:"35. Asset freezing (n)",d:"Legally preventing access to criminal proceeds"},
+{w:"36. Disclosure (n)",d:"The sharing of evidence between prosecution and defence"},
+{w:"37. Interrogation (n)",d:"Intensive questioning of a suspect by police"},
+{w:"38. Coercion (n)",d:"Forcing someone to act by using threats or pressure"},
+{w:"39. Presumption of innocence (n)",d:"The principle that a defendant is innocent until proven guilty"},
+{w:"40. Impartial (adj)",d:"Not favouring one side; unbiased"},
+{w:"41. Tribunal (n)",d:"A body established to settle legal disputes"},
+{w:"42. Overturned (adj)",d:"Reversed or annulled by a higher court"},
+{w:"43. Backlog (n)",d:"An accumulation of cases waiting to be dealt with"},
+{w:"44. Scrutiny (n)",d:"Critical observation or examination"},
+{w:"45. Pathology (n)",d:"The study of disease and cause of death"},
+{w:"46. Toxicology (n)",d:"The study of the effects of poisons and drugs"},
+{w:"47. Apprehend (v)",d:"To arrest or capture a suspect"},
+{w:"48. Interpol (n)",d:"International criminal police organisation"},
+{w:"49. Europol (n)",d:"European Union law enforcement agency"},
+{w:"50. Cross-border (adj)",d:"Involving more than one country"},
+];
+
+const t1ok={t1q1:["evidence"],t1q2:["forensic analysis"],t1q3:["beyond reasonable doubt"],t1q4:["legal aid"],t1q5:["burden of proof","defendant's guilt"],t1q6:["cross-examination"],t1q7:["trier of fact"]};
+const t4ok={t4v1:"forensic evidence",t4v2:"beyond reasonable doubt",t4v3:"legal aid",t4v4:"cross-examination",t4v5:"burden of proof",t4v6:"inadmissible",t4v7:"identity parade",t4v8:"unanimous verdict",t4v9:"hung jury",t4v10:"plead guilty"};
+const t5ok={t5w1:"barrister",t5w2:"solicitor",t5w3:"judiciary",t5w4:"jurisdiction",t5w5:"charge",t5w6:"arraignment",t5w7:"indict",t5w8:"detain",t5w9:"cross-examine",t5w10:"acquit",t5w11:"exonerate",t5w12:"corroborate",t5w13:"extradite",t5w14:"circumstantial",t5w15:"hearsay",t5w16:"inadmissible",t5w17:"mitigating",t5w18:"plea bargain",t5w19:"precedent",t5w20:"perpetrator"};
+const t6mcq={t6q1:"C",t6q2:"B",t6q3:"C",t6q4:"C",t6q5:"B",t6q6:"B",t6q7:"B",t6q8:"C",t6q9:"C",t6q10:"B"};
+
+async function initStu(){const p=new URLSearchParams(window.location.search);if(p.get("teacher")==="true"){sid="teacher-preview";return;}try{const u=localStorage.getItem("user");if(!u){window.location.href="/login.html";return;}const pu=JSON.parse(u);const{data,error}=await db.from("students").select("*").eq("username",pu.username).single();if(error||!data)return;sid=data.id;}catch(e){}}
+function buildVocab(){document.getElementById("vgrid").innerHTML=vocab.map(v=>`<div class="vi"><div class="vw">${v.w}</div><div class="vd">${v.d}</div></div>`).join("");}
+async function startDay(){document.getElementById("splash").style.display="none";document.getElementById("mc").style.display="block";buildVocab();await initStu();await restoreProgress();setupLive();}
+function goToTask(n){document.getElementById("task"+cur).classList.remove("active");cur=n;document.getElementById("task"+n).classList.add("active");document.getElementById("task"+n).scrollIntoView({behavior:"smooth",block:"start"});updProg(n);t0=Date.now();saveResume(n);}
+function updProg(n){document.getElementById("pfill").style.width=Math.round(((n-1)/TOTAL)*100)+"%";document.getElementById("plabel").textContent="Task "+n+" of "+TOTAL;}
+function showSavi(){const e=document.getElementById("savi");e.classList.add("show");setTimeout(()=>e.classList.remove("show"),2000);}
+async function saveResume(n){if(!sid||sid==="teacher-preview")return;try{await db.from("student_resume").upsert({student_id:sid,week:WEEK,day:DAY,last_task:n,updated_at:new Date().toISOString()},{onConflict:"student_id"});}catch(e){}}
+function scheduleSave(){clearTimeout(stout);stout=setTimeout(()=>{localStorage.setItem("w"+WEEK+"d"+DAY+"_ans",JSON.stringify(gatherAll()));showSavi();},800);}
+function gatherAll(){const d={};document.querySelectorAll(".gi").forEach(el=>{if(el.id)d[el.id]=el.value;});["t6q1","t6q2","t6q3","t6q4","t6q5","t6q6","t6q7","t6q8","t6q9","t6q10"].forEach(n=>{const s=document.querySelector("input[name='"+n+"']:checked");if(s)d[n]=s.value;});document.querySelectorAll("select").forEach(el=>{if(el.id)d[el.id]=el.value;});return d;}
+async function restoreProgress(){
+    try{
+        const sv=localStorage.getItem("w"+WEEK+"d"+DAY+"_ans");
+        if(sv){const d=JSON.parse(sv);Object.entries(d).forEach(([id,val])=>{const el=document.getElementById(id);if(el&&el.tagName==="INPUT")el.value=val;});["t6q1","t6q2","t6q3","t6q4","t6q5","t6q6","t6q7","t6q8","t6q9","t6q10"].forEach(n=>{const val=d[n];if(val){const r=document.querySelector("input[name='"+n+"'][value='"+val+"']");if(r)r.checked=true;}});Object.entries(d).forEach(([id,val])=>{const el=document.getElementById(id);if(el&&el.tagName==="SELECT")el.value=val;});}
+        if(sid&&sid!=="teacher-preview"){
+            const{data:td}=await db.from("task_progress").select("task_number,status").eq("student_id",sid).eq("week",WEEK).eq("day",DAY);
+            if(td&&td.filter(t=>t.status==="completed").length>=TOTAL){document.getElementById("task1").classList.remove("active");document.getElementById("donescreen").style.display="block";updProg(TOTAL);valAll();makeRO();return;}
+            const{data:res}=await db.from("student_resume").select("last_task").eq("student_id",sid).eq("week",WEEK).eq("day",DAY).single();
+            if(res&&res.last_task>1){document.getElementById("task1").classList.remove("active");cur=res.last_task;document.getElementById("task"+cur).classList.add("active");updProg(cur);}
+        }
+        valAll();
+    }catch(e){}
+}
+function makeRO(){document.querySelectorAll(".gi").forEach(el=>{el.disabled=true;el.style.opacity="0.85";});document.querySelectorAll("input[type=radio]").forEach(el=>el.disabled=true);document.querySelectorAll("select").forEach(el=>el.disabled=true);document.querySelectorAll(".chk").forEach(el=>el.style.display="none");document.querySelectorAll(".nxt").forEach(el=>el.style.display="none");document.querySelectorAll(".prv").forEach(el=>el.style.display="none");document.querySelectorAll(".sab").forEach(el=>el.style.display="inline-block");}
+function setupLive(){
+    ["t1q1","t1q2","t1q3","t1q4","t1q5","t1q6","t1q7"].forEach(id=>{const el=document.getElementById(id);if(el)el.addEventListener("input",()=>{valT1();scheduleSave();});});
+    for(let i=1;i<=10;i++){const el=document.getElementById("t4v"+i);if(el)el.addEventListener("change",()=>{valT4();scheduleSave();});}
+    for(let i=1;i<=20;i++){const el=document.getElementById("t5w"+i);if(el)el.addEventListener("input",()=>{valT5();scheduleSave();});}
+    ["t6q1","t6q2","t6q3","t6q4","t6q5","t6q6","t6q7","t6q8","t6q9","t6q10"].forEach(n=>{document.querySelectorAll("input[name='"+n+"']").forEach(el=>el.addEventListener("change",()=>{valT6();scheduleSave();}));});
+}
+function valAll(){valT1();valT4();valT5();valT6();}
+function valT1(){document.getElementById("check1").disabled=!["t1q1","t1q2","t1q3","t1q4","t1q5","t1q6","t1q7"].every(id=>document.getElementById(id)?.value.trim());}
+function valT4(){document.getElementById("check4").disabled=!Array.from({length:10},(_,i)=>document.getElementById("t4v"+(i+1))?.value).every(Boolean);}
+function valT5(){document.getElementById("check5").disabled=!Array.from({length:20},(_,i)=>document.getElementById("t5w"+(i+1))?.value.trim()).every(Boolean);}
+function valT6(){document.getElementById("check6").disabled=!["t6q1","t6q2","t6q3","t6q4","t6q5","t6q6","t6q7","t6q8","t6q9","t6q10"].every(n=>document.querySelector("input[name='"+n+"']:checked"));}
+function checkTask1(){const ans=[];Object.entries(t1ok).forEach(([id,opts])=>{const inp=document.getElementById(id);const val=inp.value.trim().toLowerCase();const ok=opts.some(o=>val.includes(o.toLowerCase()));inp.classList.toggle("correct",ok);inp.classList.toggle("incorrect",!ok);ans.push({question_id:id,question_type:"gap_fill",student_answer:inp.value.trim(),correct_answer:opts[0],is_correct:ok});});document.getElementById("showAns1").style.display="inline-block";document.getElementById("next1").disabled=false;saveAnswers(1,ans);saveTP(1);}
+function checkTask4(){const ans=[];Object.entries(t4ok).forEach(([id,correct])=>{const sel=document.getElementById(id);const ok=sel.value===correct;sel.classList.toggle("correct",ok);sel.classList.toggle("incorrect",!ok);ans.push({question_id:id,question_type:"matching",student_answer:sel.value,correct_answer:correct,is_correct:ok});});document.getElementById("showAns4").style.display="inline-block";document.getElementById("next4").disabled=false;saveAnswers(4,ans);saveTP(4);}
+function checkTask5(){const ans=[];Object.entries(t5ok).forEach(([id,correct])=>{const inp=document.getElementById(id);const ok=inp.value.trim().toLowerCase()===correct.toLowerCase();inp.classList.toggle("correct",ok);inp.classList.toggle("incorrect",!ok);ans.push({question_id:id,question_type:"gap_fill",student_answer:inp.value.trim(),correct_answer:correct,is_correct:ok});});document.getElementById("showAns5").style.display="inline-block";document.getElementById("next5").disabled=false;saveAnswers(5,ans);saveTP(5);}
+function checkTask6(){const ans=[];Object.entries(t6mcq).forEach(([n,correct])=>{const sel=document.querySelector("input[name='"+n+"']:checked");const fb=document.getElementById("fb_"+n);if(!sel)return;const ok=sel.value===correct;fb.textContent=ok?"✅ Correct!":"❌ Incorrect — correct answer: "+correct;fb.className="fb "+(ok?"correct":"incorrect");ans.push({question_id:n,question_type:"mcq",student_answer:sel.value,correct_answer:correct,is_correct:ok});});document.getElementById("showAns6").style.display="inline-block";document.getElementById("next6").disabled=false;saveAnswers(6,ans);saveTP(6);}
+async function saveAnswers(tnum,ans){if(!sid||sid==="teacher-preview")return;try{const rows=ans.map(a=>({student_id:sid,week:WEEK,day:DAY,task_number:tnum,question_id:a.question_id,question_type:a.question_type,student_answer:a.student_answer,correct_answer:a.correct_answer,is_correct:a.is_correct,answered_at:new Date().toISOString()}));await db.from("student_answers").upsert(rows,{onConflict:"student_id,week,day,task_number,question_id"});}catch(e){}}
+async function saveTP(n){if(!sid||sid==="teacher-preview")return;try{await db.from("task_progress").upsert({student_id:sid,week:WEEK,day:DAY,task_number:n,status:"completed",time_completed:new Date().toISOString(),time_spent_seconds:Math.round((Date.now()-t0)/1000)},{onConflict:"student_id,week,day,task_number"});}catch(e){}}
+async function finishDay(){document.getElementById("task7").classList.remove("active");document.getElementById("donescreen").style.display="block";document.getElementById("donescreen").scrollIntoView({behavior:"smooth"});localStorage.removeItem("w"+WEEK+"d"+DAY+"_ans");for(let i=1;i<=TOTAL;i++)await saveTP(i);if(sid&&sid!=="teacher-preview")await db.from("student_resume").delete().eq("student_id",sid);makeRO();}
+function reviewTask(n){document.getElementById("donescreen").style.display="none";cur=n;document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));document.getElementById("task"+n).classList.add("active");document.getElementById("task"+n).scrollIntoView({behavior:"smooth",block:"start"});const ex=document.getElementById("btr");if(!ex){const b=document.createElement("button");b.id="btr";b.textContent="🏆 Back to Results";b.style.cssText="position:fixed;bottom:20px;right:20px;background:#e53e3e;color:white;border:none;padding:12px 22px;border-radius:50px;cursor:pointer;font-weight:bold;font-size:0.95rem;z-index:9998;";b.onclick=()=>{b.remove();document.querySelectorAll(".card").forEach(c=>c.classList.remove("active"));document.getElementById("donescreen").style.display="block";document.getElementById("donescreen").scrollIntoView({behavior:"smooth"});};document.body.appendChild(b);}}
+function toggleVocab(){document.getElementById("vbody").classList.toggle("open");document.getElementById("varr").classList.toggle("open");}
+function toggleAns(id){const d=document.getElementById(id);const b=d.previousElementSibling;d.style.display=d.style.display==="block"?"none":"block";b.textContent=d.style.display==="block"?"▲ Hide Answers":"▼ Show Answers";}
+</script>
+</body>
+</html>
